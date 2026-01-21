@@ -17,9 +17,6 @@ export const Footer = () => {
           </Link>
           
           <nav className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">Features</a>
-            <a href="#" className="hover:text-primary transition-colors">Pricing</a>
-            <a href="#" className="hover:text-primary transition-colors">API</a>
             <a href="#" className="hover:text-primary transition-colors">Privacy</a>
           </nav>
 
@@ -35,7 +32,7 @@ export const Footer = () => {
         
         <div className="mt-10 pt-8 border-t border-border/50 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 MailRCV. All rights reserved.
+            © 2026 MailRCV. All rights reserved.
           </p>
         </div>
       </div>
