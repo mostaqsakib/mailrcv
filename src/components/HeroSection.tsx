@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shield, Zap } from "lucide-react";
+import { Mail, ArrowRight } from "lucide-react";
 
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
@@ -47,7 +47,7 @@ export const HeroSection = () => {
           </p>
 
           {/* Email creation form */}
-          <form onSubmit={handleSubmit} className="max-w-xl mx-auto mb-16">
+          <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
             <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-2xl glass-strong glow">
               <div className="flex items-center bg-background/40 rounded-xl px-4 py-3 gap-2 border border-border/50">
                 <Mail className="w-5 h-5 text-primary shrink-0" />
@@ -67,25 +67,6 @@ export const HeroSection = () => {
             </div>
           </form>
 
-          {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-md mx-auto">
-            {[
-              { icon: Shield, title: "Private", desc: "No signup needed" },
-              { icon: Zap, title: "Instant", desc: "Ready in seconds" },
-            ].map((feature, i) => (
-              <div 
-                key={feature.title}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl glass group hover:glow transition-all duration-300"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="w-6 h-6 text-primary" />
-                </div>
-                <span className="font-semibold text-foreground">{feature.title}</span>
-                <span className="text-sm text-muted-foreground">{feature.desc}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
