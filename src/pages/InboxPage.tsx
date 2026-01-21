@@ -31,8 +31,6 @@ import {
 const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const domain = "mailfly.io";
-  const email = `${username}@${domain}`;
   
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
@@ -41,6 +39,10 @@ const InboxPage = () => {
   const [showForward, setShowForward] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [domainName, setDomainName] = useState("mailrcv.site");
+  
+  const email = `${username}@${domainName}`;
+  
 
   useEffect(() => {
     if (username) {
