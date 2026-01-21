@@ -1,20 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, ArrowRight, Shield, Zap, Globe } from "lucide-react";
 
-interface HeroSectionProps {
-  onCreateEmail: (username: string) => void;
-}
-
-export const HeroSection = ({ onCreateEmail }: HeroSectionProps) => {
+export const HeroSection = () => {
   const [username, setUsername] = useState("");
-  const domain = "mailfly.io"; // This would be configurable
+  const navigate = useNavigate();
+  const domain = "mailfly.io";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim()) {
-      onCreateEmail(username.trim().toLowerCase());
+      navigate(`/inbox/${username.trim().toLowerCase()}`);
     }
   };
 
@@ -61,7 +59,7 @@ export const HeroSection = ({ onCreateEmail }: HeroSectionProps) => {
                 <span className="text-muted-foreground font-mono shrink-0">@{domain}</span>
               </div>
               <Button type="submit" variant="hero" size="lg" className="shrink-0">
-                Create Inbox
+                Open Inbox
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </div>

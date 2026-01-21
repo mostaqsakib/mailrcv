@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -11,8 +12,10 @@ import {
   Clock,
   Inbox,
   ExternalLink,
-  ArrowLeft
+  ArrowLeft,
+  Share2
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Email {
   id: string;
@@ -21,11 +24,6 @@ interface Email {
   preview: string;
   date: Date;
   read: boolean;
-}
-
-interface InboxViewProps {
-  email: string;
-  onBack: () => void;
 }
 
 // Mock emails for demo
@@ -56,7 +54,12 @@ const mockEmails: Email[] = [
   },
 ];
 
-export const InboxView = ({ email, onBack }: InboxViewProps) => {
+const InboxPage = () => {
+  const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  const domain = "mailfly.io";
+  const email = `${username}@${domain}`;
+  
   const [emails] = useState<Email[]>(mockEmails);
   const [copied, setCopied] = useState(false);
   const [forwardEmail, setForwardEmail] = useState("");
@@ -66,12 +69,21 @@ export const InboxView = ({ email, onBack }: InboxViewProps) => {
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(email);
     setCopied(true);
+    toast.success("Email address copied!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyInboxUrl = async () => {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success("Inbox URL copied!");
   };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.info("Inbox refreshed");
+    }, 1000);
   };
 
   const formatTime = (date: Date) => {
@@ -91,13 +103,13 @@ export const InboxView = ({ email, onBack }: InboxViewProps) => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={onBack}>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-primary" />
-                  <span className="font-mono font-semibold text-lg">{email}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Mail className="w-5 h-5 text-primary shrink-0" />
+                  <span className="font-mono font-semibold text-lg break-all">{email}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -110,8 +122,19 @@ export const InboxView = ({ email, onBack }: InboxViewProps) => {
                       <Copy className="w-4 h-4" />
                     )}
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={copyInboxUrl}
+                    title="Share inbox URL"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">Your temporary inbox</p>
+                <p className="text-sm text-muted-foreground">
+                  Inbox URL: <code className="text-xs bg-muted px-1 py-0.5 rounded">/inbox/{username}</code>
+                </p>
               </div>
             </div>
             
@@ -170,7 +193,8 @@ export const InboxView = ({ email, onBack }: InboxViewProps) => {
             </div>
             <h3 className="text-xl font-semibold mb-2">Inbox is empty</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Emails sent to {email} will appear here. Use this address to sign up for newsletters, verify accounts, and more.
+              Emails sent to <strong className="font-mono">{email}</strong> will appear here. 
+              Use this address to sign up for newsletters, verify accounts, and more.
             </p>
           </div>
         ) : (
@@ -225,3 +249,5 @@ export const InboxView = ({ email, onBack }: InboxViewProps) => {
     </div>
   );
 };
+
+export default InboxPage;
