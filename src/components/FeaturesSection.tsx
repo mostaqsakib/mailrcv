@@ -2,10 +2,8 @@ import {
   Shield, 
   Zap, 
   RefreshCw, 
-  Bell,
-  ArrowRight
+  Bell
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const features = [
   {
@@ -62,13 +60,6 @@ export const FeaturesSection = () => {
               <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
             </div>
           ))}
-        </div>
-
-        <div className="text-center mt-14">
-          <Button variant="hero" size="lg">
-            Get Started Free
-            <ArrowRight className="w-5 h-5" />
-          </Button>
         </div>
       </div>
     </section>
