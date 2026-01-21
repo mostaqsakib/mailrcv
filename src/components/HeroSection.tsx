@@ -7,7 +7,7 @@ import { Mail, ArrowRight, Shield, Zap, Globe } from "lucide-react";
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
-  const domain = "mailfly.io";
+  const domain = "mailrcv.site";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

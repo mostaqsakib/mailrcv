@@ -11,7 +11,7 @@ export const Header = () => {
             <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
               <Mail className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold">MailFly</span>
+            <span className="text-lg font-semibold">MailRCV</span>
           </Link>
 
           <div className="flex items-center gap-3">
