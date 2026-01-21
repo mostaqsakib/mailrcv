@@ -16,9 +16,6 @@ export const Footer = () => {
             <span className="text-xl font-bold">MailRCV</span>
           </Link>
           
-          <nav className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-          </nav>
 
           <div className="flex items-center gap-4">
             <a href="#" className="w-10 h-10 rounded-xl glass flex items-center justify-center text-muted-foreground hover:text-primary hover:glow transition-all">
