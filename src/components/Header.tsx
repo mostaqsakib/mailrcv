@@ -14,15 +14,10 @@ export const Header = () => {
             <span className="text-base sm:text-lg font-semibold">MailRCV</span>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              <Github className="w-4 h-4 mr-2" />
-              GitHub
-            </Button>
-            <Button variant="default" size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
-              Get Started
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm" className="hidden sm:flex">
+            <Github className="w-4 h-4 mr-2" />
+            GitHub
+          </Button>
         </nav>
       </div>
     </header>
