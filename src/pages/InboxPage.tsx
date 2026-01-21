@@ -112,7 +112,9 @@ const InboxPage = () => {
   };
 
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(email);
+    // Always use the production domain
+    const productionEmail = `${username}@mailrcv.site`;
+    await navigator.clipboard.writeText(productionEmail);
     setCopied(true);
     toast.success("Email address copied!");
     setTimeout(() => setCopied(false), 2000);
