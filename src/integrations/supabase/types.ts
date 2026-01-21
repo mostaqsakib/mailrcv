@@ -14,7 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      domains: {
+        Row: {
+          created_at: string
+          domain_name: string
+          forward_to_email: string | null
+          id: string
+          is_verified: boolean
+          updated_at: string
+          verification_code: string
+        }
+        Insert: {
+          created_at?: string
+          domain_name: string
+          forward_to_email?: string | null
+          id?: string
+          is_verified?: boolean
+          updated_at?: string
+          verification_code?: string
+        }
+        Update: {
+          created_at?: string
+          domain_name?: string
+          forward_to_email?: string | null
+          id?: string
+          is_verified?: boolean
+          updated_at?: string
+          verification_code?: string
+        }
+        Relationships: []
+      }
+      email_aliases: {
+        Row: {
+          created_at: string
+          domain_id: string | null
+          email_count: number
+          forward_to_email: string | null
+          id: string
+          is_active: boolean
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          domain_id?: string | null
+          email_count?: number
+          forward_to_email?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          domain_id?: string | null
+          email_count?: number
+          forward_to_email?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_aliases_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      received_emails: {
+        Row: {
+          alias_id: string | null
+          body_html: string | null
+          body_text: string | null
+          from_email: string
+          id: string
+          is_forwarded: boolean
+          is_read: boolean
+          received_at: string
+          subject: string | null
+        }
+        Insert: {
+          alias_id?: string | null
+          body_html?: string | null
+          body_text?: string | null
+          from_email: string
+          id?: string
+          is_forwarded?: boolean
+          is_read?: boolean
+          received_at?: string
+          subject?: string | null
+        }
+        Update: {
+          alias_id?: string | null
+          body_html?: string | null
+          body_text?: string | null
+          from_email?: string
+          id?: string
+          is_forwarded?: boolean
+          is_read?: boolean
+          received_at?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "received_emails_alias_id_fkey"
+            columns: ["alias_id"]
+            isOneToOne: false
+            referencedRelation: "email_aliases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
