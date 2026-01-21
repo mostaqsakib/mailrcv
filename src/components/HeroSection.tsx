@@ -48,19 +48,19 @@ export const HeroSection = () => {
 
           {/* Email creation form */}
           <form onSubmit={handleSubmit} className="max-w-xl mx-auto mb-16">
-            <div className="flex flex-col sm:flex-row gap-3 p-3 rounded-2xl glass-strong glow">
-              <div className="flex-1 flex items-center bg-background/40 rounded-xl px-4 gap-3 border border-border/50">
+            <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-2xl glass-strong glow">
+              <div className="flex items-center bg-background/40 rounded-xl px-4 py-3 gap-2 border border-border/50">
                 <Mail className="w-5 h-5 text-primary shrink-0" />
                 <Input
                   type="text"
                   placeholder="your-name"
                   value={username}
                   onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-foreground placeholder:text-muted-foreground"
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-foreground placeholder:text-muted-foreground min-w-0"
                 />
-                <span className="text-muted-foreground font-mono text-sm shrink-0">@{domain}</span>
+                <span className="text-muted-foreground font-mono text-xs sm:text-sm shrink-0">@{domain}</span>
               </div>
-              <Button type="submit" variant="hero" size="lg" className="shrink-0">
+              <Button type="submit" variant="hero" size="lg" className="w-full">
                 Open Inbox
                 <ArrowRight className="w-5 h-5" />
               </Button>
