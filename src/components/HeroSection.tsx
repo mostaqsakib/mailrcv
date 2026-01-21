@@ -17,7 +17,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center hero-gradient overflow-hidden pt-20">
+    <section className="relative min-h-[calc(100vh-80px)] sm:min-h-screen flex items-center justify-center hero-gradient overflow-hidden pt-16 sm:pt-20">
       {/* Background effects */}
       <div className="absolute inset-0 grid-dots opacity-50" />
       
@@ -27,21 +27,21 @@ export const HeroSection = () => {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/15 blur-[120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
       </div>
 
-      <div className="container relative z-10 px-4 py-20">
+      <div className="container relative z-10 px-4 py-10 sm:py-20">
         <div className="max-w-3xl mx-auto text-center animate-slide-up">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass mb-10">
+          <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm font-medium text-foreground/80">No signup required • Instant forwarding</span>
+            <span className="text-xs sm:text-sm font-medium text-foreground/80">No signup required • Instant forwarding</span>
           </div>
 
           {/* Main heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight">
             Instant Email
             <span className="block gradient-text">Forwarding</span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-muted-foreground mb-12 max-w-xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-xl mx-auto leading-relaxed">
             Create disposable email addresses in seconds. 
             No password. No registration. Pure simplicity.
           </p>
