@@ -119,8 +119,8 @@ const InboxPage = () => {
   };
 
   const copyInboxUrl = async () => {
-    // Copy only the clean URL without query parameters
-    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    // Always use the production domain
+    const cleanUrl = `https://mailrcv.site/inbox/${username}`;
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
   };
