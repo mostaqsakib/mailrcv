@@ -119,7 +119,9 @@ const InboxPage = () => {
   };
 
   const copyInboxUrl = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    // Copy only the clean URL without query parameters
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
   };
 
