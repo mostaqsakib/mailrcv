@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -13,7 +13,8 @@ import {
   Inbox,
   ExternalLink,
   ArrowLeft,
-  Share2
+  Share2,
+  Terminal
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -97,7 +98,10 @@ const InboxPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Grid pattern */}
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-lg">
         <div className="container mx-auto px-4 py-4">
@@ -106,10 +110,15 @@ const InboxPage = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-5 h-5" />
               </Button>
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-neon-green">
+                  <Mail className="w-4 h-4 text-primary-foreground" />
+                </div>
+              </Link>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Mail className="w-5 h-5 text-primary shrink-0" />
-                  <span className="font-mono font-semibold text-lg break-all">{email}</span>
+                  <Terminal className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-mono font-semibold text-lg text-primary break-all">{email}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -117,7 +126,7 @@ const InboxPage = () => {
                     onClick={copyToClipboard}
                   >
                     {copied ? (
-                      <Check className="w-4 h-4 text-accent" />
+                      <Check className="w-4 h-4 text-primary" />
                     ) : (
                       <Copy className="w-4 h-4" />
                     )}
@@ -132,8 +141,8 @@ const InboxPage = () => {
                     <Share2 className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Inbox URL: <code className="text-xs bg-muted px-1 py-0.5 rounded">/inbox/{username}</code>
+                <p className="text-sm text-muted-foreground font-mono">
+                  /inbox/{username}
                 </p>
               </div>
             </div>
@@ -143,9 +152,10 @@ const InboxPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowForward(!showForward)}
+                className="font-mono"
               >
                 <Forward className="w-4 h-4 mr-2" />
-                Set Forward
+                FORWARD
               </Button>
               <Button
                 variant="outline"
@@ -160,8 +170,8 @@ const InboxPage = () => {
 
           {/* Forward setup */}
           {showForward && (
-            <div className="mt-4 p-4 rounded-xl bg-muted/50 border border-border animate-slide-up">
-              <p className="text-sm font-medium mb-3">Forward emails to:</p>
+            <div className="mt-4 p-4 rounded-xl neon-border bg-card animate-slide-up">
+              <p className="text-sm font-semibold mb-3 text-primary font-mono">FORWARD TO:</p>
               <div className="flex gap-2">
                 <Input
                   type="email"
@@ -169,14 +179,14 @@ const InboxPage = () => {
                   value={forwardEmail}
                   onChange={(e) => setForwardEmail(e.target.value)}
                   variant="hero"
-                  className="flex-1"
+                  className="flex-1 font-mono"
                 />
                 <Button variant="hero">
                   <Check className="w-4 h-4 mr-2" />
-                  Save
+                  SAVE
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground mt-2 font-mono">
                 All incoming emails will be forwarded to this address.
               </p>
             </div>
@@ -185,49 +195,48 @@ const InboxPage = () => {
       </header>
 
       {/* Email list */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 relative z-10">
         {emails.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl neon-border bg-card flex items-center justify-center">
               <Inbox className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Inbox is empty</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Emails sent to <strong className="font-mono">{email}</strong> will appear here. 
-              Use this address to sign up for newsletters, verify accounts, and more.
+            <h3 className="text-xl font-bold mb-2">INBOX EMPTY</h3>
+            <p className="text-muted-foreground max-w-md mx-auto font-mono text-sm">
+              Emails sent to <strong className="text-primary">{email}</strong> will appear here.
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {emails.map((mail) => (
               <div
                 key={mail.id}
-                className={`group p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-card ${
+                className={`group p-4 rounded-xl border transition-all duration-300 cursor-pointer hover:shadow-neon-green ${
                   mail.read 
-                    ? "bg-card border-border" 
-                    : "bg-primary/5 border-primary/20"
+                    ? "bg-card/50 border-border" 
+                    : "neon-border bg-card"
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {!mail.read && (
-                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
                       )}
-                      <span className={`font-medium truncate ${!mail.read ? "text-foreground" : "text-muted-foreground"}`}>
+                      <span className={`font-mono text-sm truncate ${!mail.read ? "text-primary" : "text-muted-foreground"}`}>
                         {mail.from}
                       </span>
                     </div>
                     <h4 className={`font-semibold mb-1 ${!mail.read ? "text-foreground" : "text-foreground/80"}`}>
                       {mail.subject}
                     </h4>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
+                    <p className="text-sm text-muted-foreground line-clamp-1 font-light">
                       {mail.preview}
                     </p>
                   </div>
                   
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
                       <Clock className="w-3 h-3" />
                       {formatTime(mail.date)}
                     </div>
@@ -235,7 +244,7 @@ const InboxPage = () => {
                       <Button variant="ghost" size="icon" className="h-7 w-7">
                         <ExternalLink className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
