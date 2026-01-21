@@ -27,6 +27,7 @@ import {
   type ReceivedEmail,
   type EmailAlias
 } from "@/lib/email-service";
+import EmailDetailDialog from "@/components/EmailDetailDialog";
 
 const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
@@ -40,6 +41,8 @@ const InboxPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [domainName, setDomainName] = useState("mailrcv.site");
+  const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   
   const email = `${username}@${domainName}`;
   
@@ -291,10 +294,14 @@ const InboxPage = () => {
                 key={mail.id}
                 className={`group p-5 rounded-xl transition-all duration-300 cursor-pointer ${
                   mail.is_read 
-                    ? "glass" 
-                    : "glass glow"
+                    ? "glass hover:bg-white/5" 
+                    : "glass glow hover:bg-white/5"
                 }`}
-                onClick={() => handleMarkAsRead(mail.id)}
+                onClick={() => {
+                  handleMarkAsRead(mail.id);
+                  setSelectedEmail(mail);
+                  setDetailOpen(true);
+                }}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -320,9 +327,6 @@ const InboxPage = () => {
                       {formatTime(mail.received_at)}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -341,6 +345,14 @@ const InboxPage = () => {
             ))}
           </div>
         )}
+
+        {/* Email Detail Dialog */}
+        <EmailDetailDialog
+          email={selectedEmail}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          onDelete={handleDeleteEmail}
+        />
       </main>
     </div>
   );
