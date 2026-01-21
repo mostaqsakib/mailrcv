@@ -185,90 +185,88 @@ const InboxPage = () => {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
       
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/50">
-        <div className="glass-strong">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <Link to="/" className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-blue">
-                    <Mail className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                </Link>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono font-semibold text-lg text-primary break-all">{email}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={copyToClipboard}
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={copyInboxUrl}
-                      title="Share inbox URL"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground font-mono">
-                    /inbox/{username}
-                  </p>
+      <header className="sticky top-0 z-40">
+        <div className="glass-strong border-b border-border/50">
+          <div className="container mx-auto px-4 py-5">
+            {/* Top row - Logo and actions */}
+            <div className="flex items-center justify-between mb-4">
+              <Link to="/" className="flex items-center gap-3 group">
+                <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
+                  <Mail className="w-4 h-4 text-primary-foreground" />
                 </div>
-              </div>
+                <span className="text-lg font-semibold hidden sm:block">MailRCV</span>
+              </Link>
               
               <div className="flex items-center gap-2">
                 <Button
-                  variant="glass"
-                  size="sm"
-                  onClick={() => setShowForward(!showForward)}
-                >
-                  <Forward className="w-4 h-4 mr-2" />
-                  Set Forward
-                </Button>
-                <Button
-                  variant="glass"
+                  variant="ghost"
                   size="icon"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
+                  className="h-9 w-9"
                 >
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowForward(!showForward)}
+                  className={`h-9 w-9 ${showForward ? "bg-primary/10 text-primary" : ""}`}
+                >
+                  <Forward className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Forward setup */}
+            {/* Email address card */}
+            <div className="glass rounded-xl p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">Your temporary inbox</p>
+                  <p className="font-mono font-medium text-primary text-lg truncate">{email}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={copyToClipboard}
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={copyInboxUrl}
+                    title="Share inbox URL"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Forward setup - collapsible */}
             {showForward && (
-              <div className="mt-4 p-5 rounded-xl glass animate-slide-up">
-                <p className="text-sm font-medium mb-3 text-primary">Forward emails to:</p>
-                <div className="flex gap-3">
+              <div className="mt-4 p-4 rounded-xl glass animate-slide-up">
+                <p className="text-sm font-medium mb-3">Forward emails to:</p>
+                <div className="flex gap-2">
                   <Input
                     type="email"
                     placeholder="your-real@email.com"
                     value={forwardEmail}
                     onChange={(e) => setForwardEmail(e.target.value)}
-                    className="flex-1 font-mono"
+                    className="flex-1 font-mono text-sm"
                   />
-                  <Button variant="hero" onClick={handleSaveForward}>
-                    <Check className="w-4 h-4 mr-2" />
-                    Save
+                  <Button size="sm" onClick={handleSaveForward}>
+                    <Check className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  All incoming emails will be forwarded to this address.
-                </p>
               </div>
             )}
           </div>
