@@ -1,4 +1,4 @@
-import { Mail, Github } from "lucide-react";
+import { Mail, Github, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -15,6 +15,12 @@ export const Header = () => {
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link to="/domains">
+              <Button variant="ghost" size="sm">
+                <Globe className="w-4 h-4 mr-2" />
+                Domains
+              </Button>
+            </Link>
             <Button variant="ghost" size="sm" className="hidden sm:flex">
               <Github className="w-4 h-4 mr-2" />
               GitHub
