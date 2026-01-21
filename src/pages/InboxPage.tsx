@@ -194,12 +194,22 @@ const InboxPage = () => {
           <div className="container mx-auto px-4 py-5">
             {/* Top row - Logo and actions */}
             <div className="flex items-center justify-between mb-4">
-              <Link to="/" className="flex items-center gap-3 group">
-                <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
-                  <Mail className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <span className="text-lg font-semibold hidden sm:block">MailRCV</span>
-              </Link>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/")}
+                  className="h-9 w-9"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
+                    <Mail className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-base sm:text-lg font-semibold hidden sm:block">MailRCV</span>
+                </Link>
+              </div>
               
               <div className="flex items-center gap-2">
                 <Button
