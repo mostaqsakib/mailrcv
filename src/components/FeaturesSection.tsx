@@ -1,8 +1,6 @@
 import { 
   Shield, 
   Zap, 
-  Globe, 
-  Lock, 
   RefreshCw, 
   Bell,
   ArrowRight
@@ -19,16 +17,6 @@ const features = [
     icon: Zap,
     title: "Instant Setup",
     description: "Create a new email address in seconds. Start receiving emails immediately.",
-  },
-  {
-    icon: Globe,
-    title: "Custom Domains",
-    description: "Use your own domain for professional-looking disposable addresses.",
-  },
-  {
-    icon: Lock,
-    title: "Auto-Expire",
-    description: "Emails automatically expire after 24 hours, keeping your inbox clean.",
   },
   {
     icon: RefreshCw,

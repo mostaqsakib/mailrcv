@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shield, Zap, Globe } from "lucide-react";
+import { Mail, ArrowRight, Shield, Zap } from "lucide-react";
 
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
@@ -68,11 +68,10 @@ export const HeroSection = () => {
           </form>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-md mx-auto">
             {[
               { icon: Shield, title: "Private", desc: "No signup needed" },
               { icon: Zap, title: "Instant", desc: "Ready in seconds" },
-              { icon: Globe, title: "Custom Domain", desc: "Use your own" },
             ].map((feature, i) => (
               <div 
                 key={feature.title}
