@@ -17,7 +17,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-80px)] sm:min-h-screen flex items-center justify-center hero-gradient overflow-hidden pt-16 sm:pt-20">
+    <section className="relative min-h-[calc(100svh-60px)] sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-24 sm:pt-20">
       {/* Background effects */}
       <div className="absolute inset-0 grid-dots opacity-50" />
       
