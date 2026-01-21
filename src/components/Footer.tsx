@@ -13,7 +13,7 @@ export const Footer = () => {
             <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
               <Mail className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">MailFly</span>
+            <span className="text-xl font-bold">MailRCV</span>
           </Link>
           
           <nav className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
@@ -35,7 +35,7 @@ export const Footer = () => {
         
         <div className="mt-10 pt-8 border-t border-border/50 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 MailFly. All rights reserved.
+            © 2024 MailRCV. All rights reserved.
           </p>
         </div>
       </div>

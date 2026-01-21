@@ -86,7 +86,7 @@ const DomainsPage = () => {
                   <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-blue">
                     <Mail className="w-4 h-4 text-primary-foreground" />
                   </div>
-                  <span className="font-semibold">MailFly</span>
+                  <span className="font-semibold">MailRCV</span>
                 </Link>
                 <span className="text-muted-foreground">/</span>
                 <h1 className="text-lg font-semibold flex items-center gap-2">
@@ -175,17 +175,17 @@ const DomainsPage = () => {
                         <div className="space-y-2 text-sm font-mono">
                           <div className="flex items-center justify-between p-2 rounded bg-background/50">
                             <span className="text-muted-foreground">MX Record:</span>
-                            <span>mx.mailfly.io</span>
+                            <span>mx.mailrcv.site</span>
                           </div>
                           <div className="flex items-center justify-between p-2 rounded bg-background/50">
                             <span className="text-muted-foreground">TXT Record:</span>
                             <div className="flex items-center gap-2">
-                              <span className="truncate max-w-[200px]">mailfly-verify={domain.verification_code.substring(0, 8)}...</span>
+                              <span className="truncate max-w-[200px]">mailrcv-verify={domain.verification_code.substring(0, 8)}...</span>
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-6 w-6"
-                                onClick={() => copyVerificationCode(`mailfly-verify=${domain.verification_code}`)}
+                                onClick={() => copyVerificationCode(`mailrcv-verify=${domain.verification_code}`)}
                               >
                                 <Copy className="w-3 h-3" />
                               </Button>
@@ -216,7 +216,7 @@ const DomainsPage = () => {
           </h3>
           <ol className="space-y-2 text-muted-foreground">
             <li>1. Add your domain above</li>
-            <li>2. Configure MX records to point to <code className="text-primary font-mono">mx.mailfly.io</code></li>
+            <li>2. Configure MX records to point to <code className="text-primary font-mono">mx.mailrcv.site</code></li>
             <li>3. Add the TXT verification record</li>
             <li>4. Once verified, any email to <code className="text-primary font-mono">*@yourdomain.com</code> will be received</li>
             <li>5. Set up forwarding to get emails in your real inbox</li>
