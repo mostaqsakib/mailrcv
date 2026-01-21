@@ -1,5 +1,6 @@
-import { Mail } from "lucide-react";
+import { Mail, Send } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export const Footer = () => {
   return (
@@ -15,6 +16,18 @@ export const Footer = () => {
             </div>
             <span className="text-xl font-bold">MailRCV</span>
           </Link>
+
+          {/* Contact Button */}
+          <Button
+            asChild
+            variant="outline"
+            className="gap-2 px-5 py-2 rounded-full border-primary/30 hover:border-primary hover:bg-primary/10 transition-all"
+          >
+            <a href="https://t.me/DigitalizAdmin" target="_blank" rel="noopener noreferrer">
+              <Send className="w-4 h-4 text-primary" />
+              <span>Contact on Telegram</span>
+            </a>
+          </Button>
           
           <p className="text-sm text-muted-foreground">
             © 2026 MailRCV. All rights reserved.
