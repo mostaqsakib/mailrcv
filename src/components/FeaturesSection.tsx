@@ -30,7 +30,7 @@ const features = [
 
 export const FeaturesSection = () => {
   return (
-    <section className="py-28 bg-background relative overflow-hidden">
+    <section className="pt-10 pb-16 sm:py-28 bg-background relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 grid-dots opacity-30" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 blur-[150px] rounded-full" />

@@ -17,7 +17,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-[calc(100svh-60px)] sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-24 sm:pt-20">
+    <section className="relative sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-14 sm:pt-20 pb-0 sm:py-20">
       {/* Background effects */}
       <div className="absolute inset-0 grid-dots opacity-50" />
       
@@ -27,7 +27,7 @@ export const HeroSection = () => {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/15 blur-[120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
       </div>
 
-      <div className="container relative z-10 px-4 py-10 sm:py-20">
+      <div className="container relative z-10 px-4 py-4 sm:py-20">
         <div className="max-w-3xl mx-auto text-center animate-slide-up">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10">
