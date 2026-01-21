@@ -5,17 +5,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface ForwardEmailWebhook {
+interface MailgunWebhook {
+  sender: string;
   from: string;
-  to: string | string[];
+  recipient: string;
+  To?: string;
   subject?: string;
-  text?: string;
-  html?: string;
-  headers?: Record<string, string>;
-  envelope?: {
-    from: string;
-    to: string[];
-  };
+  "body-plain"?: string;
+  "body-html"?: string;
+  "stripped-text"?: string;
+  "stripped-html"?: string;
+  timestamp?: string;
+  token?: string;
+  signature?: string;
 }
 
 Deno.serve(async (req) => {
@@ -38,30 +40,34 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Parse the incoming email data
+    // Parse the incoming email data from Mailgun
     const contentType = req.headers.get("content-type") || "";
-    let emailData: ForwardEmailWebhook;
+    let emailData: MailgunWebhook;
 
     if (contentType.includes("application/json")) {
       emailData = await req.json();
     } else if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
       const formData = await req.formData();
       emailData = {
+        sender: formData.get("sender") as string || "",
         from: formData.get("from") as string || "",
-        to: formData.get("to") as string || "",
+        recipient: formData.get("recipient") as string || "",
+        To: formData.get("To") as string || "",
         subject: formData.get("subject") as string || "",
-        text: formData.get("text") as string || "",
-        html: formData.get("html") as string || "",
+        "body-plain": formData.get("body-plain") as string || "",
+        "body-html": formData.get("body-html") as string || "",
+        "stripped-text": formData.get("stripped-text") as string || "",
+        "stripped-html": formData.get("stripped-html") as string || "",
       };
     } else {
       // Try JSON as fallback
       emailData = await req.json();
     }
 
-    console.log("Received email webhook:", JSON.stringify(emailData, null, 2));
+    console.log("Received Mailgun webhook:", JSON.stringify(emailData, null, 2));
 
-    // Extract recipient address to find the alias
-    const toAddress = Array.isArray(emailData.to) ? emailData.to[0] : emailData.to;
+    // Extract recipient address - Mailgun uses 'recipient' field
+    const toAddress = emailData.recipient || emailData.To || "";
     
     if (!toAddress) {
       console.error("No recipient address found");
@@ -157,15 +163,15 @@ Deno.serve(async (req) => {
     const fromMatch = fromEmail.match(/<?([^<>\s]+@[^<>\s]+)>?/);
     const senderEmail = fromMatch ? fromMatch[1] : fromEmail;
 
-    // Store the email
+    // Store the email - Mailgun uses body-plain and body-html
     const { data: savedEmail, error: saveError } = await supabase
       .from("received_emails")
       .insert({
         alias_id: alias.id,
         from_email: senderEmail,
         subject: emailData.subject || "(No Subject)",
-        body_text: emailData.text || null,
-        body_html: emailData.html || null,
+        body_text: emailData["body-plain"] || emailData["stripped-text"] || null,
+        body_html: emailData["body-html"] || emailData["stripped-html"] || null,
         is_read: false,
         is_forwarded: false,
       })
