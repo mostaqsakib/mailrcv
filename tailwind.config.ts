@@ -58,10 +58,8 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         neon: {
-          green: "hsl(var(--neon-green))",
-          pink: "hsl(var(--neon-pink))",
           blue: "hsl(var(--neon-blue))",
-          purple: "hsl(var(--neon-purple))",
+          cyan: "hsl(var(--neon-cyan))",
         },
       },
       borderRadius: {
@@ -72,7 +70,7 @@ export default {
         "2xl": "calc(var(--radius) + 8px)",
       },
       fontFamily: {
-        sans: ['Space Grotesk', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
@@ -80,8 +78,8 @@ export default {
         card: "var(--shadow-card)",
         elevated: "var(--shadow-elevated)",
         glow: "var(--shadow-glow)",
-        "neon-green": "var(--shadow-neon-green)",
-        "neon-pink": "var(--shadow-neon-pink)",
+        blue: "var(--shadow-blue)",
+        "blue-strong": "var(--shadow-blue-strong)",
       },
       keyframes: {
         "accordion-down": {
