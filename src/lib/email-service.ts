@@ -32,7 +32,7 @@ export interface ReceivedEmail {
 }
 
 // Default domain for the app
-const DEFAULT_DOMAIN = "mailfly.io";
+const DEFAULT_DOMAIN = "mailrcv.site";
 
 export async function getOrCreateDefaultDomain(): Promise<Domain | null> {
   // Check if default domain exists
