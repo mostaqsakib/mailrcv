@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shuffle } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 // Random word generator for fun email names
 const adjectives = ["swift", "cosmic", "stellar", "pixel", "cyber", "neon", "turbo", "hyper", "ultra", "mega", "quantum", "ninja", "shadow", "thunder", "frost", "blaze", "storm", "vapor", "drift", "glitch"];
@@ -17,6 +18,7 @@ const generateRandomName = () => {
 
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const domain = "mailrcv.site";
 
@@ -29,6 +31,18 @@ export const HeroSection = () => {
 
   const handleRandomGenerate = () => {
     setUsername(generateRandomName());
+  };
+
+  const handleCopyEmail = async () => {
+    if (!username.trim()) {
+      toast.error("Please enter a name first");
+      return;
+    }
+    const fullEmail = `${username.trim().toLowerCase()}@${domain}`;
+    await navigator.clipboard.writeText(fullEmail);
+    setCopied(true);
+    toast.success("Email address copied!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -98,12 +112,28 @@ export const HeroSection = () => {
                 </Button>
               </div>
 
-              {/* Email preview */}
-              <div className="flex items-center justify-center gap-1 py-3 px-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
-                <span className="font-mono text-base sm:text-lg font-semibold text-foreground truncate">
-                  {username || <span className="text-muted-foreground/50">your-name</span>}
-                </span>
-                <span className="font-mono text-base sm:text-lg font-semibold text-primary">@{domain}</span>
+              {/* Email preview with copy */}
+              <div className="flex items-center justify-between gap-2 py-3 px-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 group hover:border-primary/40 transition-colors">
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <span className="font-mono text-base sm:text-lg font-semibold text-foreground truncate">
+                    {username || <span className="text-muted-foreground/50">your-name</span>}
+                  </span>
+                  <span className="font-mono text-base sm:text-lg font-semibold text-primary shrink-0">@{domain}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyEmail}
+                  className="h-8 w-8 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
+                  title="Copy email address"
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
               </div>
 
               {/* Submit button */}
