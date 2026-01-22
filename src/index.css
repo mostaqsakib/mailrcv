@@ -170,9 +170,16 @@
     position: absolute;
     inset: 0;
     background: 
+      radial-gradient(ellipse at 30% 20%, hsl(var(--primary) / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, hsl(var(--accent) / 0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  :root.dark .hero-gradient::before,
+  .dark .hero-gradient::before {
+    background: 
       radial-gradient(ellipse at 30% 20%, hsl(199 89% 48% / 0.12) 0%, transparent 50%),
       radial-gradient(ellipse at 70% 80%, hsl(185 80% 50% / 0.08) 0%, transparent 50%);
-    pointer-events: none;
   }
 
   .glass {
