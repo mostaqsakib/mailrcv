@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import {
   Trash2, 
   Clock,
   Inbox,
-  ExternalLink,
   ArrowLeft,
   Share2
 } from "lucide-react";
@@ -29,6 +28,89 @@ import {
 } from "@/lib/email-service";
 import EmailDetailDialog from "@/components/EmailDetailDialog";
 
+// Memoized email item component for better performance
+const EmailItem = memo(({ 
+  mail, 
+  onRead, 
+  onDelete, 
+  onSelect 
+}: { 
+  mail: ReceivedEmail; 
+  onRead: (id: string) => void;
+  onDelete: (id: string) => void;
+  onSelect: (mail: ReceivedEmail) => void;
+}) => {
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const diff = Date.now() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return date.toLocaleDateString();
+  };
+
+  const handleClick = useCallback(() => {
+    onRead(mail.id);
+    onSelect(mail);
+  }, [mail, onRead, onSelect]);
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(mail.id);
+  }, [mail.id, onDelete]);
+
+  return (
+    <div
+      className={`group p-5 rounded-xl transition-all duration-300 cursor-pointer ${
+        mail.is_read 
+          ? "glass hover:bg-white/5" 
+          : "glass glow hover:bg-white/5"
+      }`}
+      onClick={handleClick}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            {!mail.is_read && (
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+            )}
+            <span className={`font-mono text-sm truncate ${!mail.is_read ? "text-primary" : "text-muted-foreground"}`}>
+              {mail.from_email}
+            </span>
+          </div>
+          <h4 className={`font-semibold text-lg mb-1 ${!mail.is_read ? "text-foreground" : "text-foreground/80"}`}>
+            {mail.subject || "(No subject)"}
+          </h4>
+          <p className="text-muted-foreground line-clamp-1">
+            {mail.body_text?.substring(0, 150) || "(No content)"}
+          </p>
+        </div>
+        
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+            <Clock className="w-3 h-3" />
+            {formatTime(mail.received_at)}
+          </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={handleDelete}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+EmailItem.displayName = "EmailItem";
+
 const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -40,29 +122,54 @@ const InboxPage = () => {
   const [showForward, setShowForward] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [domainName, setDomainName] = useState("mailrcv.site");
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   
-  const email = `${username}@${domainName}`;
-  
+  const domainName = "mailrcv.site";
+  const email = useMemo(() => `${username}@${domainName}`, [username]);
+
+  const initializeInbox = useCallback(async () => {
+    setLoading(true);
+    try {
+      const defaultDomain = await getOrCreateDefaultDomain();
+      if (!defaultDomain) {
+        toast.error("Failed to initialize inbox");
+        return;
+      }
+
+      const aliasData = await getOrCreateAlias(username!, defaultDomain.id);
+      if (!aliasData) {
+        toast.error("Failed to create inbox");
+        return;
+      }
+      
+      setAlias(aliasData);
+      setForwardEmail(aliasData.forward_to_email || "");
+
+      const emailsData = await getEmailsForAlias(aliasData.id);
+      setEmails(emailsData);
+    } catch (error) {
+      console.error("Error initializing inbox:", error);
+      toast.error("Failed to load inbox");
+    } finally {
+      setLoading(false);
+    }
+  }, [username]);
 
   useEffect(() => {
     if (username) {
-      // Reset state when username changes to avoid showing stale data
       setAlias(null);
       setEmails([]);
       setSelectedEmail(null);
       setDetailOpen(false);
       initializeInbox();
     }
-  }, [username]);
+  }, [username, initializeInbox]);
 
   // Set up realtime subscription for new emails
   useEffect(() => {
     if (!alias?.id) return;
 
-    // Use unique channel name per alias to avoid conflicts
     const channelName = `inbox-emails-${alias.id}`;
     
     const channel = supabase
@@ -88,54 +195,21 @@ const InboxPage = () => {
     };
   }, [alias?.id]);
 
-  const initializeInbox = async () => {
-    setLoading(true);
-    try {
-      // Get or create default domain
-      const defaultDomain = await getOrCreateDefaultDomain();
-      if (!defaultDomain) {
-        toast.error("Failed to initialize inbox");
-        return;
-      }
-
-      // Get or create alias for this username
-      const aliasData = await getOrCreateAlias(username!, defaultDomain.id);
-      if (!aliasData) {
-        toast.error("Failed to create inbox");
-        return;
-      }
-      
-      setAlias(aliasData);
-      setForwardEmail(aliasData.forward_to_email || "");
-
-      // Load existing emails
-      const emailsData = await getEmailsForAlias(aliasData.id);
-      setEmails(emailsData);
-    } catch (error) {
-      console.error("Error initializing inbox:", error);
-      toast.error("Failed to load inbox");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = async () => {
-    // Always use the production domain
+  const copyToClipboard = useCallback(async () => {
     const productionEmail = `${username}@mailrcv.site`;
     await navigator.clipboard.writeText(productionEmail);
     setCopied(true);
     toast.success("Email address copied!");
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [username]);
 
-  const copyInboxUrl = async () => {
-    // Always use the production domain
+  const copyInboxUrl = useCallback(async () => {
     const cleanUrl = `https://mailrcv.site/inbox/${username}`;
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
-  };
+  }, [username]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     if (alias) {
       const emailsData = await getEmailsForAlias(alias.id);
@@ -143,12 +217,11 @@ const InboxPage = () => {
     }
     setIsRefreshing(false);
     toast.info("Inbox refreshed");
-  };
+  }, [alias]);
 
-  const handleSaveForward = async () => {
+  const handleSaveForward = useCallback(async () => {
     if (!alias) return;
     
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (forwardEmail && !emailRegex.test(forwardEmail)) {
       toast.error("Invalid email format");
@@ -158,29 +231,31 @@ const InboxPage = () => {
     await updateAliasForwarding(alias.id, forwardEmail);
     setShowForward(false);
     toast.success("Forwarding settings saved!");
-  };
+  }, [alias, forwardEmail]);
 
-  const handleDeleteEmail = async (emailId: string) => {
+  const handleDeleteEmail = useCallback(async (emailId: string) => {
     await deleteEmail(emailId);
-    setEmails(emails.filter(e => e.id !== emailId));
+    setEmails(prev => prev.filter(e => e.id !== emailId));
     toast.success("Email deleted");
-  };
+  }, []);
 
-  const handleMarkAsRead = async (emailId: string) => {
+  const handleMarkAsRead = useCallback(async (emailId: string) => {
     await markEmailAsRead(emailId);
-    setEmails(emails.map(e => e.id === emailId ? { ...e, is_read: true } : e));
-  };
+    setEmails(prev => prev.map(e => e.id === emailId ? { ...e, is_read: true } : e));
+  }, []);
 
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const diff = Date.now() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return date.toLocaleDateString();
-  };
+  const handleSelectEmail = useCallback((mail: ReceivedEmail) => {
+    setSelectedEmail(mail);
+    setDetailOpen(true);
+  }, []);
+
+  const toggleForward = useCallback(() => {
+    setShowForward(prev => !prev);
+  }, []);
+
+  const goBack = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -206,7 +281,7 @@ const InboxPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/")}
+                  onClick={goBack}
                   className="gap-2 px-3 sm:px-4 rounded-full border-primary/30 hover:border-primary hover:bg-primary/10 transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -233,7 +308,7 @@ const InboxPage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setShowForward(!showForward)}
+                  onClick={toggleForward}
                   className={`h-9 w-9 ${showForward ? "bg-primary/10 text-primary" : ""}`}
                 >
                   <Forward className="w-4 h-4" />
@@ -311,58 +386,13 @@ const InboxPage = () => {
         ) : (
           <div className="space-y-3">
             {emails.map((mail) => (
-              <div
+              <EmailItem
                 key={mail.id}
-                className={`group p-5 rounded-xl transition-all duration-300 cursor-pointer ${
-                  mail.is_read 
-                    ? "glass hover:bg-white/5" 
-                    : "glass glow hover:bg-white/5"
-                }`}
-                onClick={() => {
-                  handleMarkAsRead(mail.id);
-                  setSelectedEmail(mail);
-                  setDetailOpen(true);
-                }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      {!mail.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-                      )}
-                      <span className={`font-mono text-sm truncate ${!mail.is_read ? "text-primary" : "text-muted-foreground"}`}>
-                        {mail.from_email}
-                      </span>
-                    </div>
-                    <h4 className={`font-semibold text-lg mb-1 ${!mail.is_read ? "text-foreground" : "text-foreground/80"}`}>
-                      {mail.subject || "(No subject)"}
-                    </h4>
-                    <p className="text-muted-foreground line-clamp-1">
-                      {mail.body_text?.substring(0, 150) || "(No content)"}
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                      <Clock className="w-3 h-3" />
-                      {formatTime(mail.received_at)}
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteEmail(mail.id);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                mail={mail}
+                onRead={handleMarkAsRead}
+                onDelete={handleDeleteEmail}
+                onSelect={handleSelectEmail}
+              />
             ))}
           </div>
         )}
