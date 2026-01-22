@@ -49,6 +49,11 @@ const InboxPage = () => {
 
   useEffect(() => {
     if (username) {
+      // Reset state when username changes to avoid showing stale data
+      setAlias(null);
+      setEmails([]);
+      setSelectedEmail(null);
+      setDetailOpen(false);
       initializeInbox();
     }
   }, [username]);
@@ -57,8 +62,11 @@ const InboxPage = () => {
   useEffect(() => {
     if (!alias?.id) return;
 
+    // Use unique channel name per alias to avoid conflicts
+    const channelName = `inbox-emails-${alias.id}`;
+    
     const channel = supabase
-      .channel('inbox-emails')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
