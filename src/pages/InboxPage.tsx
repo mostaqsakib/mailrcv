@@ -12,7 +12,9 @@ import {
   Clock,
   Inbox,
   ArrowLeft,
-  Share2
+  Share2,
+  Bell,
+  BellOff
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +29,8 @@ import {
   type EmailAlias
 } from "@/lib/email-service";
 import EmailDetailDialog from "@/components/EmailDetailDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useNotifications } from "@/hooks/use-notifications";
 
 // Memoized email item component for better performance
 const EmailItem = memo(({ 
@@ -114,6 +118,7 @@ EmailItem.displayName = "EmailItem";
 const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const { permission, requestPermission, showNotification, isSupported } = useNotifications();
   
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
@@ -186,6 +191,12 @@ const InboxPage = () => {
           const newEmail = payload.new as ReceivedEmail;
           setEmails((prev) => [newEmail, ...prev]);
           toast.info("New email received!");
+          
+          // Show browser notification
+          showNotification("📧 New Email", {
+            body: `From: ${newEmail.from_email}\n${newEmail.subject || "(No subject)"}`,
+            tag: newEmail.id,
+          });
         }
       )
       .subscribe();
@@ -193,7 +204,7 @@ const InboxPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [alias?.id]);
+  }, [alias?.id, showNotification]);
 
   const copyToClipboard = useCallback(async () => {
     const productionEmail = `${username}@mailrcv.site`;
@@ -253,6 +264,21 @@ const InboxPage = () => {
     setShowForward(prev => !prev);
   }, []);
 
+  const handleNotificationToggle = useCallback(async () => {
+    if (permission === "granted") {
+      toast.info("Notifications already enabled!");
+    } else if (permission === "denied") {
+      toast.error("Notifications blocked. Please enable in browser settings.");
+    } else {
+      const granted = await requestPermission();
+      if (granted) {
+        toast.success("Notifications enabled!");
+      } else {
+        toast.error("Notification permission denied");
+      }
+    }
+  }, [permission, requestPermission]);
+
   const goBack = useCallback(() => {
     navigate("/");
   }, [navigate]);
@@ -302,17 +328,35 @@ const InboxPage = () => {
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   className="h-9 w-9"
+                  title="Refresh inbox"
                 >
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 </Button>
+                {isSupported && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNotificationToggle}
+                    className={`h-9 w-9 ${permission === "granted" ? "text-primary" : ""}`}
+                    title={permission === "granted" ? "Notifications enabled" : "Enable notifications"}
+                  >
+                    {permission === "granted" ? (
+                      <Bell className="w-4 h-4" />
+                    ) : (
+                      <BellOff className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleForward}
                   className={`h-9 w-9 ${showForward ? "bg-primary/10 text-primary" : ""}`}
+                  title="Forward settings"
                 >
                   <Forward className="w-4 h-4" />
                 </Button>
+                <ThemeToggle />
               </div>
             </div>
 
