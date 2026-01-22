@@ -72,6 +72,33 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
               a:hover {
                 text-decoration: underline;
               }
+              /* Tap to copy tooltip for mobile */
+              .tap-copy-hint {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #22c55e;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 9999;
+                animation: fadeInOut 2s ease-in-out forwards;
+              }
+              @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+              }
+              /* Highlight copyable elements */
+              .copy-highlight {
+                outline: 2px solid #22d3ee !important;
+                outline-offset: 2px;
+                background: rgba(34, 211, 238, 0.1) !important;
+              }
               img {
                 max-width: 100%;
                 height: auto;
@@ -194,44 +221,105 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
                 pre.appendChild(btn);
               });
 
-              // Add copy functionality to links
+              // Helper to show copy toast
+              function showCopyToast(message) {
+                const existing = document.querySelector('.tap-copy-hint');
+                if (existing) existing.remove();
+                
+                const toast = document.createElement('div');
+                toast.className = 'tap-copy-hint';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => toast.remove(), 2000);
+              }
+
+              // Add tap-to-copy for links (mobile friendly - no Ctrl needed)
               document.querySelectorAll('a[href]').forEach(link => {
                 link.classList.add('copyable');
-                link.addEventListener('click', async (e) => {
-                  if (e.ctrlKey || e.metaKey) {
+                
+                // Long press or double tap to copy on mobile
+                let pressTimer;
+                let lastTap = 0;
+                
+                link.addEventListener('touchstart', (e) => {
+                  pressTimer = setTimeout(() => {
                     e.preventDefault();
-                    const url = link.href;
-                    try {
-                      await navigator.clipboard.writeText(url);
-                      const original = link.textContent;
-                      link.textContent = '✓ Copied!';
-                      setTimeout(() => {
-                        link.textContent = original;
-                      }, 1500);
-                    } catch (err) {
-                      console.error('Failed to copy:', err);
-                    }
+                    navigator.clipboard.writeText(link.href).then(() => {
+                      link.classList.add('copy-highlight');
+                      showCopyToast('✓ Link copied!');
+                      setTimeout(() => link.classList.remove('copy-highlight'), 1500);
+                    });
+                  }, 500); // Long press 500ms
+                });
+                
+                link.addEventListener('touchend', () => clearTimeout(pressTimer));
+                link.addEventListener('touchmove', () => clearTimeout(pressTimer));
+                
+                // Double tap for desktop/mobile
+                link.addEventListener('click', (e) => {
+                  const now = Date.now();
+                  if (now - lastTap < 300) {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(link.href).then(() => {
+                      link.classList.add('copy-highlight');
+                      showCopyToast('✓ Link copied!');
+                      setTimeout(() => link.classList.remove('copy-highlight'), 1500);
+                    });
                   }
+                  lastTap = now;
                 });
               });
 
-              // Add copy to inline code
+              // Add tap-to-copy for inline code (single tap)
               document.querySelectorAll('code:not(pre code)').forEach(code => {
                 code.classList.add('copyable');
-                code.title = 'Click to copy';
-                code.onclick = async () => {
+                code.style.cursor = 'pointer';
+                code.title = 'Tap to copy';
+                
+                code.onclick = async (e) => {
+                  e.stopPropagation();
                   const text = code.textContent || code.innerText;
                   try {
                     await navigator.clipboard.writeText(text);
-                    const original = code.innerHTML;
-                    code.innerHTML = '✓ Copied!';
-                    setTimeout(() => {
-                      code.innerHTML = original;
-                    }, 1500);
+                    code.classList.add('copy-highlight');
+                    showCopyToast('✓ Code copied!');
+                    setTimeout(() => code.classList.remove('copy-highlight'), 1500);
                   } catch (err) {
                     console.error('Failed to copy:', err);
                   }
                 };
+              });
+
+              // Make any text that looks like a code/OTP copyable
+              const codePatterns = [
+                /\\b[A-Z0-9]{6,8}\\b/g,  // OTP codes like ABC123
+                /\\b\\d{4,8}\\b/g,        // Numeric codes
+              ];
+              
+              document.body.querySelectorAll('*:not(script):not(style)').forEach(el => {
+                if (el.children.length === 0 && el.textContent) {
+                  const text = el.textContent.trim();
+                  codePatterns.forEach(pattern => {
+                    if (pattern.test(text) && text.length <= 20) {
+                      el.classList.add('copyable');
+                      el.style.cursor = 'pointer';
+                      el.style.borderBottom = '1px dashed #22d3ee';
+                      el.title = 'Tap to copy';
+                      el.onclick = async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await navigator.clipboard.writeText(text);
+                          el.classList.add('copy-highlight');
+                          showCopyToast('✓ Copied: ' + text);
+                          setTimeout(() => el.classList.remove('copy-highlight'), 1500);
+                        } catch (err) {
+                          console.error('Failed to copy:', err);
+                        }
+                      };
+                    }
+                  });
+                }
               });
             </script>
           </body>
@@ -380,7 +468,7 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
               ref={iframeRef}
               title="Email Content"
               className="w-full h-full border-0 bg-transparent"
-              sandbox="allow-same-origin"
+              sandbox="allow-same-origin allow-scripts"
               style={{ minHeight: "300px" }}
               onLoad={writeIframeContent}
             />
