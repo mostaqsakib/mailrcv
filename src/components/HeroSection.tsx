@@ -2,7 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight } from "lucide-react";
+import { Mail, ArrowRight, Shuffle } from "lucide-react";
+
+// Random word generator for fun email names
+const adjectives = ["swift", "cosmic", "stellar", "pixel", "cyber", "neon", "turbo", "hyper", "ultra", "mega", "quantum", "ninja", "shadow", "thunder", "frost", "blaze", "storm", "vapor", "drift", "glitch"];
+const nouns = ["fox", "wolf", "hawk", "tiger", "dragon", "phoenix", "raven", "falcon", "cobra", "viper", "panther", "lion", "eagle", "shark", "bear", "owl", "lynx", "puma", "jaguar", "leopard"];
+
+const generateRandomName = () => {
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const num = Math.floor(Math.random() * 99) + 1;
+  return `${adj}${noun}${num}`;
+};
 
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
@@ -14,6 +25,10 @@ export const HeroSection = () => {
     if (username.trim()) {
       navigate(`/inbox/${username.trim().toLowerCase()}`);
     }
+  };
+
+  const handleRandomGenerate = () => {
+    setUsername(generateRandomName());
   };
 
   return (
@@ -48,25 +63,53 @@ export const HeroSection = () => {
 
           {/* Email creation form */}
           <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
-            <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-2xl glass-strong glow">
-              <div className="flex items-center bg-background/40 rounded-xl px-4 py-3 gap-2 border border-border/50">
-                <Mail className="w-5 h-5 text-primary shrink-0" />
-                <Input
-                  type="text"
-                  placeholder="your-name"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-foreground placeholder:text-muted-foreground min-w-0"
-                />
-                <span className="text-muted-foreground font-mono text-xs sm:text-sm shrink-0">@{domain}</span>
+            <div className="flex flex-col gap-4 p-4 sm:p-5 rounded-3xl bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_40px_-10px] shadow-primary/30">
+              {/* Input row with random button */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center bg-background/60 rounded-xl px-4 py-3.5 gap-3 border border-border/40 hover:border-primary/40 transition-colors focus-within:border-primary/60 focus-within:shadow-[0_0_20px_-5px] focus-within:shadow-primary/20">
+                  <Mail className="w-5 h-5 text-primary shrink-0" />
+                  <Input
+                    type="text"
+                    placeholder="enter-name"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-base text-foreground placeholder:text-muted-foreground/60 min-w-0"
+                  />
+                  <span className="text-muted-foreground/80 font-mono text-sm shrink-0 hidden sm:block">@{domain}</span>
+                </div>
+                
+                {/* Random generate button */}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleRandomGenerate}
+                  className="h-[52px] w-[52px] shrink-0 rounded-xl border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 transition-all duration-300 group"
+                  title="Generate random name"
+                >
+                  <Shuffle className="w-5 h-5 text-primary group-hover:rotate-180 transition-transform duration-500" />
+                </Button>
               </div>
-              <Button type="submit" variant="hero" size="lg" className="w-full">
+
+              {/* Domain display for mobile */}
+              <div className="sm:hidden text-center">
+                <span className="text-muted-foreground/70 font-mono text-sm">
+                  {username || "your-name"}@{domain}
+                </span>
+              </div>
+
+              {/* Submit button */}
+              <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-12 text-base font-semibold">
                 Open Inbox
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5 ml-1" />
               </Button>
             </div>
           </form>
 
+          {/* Hint text */}
+          <p className="mt-4 text-xs sm:text-sm text-muted-foreground/60">
+            💡 Click the <Shuffle className="inline w-3.5 h-3.5 mx-0.5" /> button for a random name
+          </p>
         </div>
       </div>
     </section>
