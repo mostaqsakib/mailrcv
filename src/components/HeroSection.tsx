@@ -34,18 +34,20 @@ export const HeroSection = () => {
   return (
     <section className="relative sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-14 sm:pt-20 pb-0 sm:py-20">
       {/* Background effects */}
-      <div className="absolute inset-0 grid-dots opacity-50" />
+      <div className="absolute inset-0 grid-dots opacity-50 dark:opacity-50" />
       
-      {/* Glowing orbs */}
+      {/* Glowing orbs - different for light/dark */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/20 blur-[150px] animate-pulse-slow" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/15 blur-[120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/10 dark:bg-primary/20 blur-[150px] animate-pulse-slow" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/8 dark:bg-accent/15 blur-[120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
+        {/* Light mode extra gradient */}
+        <div className="absolute top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-primary/5 to-transparent dark:from-transparent pointer-events-none" />
       </div>
 
       <div className="container relative z-10 px-4 py-4 sm:py-20">
         <div className="max-w-3xl mx-auto text-center animate-slide-up">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10 shadow-sm dark:shadow-none">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs sm:text-sm font-medium text-foreground/80">No signup required • Instant forwarding</span>
           </div>
@@ -53,7 +55,7 @@ export const HeroSection = () => {
           {/* Main heading */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight">
             Instant Email
-            <span className="block gradient-text">Forwarding</span>
+            <span className="block gradient-text drop-shadow-sm">Forwarding</span>
           </h1>
 
           <p className="text-base sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-xl mx-auto leading-relaxed">
@@ -63,10 +65,10 @@ export const HeroSection = () => {
 
           {/* Email creation form */}
           <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
-            <div className="flex flex-col gap-4 p-4 sm:p-5 rounded-3xl bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_40px_-10px] shadow-primary/30">
+            <div className="flex flex-col gap-4 p-4 sm:p-5 rounded-3xl bg-card/80 dark:bg-gradient-to-b dark:from-background/80 dark:to-background/40 backdrop-blur-xl border border-border/50 dark:border-primary/20 shadow-xl dark:shadow-[0_0_40px_-10px] dark:shadow-primary/30">
               {/* Input row with random button */}
               <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center bg-background/60 rounded-xl px-4 py-3.5 gap-3 border border-border/40 hover:border-primary/40 transition-colors focus-within:border-primary/60 focus-within:shadow-[0_0_20px_-5px] focus-within:shadow-primary/20">
+                <div className="flex-1 flex items-center bg-background/80 dark:bg-background/60 rounded-xl px-4 py-3.5 gap-3 border border-border/60 dark:border-border/40 hover:border-primary/40 transition-colors focus-within:border-primary/60 focus-within:shadow-lg dark:focus-within:shadow-[0_0_20px_-5px] dark:focus-within:shadow-primary/20">
                   <Mail className="w-5 h-5 text-primary shrink-0" />
                   <Input
                     type="text"
@@ -99,7 +101,7 @@ export const HeroSection = () => {
               </div>
 
               {/* Submit button */}
-              <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-12 text-base font-semibold">
+              <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-12 text-base font-semibold shadow-lg dark:shadow-primary/20">
                 Open Inbox
                 <ArrowRight className="w-5 h-5 ml-1" />
               </Button>
