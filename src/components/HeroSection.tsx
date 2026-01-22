@@ -65,19 +65,27 @@ export const HeroSection = () => {
 
           {/* Email creation form */}
           <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
-            <div className="flex flex-col gap-4 p-4 sm:p-5 rounded-3xl bg-card/80 dark:bg-gradient-to-b dark:from-background/80 dark:to-background/40 backdrop-blur-xl border border-border/50 dark:border-primary/20 shadow-xl dark:shadow-[0_0_40px_-10px] dark:shadow-primary/30">
+            <div className="flex flex-col gap-4 p-5 sm:p-6 rounded-3xl bg-card/90 dark:bg-gradient-to-b dark:from-background/80 dark:to-background/40 backdrop-blur-xl border border-border/40 dark:border-primary/20 shadow-2xl dark:shadow-[0_0_50px_-10px] dark:shadow-primary/40">
               {/* Input row with random button */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center bg-background/80 dark:bg-background/60 rounded-xl px-4 py-3.5 gap-3 border border-border/60 dark:border-border/40 hover:border-primary/40 transition-colors focus-within:border-primary/60 focus-within:shadow-lg dark:focus-within:shadow-[0_0_20px_-5px] dark:focus-within:shadow-primary/20">
-                  <Mail className="w-5 h-5 text-primary shrink-0" />
-                  <Input
-                    type="text"
-                    placeholder="enter-name"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-base text-foreground placeholder:text-muted-foreground/60 min-w-0"
-                  />
-                  <span className="text-muted-foreground/80 font-mono text-sm shrink-0 hidden sm:block">@{domain}</span>
+              <div className="flex items-center gap-3">
+                {/* Main input container */}
+                <div className="flex-1 relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-accent/50 rounded-2xl blur opacity-0 group-hover:opacity-30 group-focus-within:opacity-50 transition-opacity duration-300" />
+                  <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-4 gap-3 border border-border/50 dark:border-primary/20 group-hover:border-primary/40 transition-all duration-300 group-focus-within:border-primary group-focus-within:shadow-lg dark:group-focus-within:shadow-primary/30">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                      <Mail className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0 min-w-0">
+                      <Input
+                        type="text"
+                        placeholder="enter-name"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
+                      />
+                      <span className="text-primary font-mono text-sm sm:text-base font-medium shrink-0">@{domain}</span>
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Random generate button */}
@@ -86,24 +94,17 @@ export const HeroSection = () => {
                   variant="outline" 
                   size="icon"
                   onClick={handleRandomGenerate}
-                  className="h-[52px] w-[52px] shrink-0 rounded-xl border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 transition-all duration-300 group"
+                  className="h-14 w-14 shrink-0 rounded-xl border-primary/30 bg-gradient-to-br from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 hover:border-primary/50 transition-all duration-300 group hover:scale-105 active:scale-95"
                   title="Generate random name"
                 >
                   <Shuffle className="w-5 h-5 text-primary group-hover:rotate-180 transition-transform duration-500" />
                 </Button>
               </div>
 
-              {/* Domain display for mobile */}
-              <div className="sm:hidden text-center">
-                <span className="text-muted-foreground/70 font-mono text-sm">
-                  {username || "your-name"}@{domain}
-                </span>
-              </div>
-
               {/* Submit button */}
-              <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-12 text-base font-semibold shadow-lg dark:shadow-primary/20">
+              <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-14 text-base font-semibold shadow-lg hover:shadow-xl dark:shadow-primary/20 dark:hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
                 Open Inbox
-                <ArrowRight className="w-5 h-5 ml-1" />
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </form>
