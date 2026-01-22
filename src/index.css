@@ -53,8 +53,10 @@
     --shadow-glow: var(--shadow-blue);
 
     --glass-bg: hsl(222 47% 11% / 0.6);
+    --glass-bg-strong: hsl(222 47% 10% / 0.85);
     --glass-border: hsl(199 89% 48% / 0.15);
     --glass-border-hover: hsl(199 89% 48% / 0.3);
+    --grid-dot-color: hsl(199 89% 48% / 0.15);
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 40% 90%;
@@ -112,8 +114,10 @@
     --shadow-glow: var(--shadow-blue);
 
     --glass-bg: hsl(0 0% 100% / 0.7);
+    --glass-bg-strong: hsl(0 0% 100% / 0.9);
     --glass-border: hsl(199 89% 48% / 0.2);
     --glass-border-hover: hsl(199 89% 48% / 0.4);
+    --grid-dot-color: hsl(199 89% 48% / 0.25);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
@@ -184,10 +188,10 @@
   }
 
   .glass-strong {
-    background: hsl(222 47% 10% / 0.85);
+    background: var(--glass-bg-strong);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid hsl(199 89% 48% / 0.2);
+    border: 1px solid var(--glass-border);
   }
 
   .glow {
@@ -246,7 +250,7 @@
   }
 
   .grid-dots {
-    background-image: radial-gradient(hsl(199 89% 48% / 0.15) 1px, transparent 1px);
+    background-image: radial-gradient(var(--grid-dot-color) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 }
