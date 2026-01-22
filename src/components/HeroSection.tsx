@@ -75,16 +75,13 @@ export const HeroSection = () => {
                     <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
                       <Mail className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0 min-w-0">
-                      <Input
-                        type="text"
-                        placeholder="enter-name"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
-                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
-                      />
-                      <span className="text-primary font-mono text-sm sm:text-base font-medium shrink-0">@{domain}</span>
-                    </div>
+                    <Input
+                      type="text"
+                      placeholder="enter-name"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
+                    />
                   </div>
                 </div>
                 
@@ -99,6 +96,14 @@ export const HeroSection = () => {
                 >
                   <Shuffle className="w-5 h-5 text-primary group-hover:rotate-180 transition-transform duration-500" />
                 </Button>
+              </div>
+
+              {/* Email preview */}
+              <div className="flex items-center justify-center gap-1 py-3 px-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
+                <span className="font-mono text-base sm:text-lg font-semibold text-foreground truncate">
+                  {username || <span className="text-muted-foreground/50">your-name</span>}
+                </span>
+                <span className="font-mono text-base sm:text-lg font-semibold text-primary">@{domain}</span>
               </div>
 
               {/* Submit button */}
