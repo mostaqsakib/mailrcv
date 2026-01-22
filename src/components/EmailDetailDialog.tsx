@@ -37,7 +37,7 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
   }, [email]);
 
   // Update iframe content when email changes or view mode changes
-  useEffect(() => {
+  const writeIframeContent = () => {
     if (viewMode === "html" && email?.body_html && iframeRef.current) {
       const iframe = iframeRef.current;
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -126,6 +126,16 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
         doc.write(htmlContent);
         doc.close();
       }
+    }
+  };
+
+  useEffect(() => {
+    if (open && viewMode === "html" && email?.body_html) {
+      // Small delay to ensure iframe is mounted and ready
+      const timeoutId = setTimeout(() => {
+        writeIframeContent();
+      }, 50);
+      return () => clearTimeout(timeoutId);
     }
   }, [email?.body_html, viewMode, open]);
 
@@ -257,6 +267,7 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
               className="w-full h-full border-0 bg-transparent"
               sandbox="allow-same-origin"
               style={{ minHeight: "300px" }}
+              onLoad={writeIframeContent}
             />
           ) : (
             <ScrollArea className="h-full">
