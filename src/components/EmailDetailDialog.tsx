@@ -65,7 +65,12 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
                 overflow-wrap: break-word;
               }
               a {
-                color: #60a5fa;
+                color: #22d3ee;
+                cursor: pointer;
+                position: relative;
+              }
+              a:hover {
+                text-decoration: underline;
               }
               img {
                 max-width: 100%;
@@ -84,18 +89,67 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
                 padding-left: 16px;
                 color: #a1a1aa;
               }
+              /* Copyable code blocks */
               pre, code {
-                background: #27272a;
-                border-radius: 4px;
-                font-family: 'Monaco', 'Menlo', monospace;
+                background: #18181b;
+                border-radius: 6px;
+                font-family: 'Monaco', 'Menlo', 'JetBrains Mono', monospace;
                 font-size: 13px;
+                position: relative;
               }
               pre {
-                padding: 12px;
+                padding: 16px;
+                padding-right: 50px;
                 overflow-x: auto;
+                border: 1px solid #27272a;
               }
               code {
-                padding: 2px 4px;
+                padding: 2px 6px;
+              }
+              pre code {
+                padding: 0;
+                background: transparent;
+              }
+              /* Copyable elements styling */
+              .copyable {
+                position: relative;
+                cursor: pointer;
+                transition: all 0.2s ease;
+              }
+              .copyable:hover {
+                background: #27272a;
+              }
+              .copy-btn {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: #22d3ee;
+                color: #000;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+              }
+              pre:hover .copy-btn,
+              .copyable:hover .copy-btn {
+                opacity: 1;
+              }
+              .copy-btn:hover {
+                background: #06b6d4;
+              }
+              .copy-btn.copied {
+                background: #22c55e;
+              }
+              /* Link copy indicator */
+              a.copyable::after {
+                content: '📋';
+                font-size: 10px;
+                margin-left: 4px;
+                opacity: 0.5;
               }
               hr {
                 border: none;
@@ -110,15 +164,76 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
               .MsoNormal {
                 margin: 0;
               }
-              /* Common forward headers */
-              div[style*="border-left"], 
-              div[style*="border-top"] {
-                border-color: #3f3f46 !important;
-              }
             </style>
           </head>
           <body>
             ${email.body_html}
+            <script>
+              // Add copy functionality to code blocks
+              document.querySelectorAll('pre').forEach(pre => {
+                const btn = document.createElement('button');
+                btn.className = 'copy-btn';
+                btn.textContent = 'Copy';
+                btn.onclick = async (e) => {
+                  e.stopPropagation();
+                  const code = pre.querySelector('code') || pre;
+                  const text = code.textContent || code.innerText;
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                      btn.textContent = 'Copy';
+                      btn.classList.remove('copied');
+                    }, 2000);
+                  } catch (err) {
+                    console.error('Failed to copy:', err);
+                  }
+                };
+                pre.style.position = 'relative';
+                pre.appendChild(btn);
+              });
+
+              // Add copy functionality to links
+              document.querySelectorAll('a[href]').forEach(link => {
+                link.classList.add('copyable');
+                link.addEventListener('click', async (e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const url = link.href;
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      const original = link.textContent;
+                      link.textContent = '✓ Copied!';
+                      setTimeout(() => {
+                        link.textContent = original;
+                      }, 1500);
+                    } catch (err) {
+                      console.error('Failed to copy:', err);
+                    }
+                  }
+                });
+              });
+
+              // Add copy to inline code
+              document.querySelectorAll('code:not(pre code)').forEach(code => {
+                code.classList.add('copyable');
+                code.title = 'Click to copy';
+                code.onclick = async () => {
+                  const text = code.textContent || code.innerText;
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    const original = code.innerHTML;
+                    code.innerHTML = '✓ Copied!';
+                    setTimeout(() => {
+                      code.innerHTML = original;
+                    }, 1500);
+                  } catch (err) {
+                    console.error('Failed to copy:', err);
+                  }
+                };
+              });
+            </script>
           </body>
           </html>
         `;
