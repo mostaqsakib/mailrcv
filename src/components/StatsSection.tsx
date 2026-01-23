@@ -96,28 +96,20 @@ export const StatsSection = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Fetch stats function
+  // Fetch stats - only when section becomes visible
   const fetchStats = async () => {
     try {
-      const { count: inboxCount } = await supabase
-        .from("email_aliases")
-        .select("*", { count: "exact", head: true });
-
-      const { count: emailCount } = await supabase
-        .from("received_emails")
-        .select("*", { count: "exact", head: true });
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const { count: activeCount } = await supabase
-        .from("email_aliases")
-        .select("*", { count: "exact", head: true })
-        .gte("updated_at", today.toISOString());
+      const [inboxRes, emailRes, activeRes] = await Promise.all([
+        supabase.from("email_aliases").select("*", { count: "exact", head: true }),
+        supabase.from("received_emails").select("*", { count: "exact", head: true }),
+        supabase.from("email_aliases").select("*", { count: "exact", head: true })
+          .gte("updated_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+      ]);
 
       setStats({
-        totalInboxes: inboxCount || 0,
-        totalEmails: emailCount || 0,
-        activeToday: activeCount || 0,
+        totalInboxes: inboxRes.count || 0,
+        totalEmails: emailRes.count || 0,
+        activeToday: activeRes.count || 0,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -126,37 +118,35 @@ export const StatsSection = () => {
     }
   };
 
-  // Initial fetch
+  // Only fetch when section is visible (lazy load)
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (isVisible && isLoading) {
+      fetchStats();
+    }
+  }, [isVisible]);
 
-  // Realtime subscription for auto-refresh
+  // Realtime subscription - only when visible
   useEffect(() => {
+    if (!isVisible) return;
+    
     const channel = supabase
       .channel('stats-realtime')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'email_aliases' },
-        () => {
-          console.log('Email aliases changed, refreshing stats...');
-          fetchStats();
-        }
+        { event: 'INSERT', schema: 'public', table: 'email_aliases' },
+        () => fetchStats()
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'received_emails' },
-        () => {
-          console.log('Received emails changed, refreshing stats...');
-          fetchStats();
-        }
+        { event: 'INSERT', schema: 'public', table: 'received_emails' },
+        () => fetchStats()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [isVisible]);
 
   const statsData = [
     {
