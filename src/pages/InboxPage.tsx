@@ -141,6 +141,10 @@ const InboxPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [savedPassword, setSavedPassword] = useState<string | null>(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   
   const domainName = "mailrcv.site";
@@ -175,30 +179,118 @@ const InboxPage = () => {
   }, [username]);
 
   useEffect(() => {
-    if (username) {
+    const checkAuthAndInit = async () => {
+      if (!username) return;
+      
       setAlias(null);
       setEmails([]);
       setSelectedEmail(null);
       setDetailOpen(false);
+      setNeedsAuth(false);
       
       // Check for saved session with password
       const sessionKey = `mailrcv_session_${username}`;
       const sessionData = localStorage.getItem(sessionKey);
-      if (sessionData) {
-        try {
-          const session = JSON.parse(sessionData);
-          if (session.password) {
-            setSavedPassword(session.password);
-            setIsPasswordProtected(true);
+      
+      // First check if inbox is password protected
+      try {
+        const { data, error } = await supabase.functions.invoke('inbox-auth', {
+          body: { action: 'check', username: username.toLowerCase(), domain: domainName }
+        });
+        
+        if (error) throw error;
+        
+        if (data.exists && data.is_password_protected) {
+          setIsPasswordProtected(true);
+          
+          // Check if we have a valid session
+          if (sessionData) {
+            try {
+              const session = JSON.parse(sessionData);
+              if (session.password) {
+                // Verify the session is still valid
+                const { data: loginData, error: loginError } = await supabase.functions.invoke('inbox-auth', {
+                  body: { action: 'login', username: username.toLowerCase(), domain: domainName, password: session.password }
+                });
+                
+                if (loginError || loginData.error) {
+                  // Session invalid, need to re-auth
+                  localStorage.removeItem(sessionKey);
+                  setNeedsAuth(true);
+                  setLoading(false);
+                  return;
+                }
+                
+                // Session valid
+                setSavedPassword(session.password);
+                initializeInbox();
+                return;
+              }
+            } catch {
+              // Parse error, need to re-auth
+              setNeedsAuth(true);
+              setLoading(false);
+              return;
+            }
           }
-        } catch {
-          // Ignore parse errors
+          
+          // No session, need auth
+          setNeedsAuth(true);
+          setLoading(false);
+          return;
         }
+        
+        // Public inbox or new inbox
+        initializeInbox();
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // Fall back to regular init
+        initializeInbox();
+      }
+    };
+    
+    checkAuthAndInit();
+  }, [username, initializeInbox]);
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginPassword) {
+      toast.error("Please enter password");
+      return;
+    }
+    
+    setIsLoggingIn(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('inbox-auth', {
+        body: { action: 'login', username: username?.toLowerCase(), domain: domainName, password: loginPassword }
+      });
+      
+      if (error) throw error;
+      
+      if (data.error) {
+        toast.error(data.error);
+        return;
       }
       
+      // Save session
+      localStorage.setItem(`mailrcv_session_${username}`, JSON.stringify({
+        alias_id: data.alias_id,
+        token: data.session_token,
+        password: loginPassword,
+        created_at: Date.now()
+      }));
+      
+      setSavedPassword(loginPassword);
+      setNeedsAuth(false);
+      toast.success("Login successful!");
       initializeInbox();
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error("Login failed");
+    } finally {
+      setIsLoggingIn(false);
     }
-  }, [username, initializeInbox]);
+  };
 
   // Register for push notifications when alias is ready
   useEffect(() => {
@@ -339,6 +431,76 @@ const InboxPage = () => {
     toast.success("Logged out successfully");
     navigate("/");
   }, [username, navigate]);
+
+  // Login screen for password protected inbox
+  if (needsAuth) {
+    return (
+      <div className="min-h-screen bg-background relative flex items-center justify-center pt-safe pb-safe">
+        {/* Background effects */}
+        <div className="fixed inset-0 grid-dots opacity-30 pointer-events-none" />
+        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
+        
+        <div className="w-full max-w-md px-4">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl gradient-bg flex items-center justify-center shadow-blue-strong">
+              <Lock className="w-10 h-10 text-primary-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Protected Inbox</h1>
+            <p className="text-muted-foreground font-mono text-lg">{username}@{domainName}</p>
+          </div>
+          
+          <form onSubmit={handleLoginSubmit} className="glass rounded-2xl p-6 space-y-4">
+            <div className="relative">
+              <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-4 gap-3 border border-border/50 dark:border-primary/20 focus-within:border-primary transition-all duration-300">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5 text-primary" />
+                </div>
+                <Input
+                  type={showLoginPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full h-12 rounded-xl text-base font-semibold"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 mr-2" />
+                  Unlock Inbox
+                </>
+              )}
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <Button variant="ghost" onClick={() => navigate("/")} className="text-muted-foreground">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
