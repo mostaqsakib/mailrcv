@@ -171,12 +171,15 @@ const EmailDetailPage = () => {
       pre code { padding: 0; background: transparent; }
       pre.plaintext {
         margin: 0;
-        padding: 0;
+        padding: 24px;
         background: transparent;
         border: 0;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
         word-break: break-word;
+        font-size: 16px;
+        line-height: 1.75;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       }
       hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
       .tap-copy-hint {
