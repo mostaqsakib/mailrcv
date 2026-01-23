@@ -57,7 +57,7 @@ export const FeaturesSection = () => {
                 <feature.icon className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed flex-1">{feature.description}</p>
+              <p className="text-muted-foreground leading-relaxed flex-1">{feature.description}</p>
             </div>
           ))}
         </div>
