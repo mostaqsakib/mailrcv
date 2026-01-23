@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,25 +7,48 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Upload, ArrowLeft } from "lucide-react";
+import { Loader2, Upload, ArrowLeft, FileUp, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AdminPage = () => {
-  const [versionCode, setVersionCode] = useState("");
   const [versionName, setVersionName] = useState("");
   const [releaseNotes, setReleaseNotes] = useState("");
   const [isForceUpdate, setIsForceUpdate] = useState(false);
   const [adminKey, setAdminKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadResult, setUploadResult] = useState<{
+    version_code: number;
+    version_name: string;
+    file_name: string;
+    download_url: string;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.apk')) {
+        toast({
+          title: "Invalid File",
+          description: "Please select an APK file",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setUploadResult(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!versionCode || !versionName || !adminKey) {
+    if (!selectedFile || !adminKey) {
       toast({
         title: "Missing Fields",
-        description: "Please fill in all required fields",
+        description: "Please select an APK file and enter admin key",
         variant: "destructive",
       });
       return;
@@ -34,36 +57,40 @@ const AdminPage = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("update-app-version", {
-        body: {
-          admin_key: adminKey,
-          version_code: parseInt(versionCode),
-          version_name: versionName,
-          release_notes: releaseNotes || null,
-          is_force_update: isForceUpdate,
-          download_url: "https://github.com/Digitaliz/mailrcv/releases/latest",
-        },
+      const formData = new FormData();
+      formData.append("admin_key", adminKey);
+      formData.append("apk_file", selectedFile);
+      formData.append("version_name", versionName || "");
+      formData.append("release_notes", releaseNotes || "");
+      formData.append("is_force_update", isForceUpdate.toString());
+
+      const { data, error } = await supabase.functions.invoke("upload-apk", {
+        body: formData,
       });
 
       if (error) throw error;
 
       if (data?.success) {
+        setUploadResult(data.data);
         toast({
-          title: "✅ Version Updated!",
-          description: `Version ${versionName} (${versionCode}) has been published`,
+          title: "✅ APK Uploaded!",
+          description: `${data.data.file_name} uploaded successfully`,
         });
         // Clear form
-        setVersionCode("");
+        setSelectedFile(null);
         setVersionName("");
         setReleaseNotes("");
         setIsForceUpdate(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       } else {
-        throw new Error(data?.error || "Failed to update version");
+        throw new Error(data?.error || "Failed to upload APK");
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update version",
+        description: error.message || "Failed to upload APK",
         variant: "destructive",
       });
     } finally {
@@ -86,7 +113,7 @@ const AdminPage = () => {
               Publish New Version
             </CardTitle>
             <CardDescription>
-              Update the app version after uploading APK to GitHub
+              Upload APK and publish new version automatically
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -103,29 +130,47 @@ const AdminPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="versionCode">Version Code *</Label>
-                  <Input
-                    id="versionCode"
-                    type="number"
-                    placeholder="e.g. 5"
-                    value={versionCode}
-                    onChange={(e) => setVersionCode(e.target.value)}
-                    required
+              <div className="space-y-2">
+                <Label htmlFor="apkFile">APK File *</Label>
+                <div 
+                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    id="apkFile"
+                    type="file"
+                    accept=".apk"
+                    onChange={handleFileSelect}
+                    className="hidden"
                   />
+                  {selectedFile ? (
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <FileUp className="w-5 h-5" />
+                      <span className="font-medium">{selectedFile.name}</span>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      <FileUp className="w-8 h-8 mx-auto mb-2" />
+                      <p>Click to select APK file</p>
+                      <p className="text-xs mt-1">Any filename works - will be renamed automatically</p>
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="versionName">Version Name *</Label>
-                  <Input
-                    id="versionName"
-                    type="text"
-                    placeholder="e.g. 1.0.5"
-                    value={versionName}
-                    onChange={(e) => setVersionName(e.target.value)}
-                    required
-                  />
-                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="versionName">Version Name (Optional)</Label>
+                <Input
+                  id="versionName"
+                  type="text"
+                  placeholder="e.g. 1.0.5 (auto-generated if empty)"
+                  value={versionName}
+                  onChange={(e) => setVersionName(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty for auto: 1.0.{'{next_version_code}'}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -153,20 +198,39 @@ const AdminPage = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Publishing...
+                    Uploading...
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4 mr-2" />
-                    Publish Version
+                    Upload & Publish
                   </>
                 )}
               </Button>
             </form>
+
+            {uploadResult && (
+              <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-semibold">Upload Successful!</span>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-muted-foreground">File:</span> {uploadResult.file_name}</p>
+                  <p><span className="text-muted-foreground">Version:</span> {uploadResult.version_name} (Code: {uploadResult.version_code})</p>
+                  <p className="break-all">
+                    <span className="text-muted-foreground">URL:</span>{" "}
+                    <a href={uploadResult.download_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      {uploadResult.download_url}
+                    </a>
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
