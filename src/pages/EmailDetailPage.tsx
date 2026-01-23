@@ -67,130 +67,147 @@ const EmailDetailPage = () => {
     
     const iframe = iframeRef.current;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (doc) {
-        const isDark = resolvedTheme === 'dark';
-        const bgColor = isDark ? '#0c0c0e' : '#ffffff';
-        const textColor = isDark ? '#f4f4f5' : '#18181b';
-        const linkColor = isDark ? '#22d3ee' : '#0891b2';
-        const quoteColor = isDark ? '#a1a1aa' : '#71717a';
-        const quoteBorder = isDark ? '#3f3f46' : '#d4d4d8';
-        const codeBg = isDark ? '#18181b' : '#f4f4f5';
-        const codeBorder = isDark ? '#27272a' : '#e4e4e7';
-        const hrColor = isDark ? '#3f3f46' : '#e4e4e7';
-        
-        const htmlContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              * { box-sizing: border-box; }
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                font-size: 15px;
-                line-height: 1.8;
-                color: ${textColor};
-                background: ${bgColor};
-                margin: 0;
-                padding: 24px;
-                word-wrap: break-word;
-                overflow-wrap: anywhere;
-                word-break: break-word;
-                white-space: pre-line;
-              }
-              p, div { margin-bottom: 1em; }
-              p:last-child, div:last-child { margin-bottom: 0; }
-              a { color: ${linkColor}; word-break: break-all; }
-              a:hover { text-decoration: underline; }
-              img { max-width: 100%; height: auto; }
-              table { max-width: 100%; border-collapse: collapse; }
-              td, th { padding: 8px; }
-              blockquote {
-                border-left: 3px solid ${quoteBorder};
-                margin: 16px 0;
-                padding-left: 16px;
-                color: ${quoteColor};
-              }
-              pre, code {
-                background: ${codeBg};
-                border-radius: 6px;
-                font-family: 'Monaco', 'Menlo', monospace;
-                font-size: 13px;
-                color: ${textColor};
-              }
-              pre { padding: 16px; overflow-x: auto; border: 1px solid ${codeBorder}; }
-              code { padding: 2px 6px; }
-              pre code { padding: 0; background: transparent; }
-              hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
-              .tap-copy-hint {
-                position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #22c55e;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 600;
-                z-index: 9999;
-                animation: fadeInOut 2s ease-in-out forwards;
-              }
-              @keyframes fadeInOut {
-                0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
-                15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                85% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-              }
-              .copy-highlight {
-                outline: 2px solid ${linkColor} !important;
-                outline-offset: 2px;
-                background: rgba(34, 211, 238, 0.1) !important;
-              }
-            </style>
-          </head>
-          <body>
-            ${email.body_html}
-            <script>
-              function showCopyToast(message) {
-                const existing = document.querySelector('.tap-copy-hint');
-                if (existing) existing.remove();
-                const toast = document.createElement('div');
-                toast.className = 'tap-copy-hint';
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2000);
-              }
-              
-              document.querySelectorAll('a[href]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                  if (e.detail === 2) {
-                    e.preventDefault();
-                    navigator.clipboard.writeText(link.href).then(() => {
-                      showCopyToast('✓ Link copied!');
-                    });
-                  }
-                });
-              });
-              
-              document.querySelectorAll('code:not(pre code)').forEach(code => {
-                code.style.cursor = 'pointer';
-                code.onclick = () => {
-                  navigator.clipboard.writeText(code.textContent).then(() => {
-                    showCopyToast('✓ Copied!');
-                  });
-                };
-              });
-            </script>
-          </body>
-          </html>
-        `;
-      doc.open();
-      doc.write(htmlContent);
-      doc.close();
-      setContentWritten(true);
+    if (!doc) return;
+
+    const isDark = resolvedTheme === 'dark';
+    const bgColor = isDark ? '#0c0c0e' : '#ffffff';
+    const textColor = isDark ? '#f4f4f5' : '#18181b';
+    const linkColor = isDark ? '#22d3ee' : '#0891b2';
+    const quoteColor = isDark ? '#a1a1aa' : '#71717a';
+    const quoteBorder = isDark ? '#3f3f46' : '#d4d4d8';
+    const codeBg = isDark ? '#18181b' : '#f4f4f5';
+    const codeBorder = isDark ? '#27272a' : '#e4e4e7';
+    const hrColor = isDark ? '#3f3f46' : '#e4e4e7';
+
+    const styleText = `
+      * { box-sizing: border-box; }
+      body {
+        background: ${bgColor};
+        color: ${textColor};
+        margin: 0;
+        padding: 0;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      a { color: ${linkColor}; }
+      a:hover { text-decoration: underline; }
+      img { max-width: 100%; height: auto; }
+      table { max-width: 100%; }
+      blockquote {
+        border-left: 3px solid ${quoteBorder};
+        margin: 16px 0;
+        padding-left: 16px;
+        color: ${quoteColor};
+      }
+      pre, code {
+        background: ${codeBg};
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 13px;
+        color: ${textColor};
+      }
+      pre { padding: 16px; overflow-x: auto; border: 1px solid ${codeBorder}; }
+      code { padding: 2px 6px; }
+      pre code { padding: 0; background: transparent; }
+      hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
+      .tap-copy-hint {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #22c55e;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 9999;
+        animation: fadeInOut 2s ease-in-out forwards;
+      }
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      }
+      .copy-highlight {
+        outline: 2px solid ${linkColor} !important;
+        outline-offset: 2px;
+        background: rgba(34, 211, 238, 0.1) !important;
+      }
+    `;
+
+    const raw = email.body_html;
+    const looksLikeFullDoc = /<!doctype/i.test(raw) || /<html[\s>]/i.test(raw) || /<head[\s>]/i.test(raw);
+
+    const scriptText = `
+      function showCopyToast(message) {
+        const existing = document.querySelector('.tap-copy-hint');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'tap-copy-hint';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      }
+
+      document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          if (e.detail === 2) {
+            e.preventDefault();
+            navigator.clipboard.writeText(link.href).then(() => {
+              showCopyToast('✓ Link copied!');
+            });
+          }
+        });
+      });
+
+      document.querySelectorAll('code:not(pre code)').forEach(code => {
+        code.style.cursor = 'pointer';
+        code.onclick = () => {
+          navigator.clipboard.writeText(code.textContent).then(() => {
+            showCopyToast('✓ Copied!');
+          });
+        };
+      });
+    `;
+
+    let htmlContent = '';
+    if (looksLikeFullDoc) {
+      const parsed = new DOMParser().parseFromString(raw, 'text/html');
+      const head = parsed.head || parsed.getElementsByTagName('head')[0] || parsed.documentElement;
+
+      const styleEl = parsed.createElement('style');
+      styleEl.textContent = styleText;
+      head.appendChild(styleEl);
+
+      const scriptEl = parsed.createElement('script');
+      scriptEl.textContent = scriptText;
+      parsed.body?.appendChild(scriptEl);
+
+      htmlContent = '<!DOCTYPE html>\n' + parsed.documentElement.outerHTML;
+    } else {
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>${styleText}</style>
+        </head>
+        <body>
+          ${raw}
+          <script>${scriptText}</script>
+        </body>
+        </html>
+      `;
     }
+
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+    setContentWritten(true);
   }, [email?.body_html, resolvedTheme, contentWritten]);
 
   // Reset contentWritten when email changes
