@@ -35,9 +35,28 @@ import {
 } from "@/lib/email-service";
 import EmailDetailDialog from "@/components/EmailDetailDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useNotificationSound } from "@/hooks/use-notification-sound";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+
+// Skeleton component for email items
+const EmailItemSkeleton = memo(() => (
+  <div className="p-5 rounded-xl glass">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-2">
+          <Skeleton className="w-2 h-2 rounded-full" />
+          <Skeleton className="h-4 w-40" />
+        </div>
+        <Skeleton className="h-6 w-3/4 mb-2" />
+        <Skeleton className="h-4 w-full" />
+      </div>
+      <Skeleton className="h-4 w-16" />
+    </div>
+  </div>
+));
+EmailItemSkeleton.displayName = "EmailItemSkeleton";
 
 // Memoized email item component for better performance
 const EmailItem = memo(({ 
@@ -140,6 +159,7 @@ const InboxPage = () => {
   const [showForward, setShowForward] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [emailsLoading, setEmailsLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -156,6 +176,7 @@ const InboxPage = () => {
 
   const initializeInbox = useCallback(async () => {
     setLoading(true);
+    setEmailsLoading(true);
     try {
       // Get default domain first (cached after first call)
       const defaultDomain = await getOrCreateDefaultDomain();
@@ -174,14 +195,18 @@ const InboxPage = () => {
       // Set alias immediately so UI can render, then fetch emails
       setAlias(aliasData);
       setForwardEmail(aliasData.forward_to_email || "");
+      setLoading(false);
 
       // Fetch emails in background (non-blocking for UI)
-      getEmailsForAlias(aliasData.id).then(setEmails);
+      getEmailsForAlias(aliasData.id).then((data) => {
+        setEmails(data);
+        setEmailsLoading(false);
+      });
     } catch (error) {
       console.error("Error initializing inbox:", error);
       toast.error("Failed to load inbox");
-    } finally {
       setLoading(false);
+      setEmailsLoading(false);
     }
   }, [username]);
 
@@ -707,7 +732,14 @@ const InboxPage = () => {
 
       {/* Email list */}
       <main className="container mx-auto px-4 py-8 relative z-10">
-        {emails.length === 0 ? (
+        {emailsLoading ? (
+          // Skeleton placeholders while emails are loading
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <EmailItemSkeleton key={i} />
+            ))}
+          </div>
+        ) : emails.length === 0 ? (
           <div className="text-center py-24">
             <div className="w-24 h-24 mx-auto mb-8 rounded-2xl glass flex items-center justify-center">
               <Inbox className="w-12 h-12 text-muted-foreground" />
