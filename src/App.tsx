@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { useAppUpdate } from "@/hooks/use-app-update";
+import { UpdateDialog } from "@/components/UpdateDialog";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -34,12 +36,31 @@ const queryClient = new QueryClient({
   },
 });
 
+// App update checker component
+const AppUpdateChecker = () => {
+  const { updateAvailable, latestVersion, dismissUpdate, goToDownload } = useAppUpdate();
+
+  if (!updateAvailable || !latestVersion) return null;
+
+  return (
+    <UpdateDialog
+      open={updateAvailable}
+      onClose={dismissUpdate}
+      onUpdate={goToDownload}
+      versionName={latestVersion.version_name}
+      releaseNotes={latestVersion.release_notes}
+      isForceUpdate={latestVersion.is_force_update}
+    />
+  );
+};
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <AppUpdateChecker />
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
