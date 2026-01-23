@@ -3,19 +3,19 @@ import { Loader2 } from "lucide-react";
 
 const DownloadPage = () => {
   useEffect(() => {
-    // Redirect to the latest GitHub release
-    window.location.href = "https://github.com/Digitaliz/mailrcv/releases/latest/download/app-debug.apk";
+    // Redirect to the GitHub releases page (not direct APK link)
+    window.location.href = "https://github.com/Digitaliz/mailrcv/releases/latest";
   }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background pt-safe pb-safe">
       <div className="text-center space-y-4">
         <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-        <h1 className="text-2xl font-bold text-foreground">Starting Download...</h1>
+        <h1 className="text-2xl font-bold text-foreground">Redirecting to Downloads...</h1>
         <p className="text-muted-foreground">
-          If download doesn't start automatically,{" "}
+          If redirect doesn't work,{" "}
           <a 
-            href="https://github.com/Digitaliz/mailrcv/releases/latest/download/app-debug.apk"
+            href="https://github.com/Digitaliz/mailrcv/releases/latest"
             className="text-primary hover:underline"
           >
             click here
