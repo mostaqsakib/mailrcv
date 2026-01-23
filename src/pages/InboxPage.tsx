@@ -352,6 +352,15 @@ const InboxPage = () => {
                     )}
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleForward}
+                  className={`h-9 w-9 ${showForward ? "bg-primary/10 text-primary" : ""}`}
+                  title="Forward settings"
+                >
+                  <Forward className="w-4 h-4" />
+                </Button>
                 <ThemeToggle />
               </div>
             </div>
