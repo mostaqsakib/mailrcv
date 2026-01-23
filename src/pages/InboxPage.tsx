@@ -44,13 +44,16 @@ const EmailItem = memo(({
   mail, 
   onRead, 
   onDelete, 
-  onSelect 
+  onSelect,
+  username
 }: { 
   mail: ReceivedEmail; 
   onRead: (id: string) => void;
   onDelete: (id: string) => void;
   onSelect: (mail: ReceivedEmail) => void;
+  username: string;
 }) => {
+  const navigate = useNavigate();
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     const diff = Date.now() - date.getTime();
@@ -64,8 +67,9 @@ const EmailItem = memo(({
 
   const handleClick = useCallback(() => {
     onRead(mail.id);
-    onSelect(mail);
-  }, [mail, onRead, onSelect]);
+    // Navigate to email detail page
+    navigate(`/inbox/${username}/email/${mail.id}`);
+  }, [mail, onRead, navigate, username]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -719,6 +723,7 @@ const InboxPage = () => {
                 onRead={handleMarkAsRead}
                 onDelete={handleDeleteEmail}
                 onSelect={handleSelectEmail}
+                username={username!}
               />
             ))}
           </div>

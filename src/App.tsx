@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
 const InboxPage = lazy(() => import("./pages/InboxPage"));
+const EmailDetailPage = lazy(() => import("./pages/EmailDetailPage"));
 const SecureInboxPage = lazy(() => import("./pages/SecureInboxPage"));
 const DomainsPage = lazy(() => import("./pages/DomainsPage"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage"));
@@ -44,6 +45,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/inbox/:username" element={<InboxPage />} />
+              <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />
               <Route path="/secure/:username" element={<SecureInboxPage />} />
               <Route path="/domains" element={<DomainsPage />} />
               <Route path="/download" element={<DownloadPage />} />
