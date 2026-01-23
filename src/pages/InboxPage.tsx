@@ -31,6 +31,7 @@ import {
 import EmailDetailDialog from "@/components/EmailDetailDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useNotificationSound } from "@/hooks/use-notification-sound";
 
 // Memoized email item component for better performance
 const EmailItem = memo(({ 
@@ -119,7 +120,7 @@ const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { permission, requestPermission, showNotification, isSupported } = useNotifications();
-  
+  const { playSound } = useNotificationSound();
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [copied, setCopied] = useState(false);
@@ -192,6 +193,9 @@ const InboxPage = () => {
           setEmails((prev) => [newEmail, ...prev]);
           toast.info("New email received!");
           
+          // Play subtle notification sound
+          playSound();
+          
           // Show browser notification
           showNotification("📧 New Email", {
             body: `From: ${newEmail.from_email}\n${newEmail.subject || "(No subject)"}`,
@@ -204,7 +208,7 @@ const InboxPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [alias?.id, showNotification]);
+  }, [alias?.id, showNotification, playSound]);
 
   const copyToClipboard = useCallback(async () => {
     const productionEmail = `${username}@mailrcv.site`;
