@@ -17,6 +17,8 @@ interface UpdateDialogProps {
   versionName: string;
   releaseNotes: string | null;
   isForceUpdate: boolean;
+  installedVersionName?: string;
+  installedVersionCode?: number;
 }
 
 export const UpdateDialog = ({
@@ -26,7 +28,12 @@ export const UpdateDialog = ({
   versionName,
   releaseNotes,
   isForceUpdate,
+  installedVersionName,
+  installedVersionCode,
 }: UpdateDialogProps) => {
+  const showInstalled =
+    Boolean(installedVersionName) || typeof installedVersionCode === 'number';
+
   return (
     <AlertDialog open={open} onOpenChange={isForceUpdate ? undefined : onClose}>
       <AlertDialogContent className="max-w-md">
@@ -45,6 +52,13 @@ export const UpdateDialog = ({
           <AlertDialogDescription className="text-left">
             {releaseNotes || "A new release is available with improvements and bug fixes."}
           </AlertDialogDescription>
+
+          {showInstalled && (
+            <p className="mt-2 text-xs text-muted-foreground text-left">
+              Installed: {installedVersionName ? `v${installedVersionName}` : 'unknown'}
+              {typeof installedVersionCode === 'number' ? ` (build ${installedVersionCode})` : ''}
+            </p>
+          )}
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
           {!isForceUpdate && (

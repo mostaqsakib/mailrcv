@@ -41,7 +41,16 @@ const queryClient = new QueryClient({
 // App update checker component - only shows on native app
 const AppUpdateChecker = () => {
   const [isNative, setIsNative] = useState(false);
-  const { updateAvailable, latestVersion, dismissUpdate, goToDownload, isReady, isChecking } = useAppUpdate();
+  const {
+    updateAvailable,
+    latestVersion,
+    dismissUpdate,
+    goToDownload,
+    isReady,
+    isChecking,
+    currentVersion,
+    currentVersionCode,
+  } = useAppUpdate();
 
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
@@ -58,6 +67,8 @@ const AppUpdateChecker = () => {
       versionName={latestVersion.version_name}
       releaseNotes={latestVersion.release_notes}
       isForceUpdate={latestVersion.is_force_update}
+      installedVersionName={currentVersion}
+      installedVersionCode={currentVersionCode}
     />
   );
 };
