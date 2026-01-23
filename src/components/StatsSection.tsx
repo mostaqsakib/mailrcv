@@ -158,7 +158,7 @@ export const StatsSection = () => {
       <div className="container relative z-10 px-4">
         <div className="text-center mb-10">
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Trusted by thousands
+            📊 Live Stats
           </p>
         </div>
 
