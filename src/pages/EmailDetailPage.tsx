@@ -8,8 +8,6 @@ import {
   User, 
   Copy, 
   Trash2,
-  FileText,
-  Code,
   ArrowLeft,
   Mail
 } from "lucide-react";
@@ -25,7 +23,7 @@ const EmailDetailPage = () => {
   const { resolvedTheme } = useTheme();
   const [email, setEmail] = useState<ReceivedEmail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"text" | "html">("html");
+  
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -48,12 +46,6 @@ const EmailDetailPage = () => {
           await markEmailAsRead(emailId);
         }
         
-        // Auto-select view mode
-        if (data?.body_html) {
-          setViewMode("html");
-        } else {
-          setViewMode("text");
-        }
       } catch (error) {
         console.error('Error fetching email:', error);
         toast.error("Failed to load email");
@@ -67,7 +59,7 @@ const EmailDetailPage = () => {
   }, [emailId, username, navigate]);
 
   const writeIframeContent = useCallback(() => {
-    if (viewMode === "html" && email?.body_html && iframeRef.current) {
+    if (email?.body_html && iframeRef.current) {
       const iframe = iframeRef.current;
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (doc) {
@@ -190,14 +182,14 @@ const EmailDetailPage = () => {
         doc.close();
       }
     }
-  }, [email?.body_html, viewMode, resolvedTheme]);
+  }, [email?.body_html, resolvedTheme]);
 
   useEffect(() => {
-    if (viewMode === "html" && email?.body_html) {
+    if (email?.body_html) {
       const timeoutId = setTimeout(writeIframeContent, 50);
       return () => clearTimeout(timeoutId);
     }
-  }, [email?.body_html, viewMode, writeIframeContent]);
+  }, [email?.body_html, writeIframeContent]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -213,7 +205,7 @@ const EmailDetailPage = () => {
 
   const copyEmailContent = async () => {
     if (!email) return;
-    const content = viewMode === "html" ? email.body_html : email.body_text;
+    const content = email.body_html || email.body_text;
     if (content) {
       await navigator.clipboard.writeText(content);
       toast.success("Email content copied!");
@@ -251,7 +243,6 @@ const EmailDetailPage = () => {
   }
 
   const hasHtml = !!email.body_html;
-  const hasText = !!email.body_text;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -318,29 +309,6 @@ const EmailDetailPage = () => {
             </div>
           </div>
           
-          {/* View mode toggle */}
-          {(hasHtml && hasText) && (
-            <div className="flex items-center gap-2 mt-4">
-              <Button
-                variant={viewMode === "html" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("html")}
-                className="gap-1.5"
-              >
-                <Code className="w-4 h-4" />
-                HTML
-              </Button>
-              <Button
-                variant={viewMode === "text" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("text")}
-                className="gap-1.5"
-              >
-                <FileText className="w-4 h-4" />
-                Text
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -348,17 +316,17 @@ const EmailDetailPage = () => {
       <main className="flex-1 relative z-10 pb-safe">
         <div className="container mx-auto px-4 py-6">
           <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-elegant">
-            {viewMode === "html" && hasHtml ? (
+            {hasHtml ? (
               <iframe
                 ref={iframeRef}
                 title="Email Content"
                 className="w-full border-0 bg-transparent"
-                style={{ minHeight: "calc(100vh - 300px)" }}
+                style={{ minHeight: "calc(100vh - 280px)" }}
                 sandbox="allow-same-origin allow-scripts"
                 onLoad={writeIframeContent}
               />
             ) : (
-              <ScrollArea className="h-full" style={{ maxHeight: "calc(100vh - 300px)" }}>
+              <ScrollArea className="h-full" style={{ maxHeight: "calc(100vh - 280px)" }}>
                 <div className="p-6">
                   <div 
                     className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground/90"
