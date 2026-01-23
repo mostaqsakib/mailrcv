@@ -23,7 +23,7 @@ const EmailDetailPage = () => {
   const { resolvedTheme } = useTheme();
   const [email, setEmail] = useState<ReceivedEmail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [iframeMounted, setIframeMounted] = useState(false);
+  const [contentWritten, setContentWritten] = useState(false);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -59,8 +59,11 @@ const EmailDetailPage = () => {
     fetchEmail();
   }, [emailId, username, navigate]);
 
-  const writeIframeContent = useCallback(() => {
+  const writeIframeContent = useCallback((forceWrite = false) => {
     if (!email?.body_html || !iframeRef.current) return;
+    
+    // Prevent double-writes unless forced (for theme changes)
+    if (contentWritten && !forceWrite) return;
     
     const iframe = iframeRef.current;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -185,21 +188,19 @@ const EmailDetailPage = () => {
       doc.open();
       doc.write(htmlContent);
       doc.close();
+      setContentWritten(true);
     }
-  }, [email?.body_html, resolvedTheme]);
+  }, [email?.body_html, resolvedTheme, contentWritten]);
 
-  // Write content when both email and iframe are ready
+  // Reset contentWritten when email changes
   useEffect(() => {
-    if (email?.body_html && iframeMounted) {
-      // Immediate write - no delay
-      writeIframeContent();
-    }
-  }, [email?.body_html, iframeMounted, writeIframeContent]);
+    setContentWritten(false);
+  }, [emailId]);
 
-  // Also re-write on theme change
+  // Re-write on theme change (force write)
   useEffect(() => {
-    if (email?.body_html && iframeMounted && resolvedTheme) {
-      writeIframeContent();
+    if (email?.body_html && contentWritten && resolvedTheme) {
+      writeIframeContent(true);
     }
   }, [resolvedTheme]);
 
@@ -330,17 +331,13 @@ const EmailDetailPage = () => {
           <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-elegant">
             {hasHtml ? (
               <iframe
-                ref={(el) => {
-                  iframeRef.current = el;
-                  if (el && !iframeMounted) {
-                    setIframeMounted(true);
-                  }
-                }}
+                ref={iframeRef}
                 title="Email Content"
                 className="w-full border-0 bg-transparent"
                 style={{ minHeight: "calc(100vh - 280px)" }}
                 sandbox="allow-same-origin allow-scripts"
-                onLoad={writeIframeContent}
+                srcDoc="<!DOCTYPE html><html><body></body></html>"
+                onLoad={() => writeIframeContent()}
               />
             ) : (
               <ScrollArea className="h-full" style={{ maxHeight: "calc(100vh - 280px)" }}>
