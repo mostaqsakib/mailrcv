@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useAppUpdate } from "@/hooks/use-app-update";
 import { UpdateDialog } from "@/components/UpdateDialog";
+import { Capacitor } from "@capacitor/core";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -37,11 +38,17 @@ const queryClient = new QueryClient({
   },
 });
 
-// App update checker component
+// App update checker component - only shows on native app
 const AppUpdateChecker = () => {
+  const [isNative, setIsNative] = useState(false);
   const { updateAvailable, latestVersion, dismissUpdate, goToDownload } = useAppUpdate();
 
-  if (!updateAvailable || !latestVersion) return null;
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
+
+  // Only show update dialog on native app
+  if (!isNative || !updateAvailable || !latestVersion) return null;
 
   return (
     <UpdateDialog
