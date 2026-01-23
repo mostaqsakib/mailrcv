@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
+import { StatsSection } from "@/components/StatsSection";
 import { Footer } from "@/components/Footer";
 
 // Memoize static components to prevent unnecessary re-renders
@@ -15,6 +16,7 @@ const Index = () => {
       <MemoizedHeader />
       <HeroSection />
       <MemoizedFeaturesSection />
+      <StatsSection />
       <MemoizedFooter />
     </div>
   );
