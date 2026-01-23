@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +18,15 @@ const generateRandomName = () => {
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
   const num = Math.floor(Math.random() * 99) + 1;
   return `${adj}${noun}${num}`;
+};
+
+const generateStrongPassword = () => {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+  let password = "";
+  for (let i = 0; i < 16; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
 };
 
 export const HeroSection = () => {
@@ -126,6 +135,14 @@ export const HeroSection = () => {
 
   const handleRandomGenerate = () => {
     setUsername(generateRandomName());
+  };
+
+  const handleGeneratePassword = async () => {
+    const newPassword = generateStrongPassword();
+    setPassword(newPassword);
+    setShowPassword(true);
+    await navigator.clipboard.writeText(newPassword);
+    toast.success("Strong password generated & copied!");
   };
 
   const handleCopyEmail = async () => {
@@ -258,6 +275,16 @@ export const HeroSection = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-base text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={handleGeneratePassword}
+                      title="Generate strong password"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
