@@ -39,6 +39,9 @@ export const useAppUpdate = () => {
         if (info.version) {
           setCurrentVersionName(info.version);
         }
+
+        // Debug: Helps verify what the native app reports on real devices.
+        console.log('[update] native App.getInfo()', { version: info.version, build: info.build });
       } catch (err) {
         console.warn('Failed to read native app version info; falling back to constants.', err);
       } finally {
@@ -75,6 +78,15 @@ export const useAppUpdate = () => {
       const isSameVersionName =
         Boolean(currentVersionName) && data.version_name === currentVersionName;
       const isSameVersionCode = data.version_code === currentVersionCode;
+
+      // Debug: helps diagnose false-positive prompts.
+      console.log('[update] compare', {
+        installed: { version_name: currentVersionName, version_code: currentVersionCode },
+        latest: { version_name: data.version_name, version_code: data.version_code },
+        isSameVersionName,
+        isSameVersionCode,
+      });
+
       if (isSameVersionName || isSameVersionCode) {
         setUpdateAvailable(false);
         setLatestVersion(data);
@@ -124,5 +136,6 @@ export const useAppUpdate = () => {
     dismissUpdate,
     goToDownload,
     currentVersion: currentVersionName,
+    currentVersionCode,
   };
 };
