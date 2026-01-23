@@ -3,8 +3,9 @@ import { Loader2 } from "lucide-react";
 
 const DownloadPage = () => {
   useEffect(() => {
-    // Redirect to the edge function that handles APK download
-    window.location.href = "https://euiqflvrdraydkhwksmh.supabase.co/functions/v1/download-apk";
+    // Redirect to the latest GitHub release
+    // This URL always points to the latest release's APK asset
+    window.location.href = "https://github.com/AbiruzzamanMolla/mailrcv/releases/latest/download/app-debug.apk";
   }, []);
 
   return (
@@ -15,7 +16,7 @@ const DownloadPage = () => {
         <p className="text-muted-foreground">
           If download doesn't start automatically,{" "}
           <a 
-            href="https://euiqflvrdraydkhwksmh.supabase.co/functions/v1/download-apk"
+            href="https://github.com/AbiruzzamanMolla/mailrcv/releases/latest/download/app-debug.apk"
             className="text-primary hover:underline"
           >
             click here
