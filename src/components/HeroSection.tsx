@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shuffle, Copy, Check } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 // Random word generator for fun email names
@@ -19,13 +19,18 @@ const generateRandomName = () => {
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isSecure, setIsSecure] = useState(false);
   const navigate = useNavigate();
   const domain = "mailrcv.site";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim()) {
-      navigate(`/inbox/${username.trim().toLowerCase()}`);
+      if (isSecure) {
+        navigate(`/secure/${username.trim().toLowerCase()}`);
+      } else {
+        navigate(`/inbox/${username.trim().toLowerCase()}`);
+      }
     }
   };
 
@@ -135,9 +140,33 @@ export const HeroSection = () => {
                 </Button>
               </div>
 
+              {/* Inbox type toggle */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={!isSecure ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsSecure(false)}
+                  className={`flex-1 rounded-xl h-11 ${!isSecure ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  Public Inbox
+                </Button>
+                <Button
+                  type="button"
+                  variant={isSecure ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsSecure(true)}
+                  className={`flex-1 rounded-xl h-11 ${isSecure ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Password Protected
+                </Button>
+              </div>
+
               {/* Submit button */}
               <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-14 text-base font-semibold shadow-lg hover:shadow-xl dark:shadow-primary/20 dark:hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                Open Inbox
+                {isSecure ? 'Create Secure Inbox' : 'Open Inbox'}
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>

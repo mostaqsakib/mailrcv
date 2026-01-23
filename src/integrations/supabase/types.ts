@@ -52,6 +52,8 @@ export type Database = {
           forward_to_email: string | null
           id: string
           is_active: boolean
+          is_password_protected: boolean
+          password_hash: string | null
           updated_at: string
           username: string
         }
@@ -62,6 +64,8 @@ export type Database = {
           forward_to_email?: string | null
           id?: string
           is_active?: boolean
+          is_password_protected?: boolean
+          password_hash?: string | null
           updated_at?: string
           username: string
         }
@@ -72,6 +76,8 @@ export type Database = {
           forward_to_email?: string | null
           id?: string
           is_active?: boolean
+          is_password_protected?: boolean
+          password_hash?: string | null
           updated_at?: string
           username?: string
         }

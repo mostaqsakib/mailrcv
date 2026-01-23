@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.register-push-token]
 verify_jwt = false
+
+[functions.inbox-auth]
+verify_jwt = false
