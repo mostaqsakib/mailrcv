@@ -41,6 +41,24 @@ const EmailDetailPage = () => {
         if (error) throw error;
         
         setEmail(data);
+
+        // Debug: help diagnose "plain text rendered as one paragraph" issues
+        // (kept as console.debug to avoid noisy logs in production)
+        try {
+          const raw = (data as any)?.body_html as string | null | undefined;
+          if (raw) {
+            const hasNewlines = raw.includes("\n") || raw.includes("\r");
+            const hasMeaningfulHtml = /<(br\s*\/?>|p|pre|blockquote|table|tr|td|th|ul|ol|li|h1|h2|h3)[\s>]/i.test(raw);
+            console.debug("[EmailDetail] content heuristics", {
+              emailId,
+              hasNewlines,
+              hasMeaningfulHtml,
+              rawPreview: raw.slice(0, 220),
+            });
+          }
+        } catch {
+          // ignore
+        }
         
         // Mark as read
         if (data && !data.is_read) {
@@ -88,7 +106,8 @@ const EmailDetailPage = () => {
     // NOTE: Some senders wrap plain text in a single <div>/<span>/etc. That should still be treated as plain text.
     // We only consider it "meaningful HTML" if it contains true layout/line-break elements.
     const hasMeaningfulHtml = /<(br\s*\/?>|p|pre|blockquote|table|tr|td|th|ul|ol|li|h1|h2|h3)[\s>]/i.test(raw);
-    const treatAsPlainTextHtml = hasNewlines && !hasMeaningfulHtml;
+    // If there's no real structure tags, render with pre-wrap (safe even if there are no newlines).
+    const treatAsPlainTextHtml = !hasMeaningfulHtml && (hasNewlines || raw.length > 0);
 
     const styleText = `
       * { box-sizing: border-box; }
