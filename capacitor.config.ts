@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.5b514b7750f64ca2a8983ad7f05c46f1',
+  appId: 'com.mailrcv.app',
   appName: 'MailRCV',
   webDir: 'dist',
   server: {
