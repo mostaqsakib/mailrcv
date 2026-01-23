@@ -132,26 +132,27 @@ jobs:
       # APK is uploaded to GitHub Releases instead of Supabase Storage
       # No SUPABASE_SERVICE_ROLE_KEY needed!
 
-      - name: Auto-increment app version in database
+      - name: Update app version in database
         run: |
           SUPABASE_URL="https://euiqflvrdraydkhwksmh.supabase.co"
           ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1aXFmbHZyZHJheWRraHdrc21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjQyNjAsImV4cCI6MjA4NDYwMDI2MH0.BL1146FYVxNnsz_eGASMlILgQCDNfmTMPZQMOsEZA3o"
           
-          echo "Incrementing app version in database..."
+          echo "Updating app version in database: version_code=${VERSION_CODE}, version_name=${VERSION_NAME}"
           
-          # Update version_code and version_name using anon key (public table)
-          curl -X PATCH "${SUPABASE_URL}/rest/v1/app_version?version_code=gte.1" \
+          # First, try to insert a new record. If fails (conflict), update existing.
+          # Using upsert pattern with version_code as the primary identifier
+          curl -X POST "${SUPABASE_URL}/rest/v1/app_version" \
             -H "apikey: ${ANON_KEY}" \
             -H "Authorization: Bearer ${ANON_KEY}" \
             -H "Content-Type: application/json" \
-            -H "Prefer: return=representation" \
-            -d '{
-              "version_code": 2,
-              "version_name": "1.1.0",
-              "release_notes": "🚀 নতুন বিল্ড - Build #${{ github.run_number }}\n\n• Latest improvements and bug fixes\n• Built from commit: ${{ github.sha }}",
-              "updated_at": "now()"
-            }' \
-            && echo "✅ App version updated in database!" \
+            -H "Prefer: resolution=merge-duplicates,return=representation" \
+            -d "{
+              \"version_code\": ${VERSION_CODE},
+              \"version_name\": \"${VERSION_NAME}\",
+              \"release_notes\": \"🚀 নতুন বিল্ড - Build #${VERSION_CODE}\\n\\n• Latest improvements and bug fixes\\n• Built from commit: ${{ github.sha }}\",
+              \"download_url\": \"https://mailrcv.site/download\"
+            }" \
+            && echo "✅ App version updated in database: v${VERSION_NAME} (code: ${VERSION_CODE})" \
             || echo "⚠️ Version update failed (may need manual update)"
 
       - name: Upload APK artifact
