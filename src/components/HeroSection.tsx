@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Download, Smartphone } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 // Random word generator for fun email names
@@ -148,24 +148,6 @@ export const HeroSection = () => {
             💡 Click the <Shuffle className="inline w-3.5 h-3.5 mx-0.5" /> button for a random name
           </p>
 
-          {/* Android App Download Button */}
-          <div className="mt-8 pt-6 border-t border-border/30">
-            <a 
-              href="https://github.com/mostaqsakib/mailrcv/releases/latest/download/app-debug.apk"
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 border border-accent/30 hover:border-accent/50 transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                <Smartphone className="w-5 h-5 text-accent-foreground" />
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  Download Android App
-                  <Download className="w-4 h-4 text-primary group-hover:translate-y-0.5 transition-transform" />
-                </div>
-                <div className="text-xs text-muted-foreground">Get push notifications for new emails</div>
-              </div>
-            </a>
-          </div>
         </div>
       </div>
     </section>
