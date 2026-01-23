@@ -1,4 +1,4 @@
-import { Mail, Send, Smartphone, Download } from "lucide-react";
+import { Mail, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -16,23 +16,6 @@ export const Footer = () => {
             </div>
             <span className="text-xl font-bold">MailRCV</span>
           </Link>
-
-          {/* Android App Download Button */}
-          <a 
-            href="https://github.com/mostaqsakib/mailrcv/releases/latest/download/app-debug.apk"
-            className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 border border-accent/30 hover:border-accent/50 transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-primary" />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-semibold text-foreground flex items-center gap-2">
-                Download Android App
-                <Download className="w-4 h-4 text-primary group-hover:translate-y-0.5 transition-transform" />
-              </div>
-              <div className="text-xs text-muted-foreground">Get push notifications for new emails</div>
-            </div>
-          </a>
 
           {/* Contact Button */}
           <Button
