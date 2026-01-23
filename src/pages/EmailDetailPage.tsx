@@ -95,7 +95,7 @@ const EmailDetailPage = () => {
         color: ${textColor};
         margin: 0;
         padding: ${treatAsPlainTextHtml ? "24px" : "0"};
-        ${treatAsPlainTextHtml ? "white-space: pre-line;" : ""}
+        ${treatAsPlainTextHtml ? "white-space: pre-wrap;" : ""}
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
         line-height: 1.8;
