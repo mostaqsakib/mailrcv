@@ -100,14 +100,31 @@ const EmailDetailPage = () => {
     const raw = email.body_html;
     const looksLikeFullDoc = /<!doctype/i.test(raw) || /<html[\s>]/i.test(raw) || /<head[\s>]/i.test(raw);
 
+    const escapeHtml = (value: string) =>
+      value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
     // Some providers send "HTML" that is basically plain text with newlines.
     // In that case we must preserve line breaks, otherwise everything collapses into one line.
     const hasNewlines = raw.includes("\n") || raw.includes("\r");
     // NOTE: Some senders wrap plain text in a single <div>/<span>/etc. That should still be treated as plain text.
     // We only consider it "meaningful HTML" if it contains true layout/line-break elements.
     const hasMeaningfulHtml = /<(br\s*\/?>|p|pre|blockquote|table|tr|td|th|ul|ol|li|h1|h2|h3)[\s>]/i.test(raw);
-    // If there's no real structure tags, render with pre-wrap (safe even if there are no newlines).
-    const treatAsPlainTextHtml = !hasMeaningfulHtml && (hasNewlines || raw.length > 0);
+
+    // Special case: many senders wrap a plaintext email inside a single <p> and rely on \n for line breaks.
+    // Browsers collapse those newlines, so we must treat it as plain text.
+    const trimmed = raw.trim();
+    const isSinglePWrapper =
+      /^<p[\s>][\s\S]*<\/p>$/i.test(trimmed) &&
+      !/<\/p>\s*<p[\s>]/i.test(trimmed) &&
+      !/<br\s*\/?>/i.test(trimmed);
+
+    // If there's no real structure tags OR it's the "single <p> + \n" case, render with pre-wrap.
+    const treatAsPlainTextHtml = (hasNewlines && isSinglePWrapper) || (!hasMeaningfulHtml && raw.length > 0);
 
     const styleText = `
       * { box-sizing: border-box; }
@@ -152,6 +169,15 @@ const EmailDetailPage = () => {
       pre { padding: 16px; overflow-x: auto; border: 1px solid ${codeBorder}; }
       code { padding: 2px 6px; }
       pre code { padding: 0; background: transparent; }
+      pre.plaintext {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
       hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
       .tap-copy-hint {
         position: fixed;
@@ -227,6 +253,11 @@ const EmailDetailPage = () => {
 
       htmlContent = '<!DOCTYPE html>\n' + parsed.documentElement.outerHTML;
     } else {
+      const contentHtml =
+        treatAsPlainTextHtml && email.body_text
+          ? `<pre class="plaintext">${escapeHtml(email.body_text)}</pre>`
+          : raw;
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -236,7 +267,7 @@ const EmailDetailPage = () => {
           <style>${styleText}</style>
         </head>
         <body>
-          ${raw}
+           ${contentHtml}
           <script>${scriptText}</script>
         </body>
         </html>
