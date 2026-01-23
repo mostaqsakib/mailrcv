@@ -83,7 +83,7 @@ const EmailDetailPage = () => {
               body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                 font-size: 15px;
-                line-height: 1.7;
+                line-height: 1.8;
                 color: ${textColor};
                 background: transparent;
                 margin: 0;
@@ -91,7 +91,10 @@ const EmailDetailPage = () => {
                 word-wrap: break-word;
                 overflow-wrap: anywhere;
                 word-break: break-word;
+                white-space: pre-line;
               }
+              p, div { margin-bottom: 1em; }
+              p:last-child, div:last-child { margin-bottom: 0; }
               a { color: ${linkColor}; word-break: break-all; }
               a:hover { text-decoration: underline; }
               img { max-width: 100%; height: auto; }
