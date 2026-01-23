@@ -336,7 +336,7 @@ const EmailDetailPage = () => {
         <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
         
         {/* Header skeleton */}
-        <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
+        <header className="sticky top-0 z-40 glass-strong border-b border-border/50 pt-safe">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -408,7 +408,7 @@ const EmailDetailPage = () => {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
       
       {/* Header */}
-      <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
+      <header className="sticky top-0 z-40 glass-strong border-b border-border/50 pt-safe">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
