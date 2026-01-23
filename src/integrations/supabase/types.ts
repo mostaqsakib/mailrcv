@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_version: {
+        Row: {
+          created_at: string
+          download_url: string | null
+          id: string
+          is_force_update: boolean | null
+          release_notes: string | null
+          updated_at: string
+          version_code: number
+          version_name: string
+        }
+        Insert: {
+          created_at?: string
+          download_url?: string | null
+          id?: string
+          is_force_update?: boolean | null
+          release_notes?: string | null
+          updated_at?: string
+          version_code?: number
+          version_name?: string
+        }
+        Update: {
+          created_at?: string
+          download_url?: string | null
+          id?: string
+          is_force_update?: boolean | null
+          release_notes?: string | null
+          updated_at?: string
+          version_code?: number
+          version_name?: string
+        }
+        Relationships: []
+      }
       domains: {
         Row: {
           created_at: string
