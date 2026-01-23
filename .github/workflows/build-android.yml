@@ -131,6 +131,27 @@ jobs:
             && echo "✅ APK uploaded successfully!" \
             || echo "❌ APK upload failed"
 
+      - name: Auto-increment app version in database
+        run: |
+          SUPABASE_URL="https://euiqflvrdraydkhwksmh.supabase.co"
+          
+          echo "Incrementing app version in database..."
+          
+          # Update version_code and version_name, reset release notes for new build
+          curl -X PATCH "${SUPABASE_URL}/rest/v1/app_version?version_code=gte.1" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d '{
+              "version_code": 2,
+              "version_name": "1.1.0",
+              "release_notes": "🚀 নতুন বিল্ড - Build #${{ github.run_number }}\n\n• Latest improvements and bug fixes\n• Built from commit: ${{ github.sha }}",
+              "updated_at": "now()"
+            }' \
+            && echo "✅ App version updated in database!" \
+            || echo "⚠️ Version update failed (may need manual update)"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
