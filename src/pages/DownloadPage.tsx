@@ -8,7 +8,7 @@ const DownloadPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background pt-safe pb-safe">
       <div className="text-center space-y-4">
         <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
         <h1 className="text-2xl font-bold text-foreground">Starting Download...</h1>
