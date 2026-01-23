@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { Capacitor } from "@capacitor/core";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
@@ -13,13 +14,16 @@ const MemoizedDownloadSection = memo(DownloadSection);
 const MemoizedFooter = memo(Footer);
 
 const Index = () => {
+  // Hide download section in native app
+  const isNativeApp = Capacitor.isNativePlatform();
+
   return (
     <div className="min-h-screen pt-safe">
       <MemoizedHeader />
       <HeroSection />
       <MemoizedFeaturesSection />
       <StatsSection />
-      <MemoizedDownloadSection />
+      {!isNativeApp && <MemoizedDownloadSection />}
       <MemoizedFooter />
     </div>
   );
