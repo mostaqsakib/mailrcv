@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "550272316751",
+    "project_id": "mailrcv-4117b",
+    "storage_bucket": "mailrcv-4117b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:550272316751:android:553f5a837ecf017086813a",
+        "android_client_info": {
+          "package_name": "com.mailrcv.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACWwQAimIQrE9Nb2PvYBFmB6gId2eE0Do"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
