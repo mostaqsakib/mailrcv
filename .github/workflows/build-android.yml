@@ -78,6 +78,25 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      - name: Upload APK to Supabase Storage
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          SUPABASE_URL="https://euiqflvrdraydkhwksmh.supabase.co"
+          BUCKET="apk-downloads"
+          FILE_NAME="mailrcv-latest.apk"
+          
+          echo "Uploading APK to Supabase Storage..."
+          
+          # Upload using Supabase Storage API
+          curl -X POST "${SUPABASE_URL}/storage/v1/object/${BUCKET}/${FILE_NAME}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            -H "x-upsert: true" \
+            --data-binary @"${APK_PATH}" \
+            --fail \
+            && echo "✅ APK uploaded successfully!" \
+            || echo "❌ APK upload failed"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -97,6 +116,8 @@ jobs:
             🤖 Automatic APK build from commit ${{ github.sha }}
             
             📱 Download the APK file below to install on your Android device.
+            
+            🔗 Direct download: https://mailrcv.site/download
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
