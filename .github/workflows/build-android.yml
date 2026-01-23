@@ -18,16 +18,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build web app
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -38,57 +34,47 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Update Capacitor config for production
+      - name: Create Capacitor config for production
         run: |
-          cat > capacitor.config.ts << 'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
-
-          const config: CapacitorConfig = {
-            appId: 'com.mailrcv.app',
-            appName: 'mailrcv',
-            webDir: 'dist',
-            plugins: {
-              PushNotifications: {
-                presentationOptions: ["badge", "sound", "alert"],
-              },
-            },
-          };
-
-          export default config;
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "com.mailrcv.app",
+            "appName": "mailrcv",
+            "webDir": "dist",
+            "plugins": {
+              "PushNotifications": {
+                "presentationOptions": ["badge", "sound", "alert"]
+              }
+            }
+          }
           EOF
 
       - name: Add Android platform
-        run: npx cap add android || true
+        run: npx cap add android
+        continue-on-error: true
 
       - name: Sync Capacitor
         run: npx cap sync android
 
       - name: Copy google-services.json
-        run: |
-          if [ -f "google-services.json" ]; then
-            cp google-services.json android/app/google-services.json
-            echo "google-services.json copied successfully"
-          else
-            echo "Warning: google-services.json not found"
-          fi
+        run: cp google-services.json android/app/google-services.json
 
-      - name: Add Firebase dependencies to build.gradle
+      - name: Setup Firebase in Android project
         run: |
-          # Add Google services plugin to project-level build.gradle
-          sed -i "s|classpath 'com.android.tools.build:gradle:|classpath 'com.google.gms:google-services:4.4.0'\n        classpath 'com.android.tools.build:gradle:|g" android/build.gradle || true
+          # Add Google services classpath to project build.gradle
+          sed -i '/dependencies {/a\        classpath "com.google.gms:google-services:4.4.0"' android/build.gradle
           
-          # Add apply plugin to app-level build.gradle
-          echo "" >> android/app/build.gradle
-          echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
+          # Add Firebase messaging to app build.gradle dependencies
+          sed -i '/dependencies {/a\    implementation "com.google.firebase:firebase-messaging:23.4.0"' android/app/build.gradle
           
-          # Add Firebase messaging dependency
-          sed -i "/dependencies {/a\\    implementation 'com.google.firebase:firebase-messaging:23.4.0'" android/app/build.gradle || true
+          # Apply google-services plugin at end of app build.gradle
+          echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
 
-      - name: Build APK
+      - name: Build Debug APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
