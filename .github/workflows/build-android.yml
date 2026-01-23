@@ -38,10 +38,14 @@ jobs:
 
       - name: Create Capacitor config for production
         run: |
+          # Remove dev config that has server URL (causes redirect to browser)
+          rm -f capacitor.config.ts
+          
+          # Create production config without server URL
           cat > capacitor.config.json << 'EOF'
           {
             "appId": "com.mailrcv.app",
-            "appName": "mailrcv",
+            "appName": "MailRCV",
             "webDir": "dist",
             "plugins": {
               "PushNotifications": {
@@ -50,6 +54,8 @@ jobs:
             }
           }
           EOF
+          
+          echo "✅ Production config created (no server redirect)"
 
       - name: Add Android platform
         run: npx cap add android
