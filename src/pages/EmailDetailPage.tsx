@@ -86,9 +86,10 @@ const EmailDetailPage = () => {
                 margin: 0;
                 padding: 24px;
                 word-wrap: break-word;
-                overflow-wrap: break-word;
+                overflow-wrap: anywhere;
+                word-break: break-word;
               }
-              a { color: #22d3ee; }
+              a { color: #22d3ee; word-break: break-all; }
               a:hover { text-decoration: underline; }
               img { max-width: 100%; height: auto; }
               table { max-width: 100%; border-collapse: collapse; }
@@ -332,25 +333,32 @@ const EmailDetailPage = () => {
       </div>
 
       {/* Email content - full height */}
-      <main className="flex-1 relative z-10">
-        {viewMode === "html" && hasHtml ? (
-          <iframe
-            ref={iframeRef}
-            title="Email Content"
-            className="w-full h-full border-0 bg-transparent"
-            style={{ minHeight: "calc(100vh - 220px)" }}
-            sandbox="allow-same-origin allow-scripts"
-            onLoad={writeIframeContent}
-          />
-        ) : (
-          <ScrollArea className="h-full">
-            <div className="container mx-auto px-4 py-6">
-              <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground/90 max-w-3xl">
-                {email.body_text || "(No content)"}
-              </div>
-            </div>
-          </ScrollArea>
-        )}
+      <main className="flex-1 relative z-10 pb-safe">
+        <div className="container mx-auto px-4 py-6">
+          <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-elegant">
+            {viewMode === "html" && hasHtml ? (
+              <iframe
+                ref={iframeRef}
+                title="Email Content"
+                className="w-full border-0 bg-transparent"
+                style={{ minHeight: "calc(100vh - 300px)" }}
+                sandbox="allow-same-origin allow-scripts"
+                onLoad={writeIframeContent}
+              />
+            ) : (
+              <ScrollArea className="h-full" style={{ maxHeight: "calc(100vh - 300px)" }}>
+                <div className="p-6">
+                  <div 
+                    className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground/90"
+                    style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+                  >
+                    {email.body_text || "(No content)"}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
