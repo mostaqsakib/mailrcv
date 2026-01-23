@@ -96,37 +96,66 @@ export const StatsSection = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Fetch stats function
+  const fetchStats = async () => {
+    try {
+      const { count: inboxCount } = await supabase
+        .from("email_aliases")
+        .select("*", { count: "exact", head: true });
+
+      const { count: emailCount } = await supabase
+        .from("received_emails")
+        .select("*", { count: "exact", head: true });
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: activeCount } = await supabase
+        .from("email_aliases")
+        .select("*", { count: "exact", head: true })
+        .gte("updated_at", today.toISOString());
+
+      setStats({
+        totalInboxes: inboxCount || 0,
+        totalEmails: emailCount || 0,
+        activeToday: activeCount || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const { count: inboxCount } = await supabase
-          .from("email_aliases")
-          .select("*", { count: "exact", head: true });
-
-        const { count: emailCount } = await supabase
-          .from("received_emails")
-          .select("*", { count: "exact", head: true });
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const { count: activeCount } = await supabase
-          .from("email_aliases")
-          .select("*", { count: "exact", head: true })
-          .gte("updated_at", today.toISOString());
-
-        setStats({
-          totalInboxes: inboxCount || 0,
-          totalEmails: emailCount || 0,
-          activeToday: activeCount || 0,
-        });
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchStats();
+  }, []);
+
+  // Realtime subscription for auto-refresh
+  useEffect(() => {
+    const channel = supabase
+      .channel('stats-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'email_aliases' },
+        () => {
+          console.log('Email aliases changed, refreshing stats...');
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'received_emails' },
+        () => {
+          console.log('Received emails changed, refreshing stats...');
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const statsData = [
