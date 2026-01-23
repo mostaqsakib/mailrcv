@@ -49,7 +49,7 @@ export const DownloadSection = () => {
                 
                 {/* Download button */}
                 <a 
-                  href="https://euiqflvrdraydkhwksmh.supabase.co/functions/v1/download-apk"
+                  href="/download"
                   className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold text-lg shadow-lg hover:shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
                 >
                   <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />

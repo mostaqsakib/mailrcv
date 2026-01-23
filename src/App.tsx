@@ -10,6 +10,7 @@ import { ThemeProvider } from "next-themes";
 const Index = lazy(() => import("./pages/Index"));
 const InboxPage = lazy(() => import("./pages/InboxPage"));
 const DomainsPage = lazy(() => import("./pages/DomainsPage"));
+const DownloadPage = lazy(() => import("./pages/DownloadPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback component
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/inbox/:username" element={<InboxPage />} />
               <Route path="/domains" element={<DomainsPage />} />
+              <Route path="/download" element={<DownloadPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
