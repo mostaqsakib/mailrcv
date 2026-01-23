@@ -22,6 +22,16 @@ const generateRandomPassword = () => {
   return password;
 };
 
+// Save session with password for later viewing
+const saveSession = (username: string, aliasId: string, token: string, password?: string) => {
+  localStorage.setItem(`${SESSION_KEY_PREFIX}${username}`, JSON.stringify({
+    alias_id: aliasId,
+    token: token,
+    password: password, // Store password for viewing in inbox
+    created_at: Date.now()
+  }));
+};
+
 export default function SecureInboxPage() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -124,12 +134,8 @@ export default function SecureInboxPage() {
         return;
       }
 
-      // Save session
-      localStorage.setItem(`${SESSION_KEY_PREFIX}${username}`, JSON.stringify({
-        alias_id: data.alias_id,
-        token: data.session_token,
-        created_at: Date.now()
-      }));
+      // Save session with password
+      saveSession(username!, data.alias_id, data.session_token, password);
 
       toast({
         title: "Inbox created!",
@@ -177,12 +183,8 @@ export default function SecureInboxPage() {
         return;
       }
 
-      // Save session
-      localStorage.setItem(`${SESSION_KEY_PREFIX}${username}`, JSON.stringify({
-        alias_id: data.alias_id,
-        token: data.session_token,
-        created_at: Date.now()
-      }));
+      // Save session with password
+      saveSession(username!, data.alias_id, data.session_token, password);
 
       toast({
         title: "Welcome back!",

@@ -14,7 +14,11 @@ import {
   ArrowLeft,
   Share2,
   Bell,
-  BellOff
+  BellOff,
+  Lock,
+  Eye,
+  EyeOff,
+  KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,12 +130,16 @@ const InboxPage = () => {
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [copied, setCopied] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
   const [forwardEmail, setForwardEmail] = useState("");
   const [showForward, setShowForward] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [savedPassword, setSavedPassword] = useState<string | null>(null);
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   
   
   const domainName = "mailrcv.site";
@@ -171,6 +179,22 @@ const InboxPage = () => {
       setEmails([]);
       setSelectedEmail(null);
       setDetailOpen(false);
+      
+      // Check for saved session with password
+      const sessionKey = `mailrcv_session_${username}`;
+      const sessionData = localStorage.getItem(sessionKey);
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          if (session.password) {
+            setSavedPassword(session.password);
+            setIsPasswordProtected(true);
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+      
       initializeInbox();
     }
   }, [username, initializeInbox]);
@@ -233,6 +257,15 @@ const InboxPage = () => {
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
   }, [username]);
+
+  const copyPassword = useCallback(async () => {
+    if (savedPassword) {
+      await navigator.clipboard.writeText(savedPassword);
+      setCopiedPassword(true);
+      toast.success("Password copied!");
+      setTimeout(() => setCopiedPassword(false), 2000);
+    }
+  }, [savedPassword]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -378,7 +411,15 @@ const InboxPage = () => {
             <div className="glass rounded-xl p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground mb-1">Your temporary inbox</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs text-muted-foreground">Your temporary inbox</p>
+                    {isPasswordProtected && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                        <Lock className="w-3 h-3" />
+                        Protected
+                      </span>
+                    )}
+                  </div>
                   <p className="font-mono font-medium text-primary text-lg truncate">{email}</p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -405,6 +446,51 @@ const InboxPage = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Password section for protected inboxes */}
+              {isPasswordProtected && savedPassword && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <KeyRound className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Password</p>
+                        <p className="font-mono font-medium text-sm truncate">
+                          {showPassword ? savedPassword : '••••••••••••'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => setShowPassword(!showPassword)}
+                        title={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={copyPassword}
+                        title="Copy password"
+                      >
+                        {copiedPassword ? (
+                          <Check className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Forward setup - collapsible */}
