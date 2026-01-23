@@ -204,7 +204,20 @@ export const HeroSection = () => {
                       type="text"
                       placeholder="enter-name"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                      onChange={(e) => {
+                        let value = e.target.value;
+                        // Auto-detect if user pasted full email
+                        if (value.includes('@')) {
+                          const emailMatch = value.match(/^([a-zA-Z0-9._-]+)@mailrcv\.site$/i);
+                          if (emailMatch) {
+                            value = emailMatch[1];
+                          } else {
+                            // Remove everything from @ onwards
+                            value = value.split('@')[0];
+                          }
+                        }
+                        setUsername(value.replace(/[^a-zA-Z0-9._-]/g, ""));
+                      }}
                       className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
                     />
                   </div>
