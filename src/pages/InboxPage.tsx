@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Mail, 
   Copy, 
@@ -14,7 +21,8 @@ import {
   ArrowLeft,
   Share2,
   Bell,
-  BellOff
+  BellOff,
+  Volume2
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +39,7 @@ import {
 import EmailDetailDialog from "@/components/EmailDetailDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNotifications } from "@/hooks/use-notifications";
-import { useNotificationSound } from "@/hooks/use-notification-sound";
+import { useNotificationSound, AVAILABLE_SOUNDS, type SoundType } from "@/hooks/use-notification-sound";
 
 // Memoized email item component for better performance
 const EmailItem = memo(({ 
@@ -120,7 +128,7 @@ const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { permission, requestPermission, showNotification, isSupported } = useNotifications();
-  const { playSound } = useNotificationSound();
+  const { playSound, selectedSound, changeSound } = useNotificationSound();
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [copied, setCopied] = useState(false);
@@ -130,6 +138,7 @@ const InboxPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
   
   const domainName = "mailrcv.site";
   const email = useMemo(() => `${username}@${domainName}`, [username]);
@@ -354,6 +363,15 @@ const InboxPage = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => setShowSoundSettings(prev => !prev)}
+                  className={`h-9 w-9 ${showSoundSettings ? "bg-primary/10 text-primary" : ""}`}
+                  title="Sound settings"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={toggleForward}
                   className={`h-9 w-9 ${showForward ? "bg-primary/10 text-primary" : ""}`}
                   title="Forward settings"
@@ -396,6 +414,36 @@ const InboxPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Sound settings - collapsible */}
+            {showSoundSettings && (
+              <div className="mt-4 p-4 rounded-xl glass animate-slide-up">
+                <p className="text-sm font-medium mb-3">🔔 Notification Sound:</p>
+                <div className="flex gap-2 items-center">
+                  <Select value={selectedSound} onValueChange={(value) => changeSound(value as SoundType)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select sound" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AVAILABLE_SOUNDS.map((sound) => (
+                        <SelectItem key={sound.id} value={sound.id}>
+                          {sound.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => playSound()}
+                    className="gap-2"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                    Test
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Forward setup - collapsible */}
             {showForward && (
