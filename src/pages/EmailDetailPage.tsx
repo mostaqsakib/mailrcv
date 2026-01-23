@@ -79,13 +79,26 @@ const EmailDetailPage = () => {
     const codeBorder = isDark ? '#27272a' : '#e4e4e7';
     const hrColor = isDark ? '#3f3f46' : '#e4e4e7';
 
+    const raw = email.body_html;
+    const looksLikeFullDoc = /<!doctype/i.test(raw) || /<html[\s>]/i.test(raw) || /<head[\s>]/i.test(raw);
+
+    // Some providers send "HTML" that is basically plain text with newlines.
+    // In that case we must preserve line breaks, otherwise everything collapses into one line.
+    const hasNewlines = raw.includes("\n") || raw.includes("\r");
+    const hasMeaningfulHtml = /<(br|p|div|table|tr|td|th|ul|ol|li|pre|blockquote|img|h1|h2|h3|style|body|head|html)[\s>]/i.test(raw);
+    const treatAsPlainTextHtml = hasNewlines && !hasMeaningfulHtml;
+
     const styleText = `
       * { box-sizing: border-box; }
       body {
         background: ${bgColor};
         color: ${textColor};
         margin: 0;
-        padding: 0;
+        padding: ${treatAsPlainTextHtml ? "24px" : "0"};
+        ${treatAsPlainTextHtml ? "white-space: pre-line;" : ""}
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.8;
         word-wrap: break-word;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -137,9 +150,6 @@ const EmailDetailPage = () => {
         background: rgba(34, 211, 238, 0.1) !important;
       }
     `;
-
-    const raw = email.body_html;
-    const looksLikeFullDoc = /<!doctype/i.test(raw) || /<html[\s>]/i.test(raw) || /<head[\s>]/i.test(raw);
 
     const scriptText = `
       function showCopyToast(message) {
