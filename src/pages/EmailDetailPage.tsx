@@ -70,7 +70,7 @@ const EmailDetailPage = () => {
     if (!doc) return;
 
     const isDark = resolvedTheme === 'dark';
-    const bgColor = isDark ? '#0c0c0e' : '#ffffff';
+    const bgColor = isDark ? '#0d1117' : '#ffffff';
     const textColor = isDark ? '#f4f4f5' : '#18181b';
     const linkColor = isDark ? '#22d3ee' : '#0891b2';
     const quoteColor = isDark ? '#a1a1aa' : '#71717a';
