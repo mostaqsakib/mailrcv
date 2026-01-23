@@ -7,14 +7,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // List files in the apk-downloads bucket to find the latest APK
+    // Get the public URL for the APK (fixed filename from CI)
+    const apkFileName = "mailrcv-latest.apk";
+    
+    const { data: urlData } = supabase
+      .storage
+      .from('apk-downloads')
+      .getPublicUrl(apkFileName);
+
+    // Check if file exists by trying to list it
     const { data: files, error: listError } = await supabase
       .storage
       .from('apk-downloads')
-      .list('', {
-        limit: 10,
-        sortBy: { column: 'created_at', order: 'desc' }
-      });
+      .list('', { search: apkFileName });
 
     console.log("Files in bucket:", files);
 
@@ -29,15 +34,15 @@ serve(async (req) => {
       );
     }
 
-    // Find the first APK file
-    const apkFile = files?.find(file => file.name.endsWith('.apk'));
+    // Check if APK exists
+    const apkExists = files?.some(file => file.name === apkFileName);
 
-    if (!apkFile) {
+    if (!apkExists) {
       console.log("No APK file found in storage");
       return new Response(
         JSON.stringify({ 
           error: "No APK available yet",
-          message: "Please upload an APK file to the storage bucket"
+          message: "APK will be available after the next CI build"
         }),
         { 
           status: 404,
@@ -45,12 +50,6 @@ serve(async (req) => {
         }
       );
     }
-
-    // Get the public URL for the APK
-    const { data: urlData } = supabase
-      .storage
-      .from('apk-downloads')
-      .getPublicUrl(apkFile.name);
 
     console.log("Redirecting to APK:", urlData.publicUrl);
 
