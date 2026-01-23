@@ -154,7 +154,7 @@ export const StatsSection = () => {
   ];
 
   return (
-    <section ref={sectionRef} className="py-12 sm:py-16 bg-background relative overflow-hidden">
+    <section ref={sectionRef} className="py-8 sm:py-10 bg-background relative overflow-hidden">
       <div className="container relative z-10 px-4">
         <div className="text-center mb-10">
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
