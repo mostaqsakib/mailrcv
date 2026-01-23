@@ -69,7 +69,8 @@ const EmailDetailPage = () => {
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (doc) {
         const isDark = resolvedTheme === 'dark';
-        const textColor = isDark ? '#e4e4e7' : '#18181b';
+        const bgColor = isDark ? '#0c0c0e' : '#ffffff';
+        const textColor = isDark ? '#f4f4f5' : '#18181b';
         const linkColor = isDark ? '#22d3ee' : '#0891b2';
         const quoteColor = isDark ? '#a1a1aa' : '#71717a';
         const quoteBorder = isDark ? '#3f3f46' : '#d4d4d8';
@@ -90,7 +91,7 @@ const EmailDetailPage = () => {
                 font-size: 15px;
                 line-height: 1.8;
                 color: ${textColor};
-                background: transparent;
+                background: ${bgColor};
                 margin: 0;
                 padding: 24px;
                 word-wrap: break-word;
