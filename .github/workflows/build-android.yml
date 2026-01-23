@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # Build/versioning source of truth for the native APK.
+      # This ensures Android "App info" and Capacitor App.getInfo() report the full version.
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
     
     steps:
       - name: Checkout code
@@ -105,6 +110,18 @@ jobs:
           
           # Apply google-services plugin at end of app build.gradle
           echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
+
+      - name: Set Android app version (versionName/versionCode)
+        run: |
+          echo "Setting Android versionName=${VERSION_NAME} versionCode=${VERSION_CODE}"
+
+          # Update versionCode (integer)
+          sed -i -E "s/versionCode[[:space:]]+[0-9]+/versionCode ${VERSION_CODE}/g" android/app/build.gradle
+
+          # Update versionName (string)
+          sed -i -E "s/versionName[[:space:]]+\"[^\"]*\"/versionName \"${VERSION_NAME}\"/g" android/app/build.gradle
+
+          echo "✅ Updated android/app/build.gradle version fields"
 
       - name: Build Debug APK
         working-directory: android
