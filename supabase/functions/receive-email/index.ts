@@ -202,6 +202,40 @@ Deno.serve(async (req) => {
 
     console.log("Email saved successfully:", savedEmail.id);
 
+    // Send push notification to registered devices
+    try {
+      const pushResponse = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            alias_id: alias.id,
+            title: `New Email from ${senderEmail}`,
+            body: emailData.subject || "(No Subject)",
+            data: {
+              email_id: savedEmail.id,
+              from: senderEmail,
+              subject: emailData.subject || "(No Subject)",
+            },
+          }),
+        }
+      );
+      
+      if (pushResponse.ok) {
+        const pushResult = await pushResponse.json();
+        console.log("Push notification result:", pushResult);
+      } else {
+        console.error("Push notification failed:", await pushResponse.text());
+      }
+    } catch (pushError) {
+      console.error("Error sending push notification:", pushError);
+      // Don't fail the whole request if push fails
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

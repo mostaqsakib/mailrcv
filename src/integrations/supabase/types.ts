@@ -85,6 +85,41 @@ export type Database = {
           },
         ]
       }
+      push_tokens: {
+        Row: {
+          alias_id: string | null
+          created_at: string
+          device_info: string | null
+          fcm_token: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          alias_id?: string | null
+          created_at?: string
+          device_info?: string | null
+          fcm_token: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          alias_id?: string | null
+          created_at?: string
+          device_info?: string | null
+          fcm_token?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_alias_id_fkey"
+            columns: ["alias_id"]
+            isOneToOne: false
+            referencedRelation: "email_aliases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       received_emails: {
         Row: {
           alias_id: string | null
