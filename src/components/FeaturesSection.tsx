@@ -50,14 +50,14 @@ export const FeaturesSection = () => {
           {features.map((feature, index) => (
             <div
               key={feature.title}
-              className="group p-7 rounded-2xl glass hover:glow transition-all duration-300 animate-slide-up"
+              className="group p-7 rounded-2xl glass hover:glow transition-all duration-300 animate-slide-up flex flex-col"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                 <feature.icon className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed flex-1">{feature.description}</p>
             </div>
           ))}
         </div>
