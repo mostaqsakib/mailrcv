@@ -34,21 +34,30 @@ export interface ReceivedEmail {
 // Default domain for the app
 const DEFAULT_DOMAIN = "mailrcv.site";
 
+// Cache the default domain to avoid repeated DB calls
+let cachedDefaultDomain: Domain | null = null;
+
 export async function getOrCreateDefaultDomain(): Promise<Domain | null> {
+  // Return cached if available
+  if (cachedDefaultDomain) return cachedDefaultDomain;
+
   // Check if default domain exists
   const { data: existing } = await supabase
     .from("domains")
-    .select("*")
+    .select("id, domain_name, is_verified, verification_code, forward_to_email, created_at")
     .eq("domain_name", DEFAULT_DOMAIN)
     .maybeSingle();
 
-  if (existing) return existing as Domain;
+  if (existing) {
+    cachedDefaultDomain = existing as Domain;
+    return cachedDefaultDomain;
+  }
 
   // Create default domain
   const { data: created, error } = await supabase
     .from("domains")
     .insert({ domain_name: DEFAULT_DOMAIN, is_verified: true })
-    .select()
+    .select("id, domain_name, is_verified, verification_code, forward_to_email, created_at")
     .single();
 
   if (error) {
@@ -56,7 +65,8 @@ export async function getOrCreateDefaultDomain(): Promise<Domain | null> {
     return null;
   }
 
-  return created as Domain;
+  cachedDefaultDomain = created as Domain;
+  return cachedDefaultDomain;
 }
 
 export async function getAllDomains(): Promise<Domain[]> {
@@ -139,9 +149,10 @@ export async function getAliasByUsername(username: string, domainName: string): 
 export async function getEmailsForAlias(aliasId: string): Promise<ReceivedEmail[]> {
   const { data, error } = await supabase
     .from("received_emails")
-    .select("*")
+    .select("id, alias_id, from_email, subject, body_text, body_html, received_at, is_read, is_forwarded")
     .eq("alias_id", aliasId)
-    .order("received_at", { ascending: false });
+    .order("received_at", { ascending: false })
+    .limit(50); // Limit initial load for performance
 
   if (error) {
     console.error("Error fetching emails:", error);
