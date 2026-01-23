@@ -11,7 +11,7 @@ import { Loader2, Upload, ArrowLeft, FileUp, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AdminPage = () => {
-  const [versionName, setVersionName] = useState("");
+  
   const [releaseNotes, setReleaseNotes] = useState("");
   const [isForceUpdate, setIsForceUpdate] = useState(false);
   const [adminKey, setAdminKey] = useState("");
@@ -60,7 +60,6 @@ const AdminPage = () => {
       const formData = new FormData();
       formData.append("admin_key", adminKey);
       formData.append("apk_file", selectedFile);
-      formData.append("version_name", versionName || "");
       formData.append("release_notes", releaseNotes || "");
       formData.append("is_force_update", isForceUpdate.toString());
 
@@ -78,7 +77,6 @@ const AdminPage = () => {
         });
         // Clear form
         setSelectedFile(null);
-        setVersionName("");
         setReleaseNotes("");
         setIsForceUpdate(false);
         if (fileInputRef.current) {
@@ -157,20 +155,6 @@ const AdminPage = () => {
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="versionName">Version Name (Optional)</Label>
-                <Input
-                  id="versionName"
-                  type="text"
-                  placeholder="e.g. 1.0.5 (auto-generated if empty)"
-                  value={versionName}
-                  onChange={(e) => setVersionName(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Leave empty for auto: 1.0.{'{next_version_code}'}
-                </p>
               </div>
 
               <div className="space-y-2">
