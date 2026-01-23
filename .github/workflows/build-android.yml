@@ -1,0 +1,99 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Add Android platform
+        run: npx cap add android || true
+
+      - name: Update Capacitor config for production
+        run: |
+          cat > capacitor.config.ts << 'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+
+          const config: CapacitorConfig = {
+            appId: 'app.lovable.5b514b7750f64ca2a8983ad7f05c46f1',
+            appName: 'mailrcv',
+            webDir: 'dist',
+            plugins: {
+              PushNotifications: {
+                presentationOptions: ["badge", "sound", "alert"],
+              },
+            },
+          };
+
+          export default config;
+          EOF
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Copy google-services.json if exists
+        run: |
+          if [ -f "google-services.json" ]; then
+            cp google-services.json android/app/google-services.json
+          fi
+        continue-on-error: true
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mailrcv-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ steps.date.outputs.date }}
+          name: APK Build ${{ steps.date.outputs.date }}
+          body: |
+            🤖 Automatic APK build from commit ${{ github.sha }}
+            
+            📱 Download the APK file below to install on your Android device.
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
