@@ -21,6 +21,9 @@ export const useAppUpdate = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [currentVersionCode, setCurrentVersionCode] = useState<number>(CURRENT_VERSION_CODE);
   const [currentVersionName, setCurrentVersionName] = useState<string>(CURRENT_VERSION_NAME);
+  const [isNativeVersionResolved, setIsNativeVersionResolved] = useState<boolean>(
+    !Capacitor.isNativePlatform()
+  );
 
   useEffect(() => {
     // On native builds, read the real installed version/build number.
@@ -38,6 +41,8 @@ export const useAppUpdate = () => {
         }
       } catch (err) {
         console.warn('Failed to read native app version info; falling back to constants.', err);
+      } finally {
+        setIsNativeVersionResolved(true);
       }
     };
 
@@ -45,6 +50,10 @@ export const useAppUpdate = () => {
   }, []);
 
   const checkForUpdate = async () => {
+    // Prevent a false-positive update prompt on native while we haven't loaded
+    // the real installed build/version yet.
+    if (Capacitor.isNativePlatform() && !isNativeVersionResolved) return;
+
     setIsChecking(true);
     try {
       const { data, error } = await supabase
@@ -60,6 +69,17 @@ export const useAppUpdate = () => {
       }
 
       if (!data) return;
+
+      // If the installed app already matches the latest release (by name OR build code),
+      // do not show any update prompt.
+      const isSameVersionName =
+        Boolean(currentVersionName) && data.version_name === currentVersionName;
+      const isSameVersionCode = data.version_code === currentVersionCode;
+      if (isSameVersionName || isSameVersionCode) {
+        setUpdateAvailable(false);
+        setLatestVersion(data);
+        return;
+      }
 
       // Only show prompt when backend version is strictly newer than installed app.
       if (data.version_code > currentVersionCode) {
@@ -93,12 +113,13 @@ export const useAppUpdate = () => {
     // Check for updates on mount
     checkForUpdate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentVersionCode]);
+  }, [currentVersionCode, isNativeVersionResolved]);
 
   return {
     updateAvailable,
     latestVersion,
     isChecking,
+    isReady: isNativeVersionResolved,
     checkForUpdate,
     dismissUpdate,
     goToDownload,

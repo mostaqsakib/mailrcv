@@ -41,14 +41,14 @@ const queryClient = new QueryClient({
 // App update checker component - only shows on native app
 const AppUpdateChecker = () => {
   const [isNative, setIsNative] = useState(false);
-  const { updateAvailable, latestVersion, dismissUpdate, goToDownload } = useAppUpdate();
+  const { updateAvailable, latestVersion, dismissUpdate, goToDownload, isReady, isChecking } = useAppUpdate();
 
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
   }, []);
 
   // Only show update dialog on native app
-  if (!isNative || !updateAvailable || !latestVersion) return null;
+  if (!isNative || !isReady || isChecking || !updateAvailable || !latestVersion) return null;
 
   return (
     <UpdateDialog
