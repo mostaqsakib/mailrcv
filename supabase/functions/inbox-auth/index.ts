@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +11,82 @@ interface AuthRequest {
   username: string;
   domain?: string;
   password?: string;
+}
+
+// Password hashing using Web Crypto API (PBKDF2)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  
+  // Combine salt and hash for storage
+  const hashArray = new Uint8Array(derivedBits);
+  const combined = new Uint8Array(salt.length + hashArray.length);
+  combined.set(salt);
+  combined.set(hashArray, salt.length);
+  
+  // Convert to base64 for storage
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  try {
+    const encoder = new TextEncoder();
+    
+    // Decode stored hash
+    const combined = Uint8Array.from(atob(storedHash), c => c.charCodeAt(0));
+    const salt = combined.slice(0, 16);
+    const storedHashBytes = combined.slice(16);
+    
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"]
+    );
+    
+    const derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      256
+    );
+    
+    const newHashBytes = new Uint8Array(derivedBits);
+    
+    // Constant-time comparison
+    if (newHashBytes.length !== storedHashBytes.length) return false;
+    let result = 0;
+    for (let i = 0; i < newHashBytes.length; i++) {
+      result |= newHashBytes[i] ^ storedHashBytes[i];
+    }
+    return result === 0;
+  } catch {
+    return false;
+  }
 }
 
 serve(async (req: Request) => {
@@ -139,9 +214,8 @@ serve(async (req: Request) => {
         }
       }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(password, salt);
+      // Hash password using Web Crypto API
+      const passwordHash = await hashPassword(password);
 
       // Create new password-protected alias
       const { data: newAlias, error: createError } = await supabase
@@ -163,7 +237,7 @@ serve(async (req: Request) => {
         );
       }
 
-      // Generate session token (simple approach - could use JWT for production)
+      // Generate session token
       const sessionToken = crypto.randomUUID();
 
       console.log(`Created password-protected inbox: ${username}@${domain}`);
@@ -202,8 +276,8 @@ serve(async (req: Request) => {
         );
       }
 
-      // Verify password
-      const isValid = await bcrypt.compare(password, existingAlias.password_hash!);
+      // Verify password using Web Crypto API
+      const isValid = await verifyPassword(password, existingAlias.password_hash!);
 
       if (!isValid) {
         return new Response(
