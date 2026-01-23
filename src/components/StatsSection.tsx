@@ -156,10 +156,10 @@ export const StatsSection = () => {
   return (
     <section ref={sectionRef} className="py-8 sm:py-10 bg-background relative overflow-hidden">
       <div className="container relative z-10 px-4">
-        <div className="text-center mb-10">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            📊 Live Stats
-          </p>
+        <div className="text-center mb-10 animate-fade-in">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
+            📊 <span className="gradient-text">Live Stats</span>
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
