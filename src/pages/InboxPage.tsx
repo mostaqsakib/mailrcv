@@ -32,6 +32,7 @@ import EmailDetailDialog from "@/components/EmailDetailDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useNotificationSound } from "@/hooks/use-notification-sound";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 // Memoized email item component for better performance
 const EmailItem = memo(({ 
@@ -121,6 +122,7 @@ const InboxPage = () => {
   const navigate = useNavigate();
   const { permission, requestPermission, showNotification, isSupported } = useNotifications();
   const { playSound } = useNotificationSound();
+  const { isNative, registerPush, isRegistered } = usePushNotifications();
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
   const [copied, setCopied] = useState(false);
@@ -170,8 +172,13 @@ const InboxPage = () => {
       setSelectedEmail(null);
       setDetailOpen(false);
       initializeInbox();
+      
+      // Register for push notifications on native platforms
+      if (isNative && !isRegistered) {
+        registerPush();
+      }
     }
-  }, [username, initializeInbox]);
+  }, [username, initializeInbox, isNative, isRegistered, registerPush]);
 
   // Set up realtime subscription for new emails
   useEffect(() => {
