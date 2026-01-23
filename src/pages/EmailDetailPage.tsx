@@ -23,6 +23,7 @@ const EmailDetailPage = () => {
   const { resolvedTheme } = useTheme();
   const [email, setEmail] = useState<ReceivedEmail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [iframeMounted, setIframeMounted] = useState(false);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -59,10 +60,11 @@ const EmailDetailPage = () => {
   }, [emailId, username, navigate]);
 
   const writeIframeContent = useCallback(() => {
-    if (email?.body_html && iframeRef.current) {
-      const iframe = iframeRef.current;
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (doc) {
+    if (!email?.body_html || !iframeRef.current) return;
+    
+    const iframe = iframeRef.current;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
         const isDark = resolvedTheme === 'dark';
         const textColor = isDark ? '#e4e4e7' : '#18181b';
         const linkColor = isDark ? '#22d3ee' : '#0891b2';
@@ -180,19 +182,26 @@ const EmailDetailPage = () => {
           </body>
           </html>
         `;
-        doc.open();
-        doc.write(htmlContent);
-        doc.close();
-      }
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
     }
   }, [email?.body_html, resolvedTheme]);
 
+  // Write content when both email and iframe are ready
   useEffect(() => {
-    if (email?.body_html) {
-      const timeoutId = setTimeout(writeIframeContent, 50);
-      return () => clearTimeout(timeoutId);
+    if (email?.body_html && iframeMounted) {
+      // Immediate write - no delay
+      writeIframeContent();
     }
-  }, [email?.body_html, writeIframeContent]);
+  }, [email?.body_html, iframeMounted, writeIframeContent]);
+
+  // Also re-write on theme change
+  useEffect(() => {
+    if (email?.body_html && iframeMounted && resolvedTheme) {
+      writeIframeContent();
+    }
+  }, [resolvedTheme]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -321,7 +330,12 @@ const EmailDetailPage = () => {
           <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-elegant">
             {hasHtml ? (
               <iframe
-                ref={iframeRef}
+                ref={(el) => {
+                  iframeRef.current = el;
+                  if (el && !iframeMounted) {
+                    setIframeMounted(true);
+                  }
+                }}
                 title="Email Content"
                 className="w-full border-0 bg-transparent"
                 style={{ minHeight: "calc(100vh - 280px)" }}
