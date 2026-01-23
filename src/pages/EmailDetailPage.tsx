@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Clock, 
   User, 
@@ -329,8 +330,60 @@ const EmailDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Background effects */}
+        <div className="fixed inset-0 grid-dots opacity-30 pointer-events-none" />
+        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
+        
+        {/* Header skeleton */}
+        <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-9 w-32 rounded-full" />
+                <div className="hidden sm:flex items-center gap-2">
+                  <Skeleton className="w-8 h-8 rounded-lg" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-9 w-9 rounded-md" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Email metadata skeleton */}
+        <div className="border-b border-border/50 bg-background/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-6">
+            <Skeleton className="h-8 w-3/4 mb-4" />
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+        </div>
+
+        {/* Email content skeleton */}
+        <main className="flex-1 relative z-10 pb-safe">
+          <div className="container mx-auto px-4 py-6">
+            <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-elegant p-6">
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-5/6" />
+                <Skeleton className="h-5 w-4/5" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-5 w-5/6" />
+                <Skeleton className="h-5 w-2/3" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-4/5" />
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
