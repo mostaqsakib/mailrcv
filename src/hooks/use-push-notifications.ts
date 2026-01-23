@@ -1,24 +1,54 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UsePushNotificationsReturn {
   isNative: boolean;
   token: string | null;
   isRegistered: boolean;
-  registerPush: () => Promise<void>;
+  registerPush: (aliasId?: string) => Promise<void>;
 }
 
 export const usePushNotifications = (): UsePushNotificationsReturn => {
   const [token, setToken] = useState<string | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [pendingAliasId, setPendingAliasId] = useState<string | null>(null);
   
   const isNative = Capacitor.isNativePlatform();
 
-  const registerPush = useCallback(async () => {
+  // Register token with backend
+  const registerTokenWithBackend = useCallback(async (fcmToken: string, aliasId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('register-push-token', {
+        body: {
+          alias_id: aliasId,
+          fcm_token: fcmToken,
+          device_info: `${Capacitor.getPlatform()} - ${navigator.userAgent}`,
+        },
+      });
+
+      if (error) {
+        console.error('Failed to register token with backend:', error);
+        return false;
+      }
+
+      console.log('Token registered with backend:', data);
+      return true;
+    } catch (err) {
+      console.error('Error registering token:', err);
+      return false;
+    }
+  }, []);
+
+  const registerPush = useCallback(async (aliasId?: string) => {
     if (!isNative) {
       console.log('Push notifications only work on native platforms');
       return;
+    }
+
+    if (aliasId) {
+      setPendingAliasId(aliasId);
     }
 
     try {
@@ -46,13 +76,15 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     if (!isNative) return;
 
     // Handle registration success
-    const registrationListener = PushNotifications.addListener('registration', (token: Token) => {
-      console.log('Push registration success, token:', token.value);
-      setToken(token.value);
+    const registrationListener = PushNotifications.addListener('registration', async (tokenData: Token) => {
+      console.log('Push registration success, token:', tokenData.value);
+      setToken(tokenData.value);
       setIsRegistered(true);
       
-      // Here you could save the token to your backend
-      // to send targeted push notifications later
+      // Register with backend if we have an alias ID
+      if (pendingAliasId) {
+        await registerTokenWithBackend(tokenData.value, pendingAliasId);
+      }
     });
 
     // Handle registration errors
@@ -89,7 +121,14 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       notificationListener.then(l => l.remove());
       actionListener.then(l => l.remove());
     };
-  }, [isNative]);
+  }, [isNative, pendingAliasId, registerTokenWithBackend]);
+
+  // Re-register token when alias changes
+  useEffect(() => {
+    if (token && pendingAliasId) {
+      registerTokenWithBackend(token, pendingAliasId);
+    }
+  }, [token, pendingAliasId, registerTokenWithBackend]);
 
   return {
     isNative,

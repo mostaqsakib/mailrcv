@@ -172,13 +172,15 @@ const InboxPage = () => {
       setSelectedEmail(null);
       setDetailOpen(false);
       initializeInbox();
-      
-      // Register for push notifications on native platforms
-      if (isNative && !isRegistered) {
-        registerPush();
-      }
     }
-  }, [username, initializeInbox, isNative, isRegistered, registerPush]);
+  }, [username, initializeInbox]);
+
+  // Register for push notifications when alias is ready
+  useEffect(() => {
+    if (isNative && alias?.id && !isRegistered) {
+      registerPush(alias.id);
+    }
+  }, [isNative, alias?.id, isRegistered, registerPush]);
 
   // Set up realtime subscription for new emails
   useEffect(() => {
