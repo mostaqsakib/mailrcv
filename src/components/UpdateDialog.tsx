@@ -37,19 +37,19 @@ export const UpdateDialog = ({
             </div>
             <div>
               <AlertDialogTitle className="text-left">
-                নতুন Version Available! 🎉
+                New version available
               </AlertDialogTitle>
               <p className="text-sm text-muted-foreground">v{versionName}</p>
             </div>
           </div>
           <AlertDialogDescription className="text-left">
-            {releaseNotes || "নতুন features এবং bug fixes সহ একটি নতুন version released হয়েছে।"}
+            {releaseNotes || "A new release is available with improvements and bug fixes."}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
           {!isForceUpdate && (
             <AlertDialogCancel className="w-full sm:w-auto">
-              পরে করবো
+              Later
             </AlertDialogCancel>
           )}
           <AlertDialogAction 
@@ -57,7 +57,7 @@ export const UpdateDialog = ({
             className="w-full sm:w-auto gap-2"
           >
             <Download className="w-4 h-4" />
-            Download করো
+            Download
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

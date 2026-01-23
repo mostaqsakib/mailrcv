@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 
 // Current app version - increment this when releasing new APK
 export const CURRENT_VERSION_CODE = 1;
@@ -17,6 +19,30 @@ export const useAppUpdate = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestVersion, setLatestVersion] = useState<AppVersion | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [currentVersionCode, setCurrentVersionCode] = useState<number>(CURRENT_VERSION_CODE);
+  const [currentVersionName, setCurrentVersionName] = useState<string>(CURRENT_VERSION_NAME);
+
+  useEffect(() => {
+    // On native builds, read the real installed version/build number.
+    // This avoids having to keep CURRENT_VERSION_* in sync manually.
+    const loadNativeVersion = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+      try {
+        const info = await App.getInfo();
+        const buildNumber = Number(info.build);
+        if (Number.isFinite(buildNumber) && buildNumber > 0) {
+          setCurrentVersionCode(buildNumber);
+        }
+        if (info.version) {
+          setCurrentVersionName(info.version);
+        }
+      } catch (err) {
+        console.warn('Failed to read native app version info; falling back to constants.', err);
+      }
+    };
+
+    loadNativeVersion();
+  }, []);
 
   const checkForUpdate = async () => {
     setIsChecking(true);
@@ -33,8 +59,14 @@ export const useAppUpdate = () => {
         return;
       }
 
-      if (data && data.version_code > CURRENT_VERSION_CODE) {
+      if (!data) return;
+
+      // Only show prompt when backend version is strictly newer than installed app.
+      if (data.version_code > currentVersionCode) {
         setUpdateAvailable(true);
+        setLatestVersion(data);
+      } else {
+        setUpdateAvailable(false);
         setLatestVersion(data);
       }
     } catch (err) {
@@ -60,7 +92,8 @@ export const useAppUpdate = () => {
   useEffect(() => {
     // Check for updates on mount
     checkForUpdate();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentVersionCode]);
 
   return {
     updateAvailable,
@@ -69,6 +102,6 @@ export const useAppUpdate = () => {
     checkForUpdate,
     dismissUpdate,
     goToDownload,
-    currentVersion: CURRENT_VERSION_NAME,
+    currentVersion: currentVersionName,
   };
 };
