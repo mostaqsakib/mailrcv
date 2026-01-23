@@ -18,7 +18,8 @@ import {
   Lock,
   Eye,
   EyeOff,
-  KeyRound
+  KeyRound,
+  LogOut
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -330,6 +331,15 @@ const InboxPage = () => {
     navigate("/");
   }, [navigate]);
 
+  const handleLogout = useCallback(() => {
+    // Remove session from localStorage
+    localStorage.removeItem(`mailrcv_session_${username}`);
+    setSavedPassword(null);
+    setIsPasswordProtected(false);
+    toast.success("Logged out successfully");
+    navigate("/");
+  }, [username, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center pt-safe pb-safe">
@@ -403,6 +413,17 @@ const InboxPage = () => {
                 >
                   <Forward className="w-4 h-4" />
                 </Button>
+                {isPasswordProtected && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleLogout}
+                    className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                )}
                 <ThemeToggle />
               </div>
             </div>

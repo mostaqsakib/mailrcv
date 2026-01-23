@@ -2,8 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Globe } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Globe, LogIn, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+// Session storage key prefix
+const SESSION_KEY_PREFIX = "mailrcv_session_";
 
 // Random word generator for fun email names
 const adjectives = ["swift", "cosmic", "stellar", "pixel", "cyber", "neon", "turbo", "hyper", "ultra", "mega", "quantum", "ninja", "shadow", "thunder", "frost", "blaze", "storm", "vapor", "drift", "glitch"];
@@ -20,6 +24,11 @@ export const HeroSection = () => {
   const [username, setUsername] = useState("");
   const [copied, setCopied] = useState(false);
   const [isSecure, setIsSecure] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
   const domain = "mailrcv.site";
 
@@ -31,6 +40,44 @@ export const HeroSection = () => {
       } else {
         navigate(`/inbox/${username.trim().toLowerCase()}`);
       }
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginUsername.trim() || !loginPassword) {
+      toast.error("Please enter username and password");
+      return;
+    }
+
+    setIsLoggingIn(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('inbox-auth', {
+        body: { action: 'login', username: loginUsername.trim().toLowerCase(), domain, password: loginPassword }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Save session with password
+      localStorage.setItem(`${SESSION_KEY_PREFIX}${loginUsername.trim().toLowerCase()}`, JSON.stringify({
+        alias_id: data.alias_id,
+        token: data.session_token,
+        password: loginPassword,
+        created_at: Date.now()
+      }));
+
+      toast.success("Login successful!");
+      navigate(`/inbox/${loginUsername.trim().toLowerCase()}`);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error("Login failed");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -171,6 +218,76 @@ export const HeroSection = () => {
               </Button>
             </div>
           </form>
+
+          {/* Login to existing secure inbox */}
+          <div className="mt-6 pt-6 border-t border-border/30">
+            {!showLoginForm ? (
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-foreground"
+                onClick={() => setShowLoginForm(true)}
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Login to existing secure inbox
+              </Button>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-3 animate-slide-up">
+                <p className="text-sm font-medium text-center mb-3">Login to Secure Inbox</p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    placeholder="username"
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                    className="flex-1 font-mono"
+                  />
+                  <span className="text-muted-foreground font-mono text-sm">@{domain}</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowLoginForm(false);
+                      setLoginUsername("");
+                      setLoginPassword("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoggingIn}>
+                    {isLoggingIn ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Login
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
 
           {/* Hint text */}
           <p className="mt-4 text-xs sm:text-sm text-muted-foreground/60">
