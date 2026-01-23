@@ -85,7 +85,9 @@ const EmailDetailPage = () => {
     // Some providers send "HTML" that is basically plain text with newlines.
     // In that case we must preserve line breaks, otherwise everything collapses into one line.
     const hasNewlines = raw.includes("\n") || raw.includes("\r");
-    const hasMeaningfulHtml = /<(br|p|div|table|tr|td|th|ul|ol|li|pre|blockquote|img|h1|h2|h3|style|body|head|html)[\s>]/i.test(raw);
+    // NOTE: Some senders wrap plain text in a single <div>/<span>/etc. That should still be treated as plain text.
+    // We only consider it "meaningful HTML" if it contains true layout/line-break elements.
+    const hasMeaningfulHtml = /<(br\s*\/?>|p|pre|blockquote|table|tr|td|th|ul|ol|li|h1|h2|h3)[\s>]/i.test(raw);
     const treatAsPlainTextHtml = hasNewlines && !hasMeaningfulHtml;
 
     const styleText = `
@@ -102,6 +104,14 @@ const EmailDetailPage = () => {
         word-wrap: break-word;
         overflow-wrap: anywhere;
         word-break: break-word;
+      }
+      ${
+        treatAsPlainTextHtml
+          ? `
+      /* Preserve newlines even if the sender wrapped the text inside elements */
+      body * { white-space: inherit; }
+      `
+          : ""
       }
       a { color: ${linkColor}; }
       a:hover { text-decoration: underline; }
