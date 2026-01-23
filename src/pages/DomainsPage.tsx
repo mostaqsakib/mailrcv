@@ -66,7 +66,7 @@ const DomainsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative pt-safe pb-safe">
       {/* Background effects */}
       <div className="fixed inset-0 grid-dots opacity-30 pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
