@@ -1,24 +1,44 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const GITHUB_REPO = "mostaqsakib/mailrcv";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   try {
-    // Fetch the latest release from GitHub API
-    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
-    console.log("Fetching latest release from:", apiUrl);
-    
-    const response = await fetch(apiUrl, {
-      headers: {
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "MailRCV-App"
-      }
-    });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!response.ok) {
-      console.error("GitHub API error:", response.status, await response.text());
+    // List files in the apk-downloads bucket to find the latest APK
+    const { data: files, error: listError } = await supabase
+      .storage
+      .from('apk-downloads')
+      .list('', {
+        limit: 10,
+        sortBy: { column: 'created_at', order: 'desc' }
+      });
+
+    console.log("Files in bucket:", files);
+
+    if (listError) {
+      console.error("Error listing files:", listError);
       return new Response(
-        JSON.stringify({ error: "Could not fetch latest release" }),
+        JSON.stringify({ error: "Could not list APK files", details: listError.message }),
+        { 
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    // Find the first APK file
+    const apkFile = files?.find(file => file.name.endsWith('.apk'));
+
+    if (!apkFile) {
+      console.log("No APK file found in storage");
+      return new Response(
+        JSON.stringify({ 
+          error: "No APK available yet",
+          message: "Please upload an APK file to the storage bucket"
+        }),
         { 
           status: 404,
           headers: { "Content-Type": "application/json" }
@@ -26,40 +46,26 @@ serve(async (req) => {
       );
     }
 
-    const release = await response.json();
-    console.log("Latest release tag:", release.tag_name);
-    console.log("Assets:", release.assets?.map((a: any) => a.name));
+    // Get the public URL for the APK
+    const { data: urlData } = supabase
+      .storage
+      .from('apk-downloads')
+      .getPublicUrl(apkFile.name);
 
-    // Find the APK asset
-    const apkAsset = release.assets?.find((asset: any) => 
-      asset.name.endsWith('.apk')
-    );
+    console.log("Redirecting to APK:", urlData.publicUrl);
 
-    if (!apkAsset) {
-      console.error("No APK found in release assets");
-      return new Response(
-        JSON.stringify({ error: "No APK found in latest release" }),
-        { 
-          status: 404,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
-    }
-
-    console.log("Redirecting to APK:", apkAsset.browser_download_url);
-
-    // Redirect to the actual APK download URL
+    // Redirect to the APK download URL
     return new Response(null, {
       status: 302,
       headers: {
-        "Location": apkAsset.browser_download_url,
+        "Location": urlData.publicUrl,
         "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: "Download failed" }),
+      JSON.stringify({ error: "Download failed", details: String(error) }),
       { 
         status: 500,
         headers: { "Content-Type": "application/json" }
