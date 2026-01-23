@@ -15,6 +15,7 @@ const EmailDetailPage = lazy(() => import("./pages/EmailDetailPage"));
 const SecureInboxPage = lazy(() => import("./pages/SecureInboxPage"));
 const DomainsPage = lazy(() => import("./pages/DomainsPage"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback component
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/secure/:username" element={<SecureInboxPage />} />
               <Route path="/domains" element={<DomainsPage />} />
               <Route path="/download" element={<DownloadPage />} />
+              <Route path="/admin-version" element={<AdminPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
