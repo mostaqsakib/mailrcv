@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -21,6 +22,7 @@ import { deleteEmail, markEmailAsRead } from "@/lib/email-service";
 const EmailDetailPage = () => {
   const { username, emailId } = useParams<{ username: string; emailId: string }>();
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
   const [email, setEmail] = useState<ReceivedEmail | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"text" | "html">("html");
@@ -69,6 +71,15 @@ const EmailDetailPage = () => {
       const iframe = iframeRef.current;
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (doc) {
+        const isDark = resolvedTheme === 'dark';
+        const textColor = isDark ? '#e4e4e7' : '#18181b';
+        const linkColor = isDark ? '#22d3ee' : '#0891b2';
+        const quoteColor = isDark ? '#a1a1aa' : '#71717a';
+        const quoteBorder = isDark ? '#3f3f46' : '#d4d4d8';
+        const codeBg = isDark ? '#18181b' : '#f4f4f5';
+        const codeBorder = isDark ? '#27272a' : '#e4e4e7';
+        const hrColor = isDark ? '#3f3f46' : '#e4e4e7';
+        
         const htmlContent = `
           <!DOCTYPE html>
           <html>
@@ -81,7 +92,7 @@ const EmailDetailPage = () => {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                 font-size: 15px;
                 line-height: 1.7;
-                color: #e4e4e7;
+                color: ${textColor};
                 background: transparent;
                 margin: 0;
                 padding: 24px;
@@ -89,27 +100,28 @@ const EmailDetailPage = () => {
                 overflow-wrap: anywhere;
                 word-break: break-word;
               }
-              a { color: #22d3ee; word-break: break-all; }
+              a { color: ${linkColor}; word-break: break-all; }
               a:hover { text-decoration: underline; }
               img { max-width: 100%; height: auto; }
               table { max-width: 100%; border-collapse: collapse; }
               td, th { padding: 8px; }
               blockquote {
-                border-left: 3px solid #3f3f46;
+                border-left: 3px solid ${quoteBorder};
                 margin: 16px 0;
                 padding-left: 16px;
-                color: #a1a1aa;
+                color: ${quoteColor};
               }
               pre, code {
-                background: #18181b;
+                background: ${codeBg};
                 border-radius: 6px;
                 font-family: 'Monaco', 'Menlo', monospace;
                 font-size: 13px;
+                color: ${textColor};
               }
-              pre { padding: 16px; overflow-x: auto; border: 1px solid #27272a; }
+              pre { padding: 16px; overflow-x: auto; border: 1px solid ${codeBorder}; }
               code { padding: 2px 6px; }
               pre code { padding: 0; background: transparent; }
-              hr { border: none; border-top: 1px solid #3f3f46; margin: 16px 0; }
+              hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
               .tap-copy-hint {
                 position: fixed;
                 bottom: 20px;
@@ -131,7 +143,7 @@ const EmailDetailPage = () => {
                 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
               }
               .copy-highlight {
-                outline: 2px solid #22d3ee !important;
+                outline: 2px solid ${linkColor} !important;
                 outline-offset: 2px;
                 background: rgba(34, 211, 238, 0.1) !important;
               }
@@ -178,7 +190,7 @@ const EmailDetailPage = () => {
         doc.close();
       }
     }
-  }, [email?.body_html, viewMode]);
+  }, [email?.body_html, viewMode, resolvedTheme]);
 
   useEffect(() => {
     if (viewMode === "html" && email?.body_html) {
