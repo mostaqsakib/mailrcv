@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Globe, LogIn, Eye, EyeOff } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,62 +22,105 @@ const generateRandomName = () => {
 
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordField, setShowPasswordField] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isSecure, setIsSecure] = useState(false);
-  const [showLoginForm, setShowLoginForm] = useState(false);
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const domain = "mailrcv.site";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim()) {
-      if (isSecure) {
-        navigate(`/secure/${username.trim().toLowerCase()}`);
-      } else {
-        navigate(`/inbox/${username.trim().toLowerCase()}`);
-      }
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginUsername.trim() || !loginPassword) {
-      toast.error("Please enter username and password");
+    if (!username.trim()) {
+      toast.error("Please enter a username");
       return;
     }
 
-    setIsLoggingIn(true);
+    const cleanUsername = username.trim().toLowerCase();
+
+    // If no password, go to public inbox
+    if (!password) {
+      navigate(`/inbox/${cleanUsername}`);
+      return;
+    }
+
+    // With password - check if inbox exists and handle accordingly
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('inbox-auth', {
-        body: { action: 'login', username: loginUsername.trim().toLowerCase(), domain, password: loginPassword }
+      // First check if inbox exists
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('inbox-auth', {
+        body: { action: 'check', username: cleanUsername, domain }
       });
 
-      if (error) throw error;
+      if (checkError) throw checkError;
 
-      if (data.error) {
-        toast.error(data.error);
-        return;
+      if (checkData.exists) {
+        if (!checkData.is_password_protected) {
+          toast.error("This is a public inbox, remove password to access");
+          setIsLoading(false);
+          return;
+        }
+
+        // Try to login
+        const { data: loginData, error: loginError } = await supabase.functions.invoke('inbox-auth', {
+          body: { action: 'login', username: cleanUsername, domain, password }
+        });
+
+        if (loginError) throw loginError;
+
+        if (loginData.error) {
+          toast.error(loginData.error);
+          setIsLoading(false);
+          return;
+        }
+
+        // Save session
+        localStorage.setItem(`${SESSION_KEY_PREFIX}${cleanUsername}`, JSON.stringify({
+          alias_id: loginData.alias_id,
+          token: loginData.session_token,
+          password: password,
+          created_at: Date.now()
+        }));
+
+        toast.success("Login successful!");
+        navigate(`/inbox/${cleanUsername}`);
+      } else {
+        // Create new secure inbox
+        if (password.length < 6) {
+          toast.error("Password must be at least 6 characters");
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: registerData, error: registerError } = await supabase.functions.invoke('inbox-auth', {
+          body: { action: 'register', username: cleanUsername, domain, password }
+        });
+
+        if (registerError) throw registerError;
+
+        if (registerData.error) {
+          toast.error(registerData.error);
+          setIsLoading(false);
+          return;
+        }
+
+        // Save session
+        localStorage.setItem(`${SESSION_KEY_PREFIX}${cleanUsername}`, JSON.stringify({
+          alias_id: registerData.alias_id,
+          token: registerData.session_token,
+          password: password,
+          created_at: Date.now()
+        }));
+
+        toast.success("Secure inbox created!");
+        navigate(`/inbox/${cleanUsername}`);
       }
-
-      // Save session with password
-      localStorage.setItem(`${SESSION_KEY_PREFIX}${loginUsername.trim().toLowerCase()}`, JSON.stringify({
-        alias_id: data.alias_id,
-        token: data.session_token,
-        password: loginPassword,
-        created_at: Date.now()
-      }));
-
-      toast.success("Login successful!");
-      navigate(`/inbox/${loginUsername.trim().toLowerCase()}`);
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error("Login failed");
+      console.error('Auth error:', error);
+      toast.error("Something went wrong");
     } finally {
-      setIsLoggingIn(false);
+      setIsLoading(false);
     }
   };
 
@@ -134,7 +177,7 @@ export const HeroSection = () => {
             <div className="flex flex-col gap-4 p-5 sm:p-6 rounded-3xl bg-card/90 dark:bg-gradient-to-b dark:from-background/80 dark:to-background/40 backdrop-blur-xl border border-border/40 dark:border-primary/20 shadow-2xl dark:shadow-[0_0_50px_-10px] dark:shadow-primary/40">
               {/* Input row with random button */}
               <div className="flex items-center gap-3">
-                {/* Main input container - no separate glow div */}
+                {/* Main input container */}
                 <div className="flex-1 relative group">
                   <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-4 gap-3 border border-border/50 dark:border-primary/20 group-hover:border-primary/40 transition-all duration-300 group-focus-within:border-primary group-focus-within:shadow-[0_0_20px_-5px] group-focus-within:shadow-primary/50">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
@@ -187,107 +230,69 @@ export const HeroSection = () => {
                 </Button>
               </div>
 
-              {/* Inbox type toggle */}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={!isSecure ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsSecure(false)}
-                  className={`flex-1 rounded-xl h-11 ${!isSecure ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
-                >
-                  <Globe className="w-4 h-4 mr-2" />
-                  Public Inbox
-                </Button>
-                <Button
-                  type="button"
-                  variant={isSecure ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsSecure(true)}
-                  className={`flex-1 rounded-xl h-11 ${isSecure ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Password Protected
-                </Button>
-              </div>
+              {/* Password toggle button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordField(!showPasswordField);
+                  if (showPasswordField) setPassword("");
+                }}
+                className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Lock className="w-4 h-4" />
+                <span>{showPasswordField ? "Remove password protection" : "Add password protection"}</span>
+                {showPasswordField ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {/* Password input - collapsible */}
+              {showPasswordField && (
+                <div className="relative animate-slide-up">
+                  <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/20 focus-within:border-primary transition-all duration-300">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4 text-primary" />
+                    </div>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter password (min 6 chars)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-base text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground/60 mt-2 text-center">
+                    With password: creates secure inbox or logs in to existing one
+                  </p>
+                </div>
+              )}
 
               {/* Submit button */}
-              <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-14 text-base font-semibold shadow-lg hover:shadow-xl dark:shadow-primary/20 dark:hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                {isSecure ? 'Create Secure Inbox' : 'Open Inbox'}
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <Button 
+                type="submit" 
+                variant="hero" 
+                size="lg" 
+                className="w-full rounded-xl h-14 text-base font-semibold shadow-lg hover:shadow-xl dark:shadow-primary/20 dark:hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    {password ? "Open Secure Inbox" : "Open Inbox"}
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
             </div>
           </form>
-
-          {/* Login to existing secure inbox */}
-          <div className="mt-6 pt-6 border-t border-border/30">
-            {!showLoginForm ? (
-              <Button
-                variant="ghost"
-                className="w-full text-muted-foreground hover:text-foreground"
-                onClick={() => setShowLoginForm(true)}
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Login to existing secure inbox
-              </Button>
-            ) : (
-              <form onSubmit={handleLogin} className="space-y-3 animate-slide-up">
-                <p className="text-sm font-medium text-center mb-3">Login to Secure Inbox</p>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    placeholder="username"
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
-                    className="flex-1 font-mono"
-                  />
-                  <span className="text-muted-foreground font-mono text-sm">@{domain}</span>
-                </div>
-                <div className="relative">
-                  <Input
-                    type={showLoginPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  >
-                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      setShowLoginForm(false);
-                      setLoginUsername("");
-                      setLoginPassword("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="flex-1" disabled={isLoggingIn}>
-                    {isLoggingIn ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <LogIn className="w-4 h-4 mr-2" />
-                        Login
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
 
           {/* Hint text */}
           <p className="mt-4 text-xs sm:text-sm text-muted-foreground/60">
