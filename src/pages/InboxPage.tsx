@@ -157,23 +157,26 @@ const InboxPage = () => {
   const initializeInbox = useCallback(async () => {
     setLoading(true);
     try {
+      // Get default domain first (cached after first call)
       const defaultDomain = await getOrCreateDefaultDomain();
       if (!defaultDomain) {
         toast.error("Failed to initialize inbox");
         return;
       }
 
+      // Get or create alias
       const aliasData = await getOrCreateAlias(username!, defaultDomain.id);
       if (!aliasData) {
         toast.error("Failed to create inbox");
         return;
       }
       
+      // Set alias immediately so UI can render, then fetch emails
       setAlias(aliasData);
       setForwardEmail(aliasData.forward_to_email || "");
 
-      const emailsData = await getEmailsForAlias(aliasData.id);
-      setEmails(emailsData);
+      // Fetch emails in background (non-blocking for UI)
+      getEmailsForAlias(aliasData.id).then(setEmails);
     } catch (error) {
       console.error("Error initializing inbox:", error);
       toast.error("Failed to load inbox");
