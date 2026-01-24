@@ -491,6 +491,15 @@ const EmailDetailPage = () => {
               if (/[A-Za-z]/.test(match) && /\\d/.test(match)) {
                 // Skip common words/abbreviations
                 if (['HTTPS', 'HTTP', 'HTML', 'JSON', 'UTF8'].includes(match.toUpperCase())) return;
+                
+                // Skip if this looks like part of an email address (followed by @)
+                const emailCheckRegex = new RegExp('\\\\b' + match + '@', 'i');
+                if (emailCheckRegex.test(text)) return;
+                
+                // Skip if preceded by @ (part of email domain or mention)
+                const atPrefixRegex = new RegExp('@' + match + '\\\\b', 'i');
+                if (atPrefixRegex.test(text)) return;
+                
                 const regex = new RegExp('\\\\b' + match + '\\\\b', 'g');
                 html = html.replace(regex, '<span class="verify-code" data-code="' + match + '">' + match + '</span>');
               }
