@@ -843,7 +843,7 @@ const EmailDetailPage = () => {
                 title="Email Content"
                 className="w-full border-0 bg-transparent"
                 style={{ minHeight: "calc(100vh - 280px)" }}
-                sandbox="allow-same-origin allow-scripts"
+                 sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
                 srcDoc="<!DOCTYPE html><html><body></body></html>"
                 onLoad={() => writeIframeContent()}
               />
