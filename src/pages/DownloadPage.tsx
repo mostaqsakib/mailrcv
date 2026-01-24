@@ -17,7 +17,7 @@ const DownloadPage = () => {
 
         if (error || !data?.download_url) {
           // Fallback to GitHub releases
-          window.location.href = "https://github.com/Digitaliz/mailrcv/releases/latest";
+          window.location.href = "https://github.com/mostaqsakib/mailrcv/releases/latest";
           return;
         }
 
@@ -40,7 +40,7 @@ const DownloadPage = () => {
           <p className="text-muted-foreground">
             Try downloading from{" "}
             <a 
-              href="https://github.com/Digitaliz/mailrcv/releases/latest"
+              href="https://github.com/mostaqsakib/mailrcv/releases/latest"
               className="text-primary hover:underline"
             >
               GitHub Releases
@@ -59,7 +59,7 @@ const DownloadPage = () => {
         <p className="text-muted-foreground">
           If download doesn't start,{" "}
           <a 
-            href="https://github.com/Digitaliz/mailrcv/releases/latest"
+            href="https://github.com/mostaqsakib/mailrcv/releases/latest"
             className="text-primary hover:underline"
           >
             click here
