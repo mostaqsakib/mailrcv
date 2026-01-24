@@ -358,6 +358,73 @@ const EmailDetailPage = () => {
         });
       }
 
+      // Convert plain text URLs to clickable links
+      function detectAndWrapUrls() {
+        const walker = document.createTreeWalker(
+          document.body,
+          NodeFilter.SHOW_TEXT,
+          null,
+          false
+        );
+
+        const textNodes = [];
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          // Skip if parent is already a link, script, style
+          if (node.parentElement && 
+              !['SCRIPT', 'STYLE', 'A'].includes(node.parentElement.tagName)) {
+            textNodes.push(node);
+          }
+        }
+
+        // URL pattern - matches http, https, and www URLs
+        const urlPattern = /(https?:\\/\\/[^\\s<>]+|www\\.[^\\s<>]+)/gi;
+
+        textNodes.forEach(node => {
+          const text = node.textContent;
+          if (!urlPattern.test(text)) return;
+          urlPattern.lastIndex = 0;
+
+          const fragment = document.createDocumentFragment();
+          let lastIndex = 0;
+          let match;
+
+          while ((match = urlPattern.exec(text)) !== null) {
+            // Add text before the URL
+            if (match.index > lastIndex) {
+              fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            }
+
+            // Create link element
+            const link = document.createElement('a');
+            let url = match[0];
+            // Add protocol if missing
+            if (url.startsWith('www.')) {
+              url = 'https://' + url;
+            }
+            link.href = url;
+            link.textContent = match[0];
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+            fragment.appendChild(link);
+
+            lastIndex = match.index + match[0].length;
+          }
+
+          // Add remaining text
+          if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+          }
+
+          if (fragment.childNodes.length > 0) {
+            node.parentNode.replaceChild(fragment, node);
+          }
+        });
+      }
+
+      // Run URL detection first
+      detectAndWrapUrls();
+
       // OTP/Verification code detection and wrapping
       function detectAndWrapCodes() {
         const walker = document.createTreeWalker(
