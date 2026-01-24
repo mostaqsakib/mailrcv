@@ -2,9 +2,23 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'  # Only trigger on version tags like v1.0.1, v2.0.0, etc.
   workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name (e.g., 1.0.5)'
+        required: true
+        default: '1.0.0'
+      release_notes:
+        description: 'Release notes (optional)'
+        required: false
+        default: ''
+      force_update:
+        description: 'Force users to update?'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -12,14 +26,30 @@ jobs:
     permissions:
       contents: write
     env:
-      # Build/versioning source of truth for the native APK.
-      # This ensures Android "App info" and Capacitor App.getInfo() report the full version.
+      # For tag-based releases: extract version from tag (v1.0.5 -> 1.0.5)
+      # For manual dispatch: use input version_name
+      # VERSION_CODE is still run_number to ensure unique incrementing build numbers
       VERSION_CODE: ${{ github.run_number }}
-      VERSION_NAME: 1.0.${{ github.run_number }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Determine version name
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            # Extract version from tag (remove 'v' prefix)
+            TAG_NAME="${{ github.ref_name }}"
+            VERSION_NAME="${TAG_NAME#v}"
+            echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+            echo "📦 Building from tag: ${TAG_NAME} -> version ${VERSION_NAME}"
+          else
+            # Use manual input or default
+            VERSION_NAME="${{ github.event.inputs.version_name || '1.0.0' }}"
+            echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+            echo "📦 Building manually with version: ${VERSION_NAME}"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -113,6 +143,7 @@ jobs:
 
       - name: Set Android app version (versionName/versionCode)
         run: |
+          VERSION_NAME="${{ steps.version.outputs.version_name }}"
           echo "Setting Android versionName=${VERSION_NAME} versionCode=${VERSION_CODE}"
 
           # Update versionCode (integer)
@@ -136,6 +167,19 @@ jobs:
         run: |
           SUPABASE_URL="https://euiqflvrdraydkhwksmh.supabase.co"
           ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1aXFmbHZyZHJheWRraHdrc21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjQyNjAsImV4cCI6MjA4NDYwMDI2MH0.BL1146FYVxNnsz_eGASMlILgQCDNfmTMPZQMOsEZA3o"
+          VERSION_NAME="${{ steps.version.outputs.version_name }}"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+          FORCE_UPDATE="${{ github.event.inputs.force_update }}"
+          
+          # Default release notes if not provided
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="🚀 Version ${VERSION_NAME}\\n\\n• Latest improvements and bug fixes\\n• Build #${VERSION_CODE}"
+          fi
+          
+          # Default force_update to false
+          if [ -z "$FORCE_UPDATE" ] || [ "$FORCE_UPDATE" != "true" ]; then
+            FORCE_UPDATE="false"
+          fi
           
           echo "Updating app version in database: version_code=${VERSION_CODE}, version_name=${VERSION_NAME}"
           
@@ -149,7 +193,8 @@ jobs:
             -d "{
               \"version_code\": ${VERSION_CODE},
               \"version_name\": \"${VERSION_NAME}\",
-              \"release_notes\": \"🚀 নতুন বিল্ড - Build #${VERSION_CODE}\\n\\n• Latest improvements and bug fixes\\n• Built from commit: ${{ github.sha }}\",
+              \"release_notes\": \"${RELEASE_NOTES}\",
+              \"is_force_update\": ${FORCE_UPDATE},
               \"download_url\": \"https://mailrcv.site/download\"
             }" \
             && echo "✅ App version updated in database: v${VERSION_NAME} (code: ${VERSION_CODE})" \
@@ -161,21 +206,19 @@ jobs:
           name: mailrcv-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: build-${{ steps.date.outputs.date }}
-          name: APK Build ${{ steps.date.outputs.date }}
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version_name) }}
+          name: MailRCV v${{ steps.version.outputs.version_name }}
           body: |
-            🤖 Automatic APK build from commit ${{ github.sha }}
+            📱 **MailRCV v${{ steps.version.outputs.version_name }}** (Build #${{ env.VERSION_CODE }})
             
-            📱 Download the APK file below to install on your Android device.
+            ${{ github.event.inputs.release_notes || '🚀 Latest improvements and bug fixes' }}
             
-            🔗 Direct download: https://mailrcv.site/download
+            ---
+            📥 Download the APK file below to install on your Android device.
+            🔗 Or visit: https://mailrcv.site/download
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
