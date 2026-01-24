@@ -150,8 +150,62 @@ const EmailDetailPage = () => {
       `
           : ""
       }
-      a { color: ${linkColor}; }
-      a:hover { text-decoration: underline; }
+      a { 
+        color: ${linkColor}; 
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      a:hover { 
+        text-decoration: underline; 
+        opacity: 0.8;
+      }
+      /* Link action popup */
+      .link-popup {
+        position: fixed;
+        background: ${isDark ? '#1f2937' : '#ffffff'};
+        border: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
+        border-radius: 12px;
+        padding: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 160px;
+        animation: popIn 0.15s ease-out;
+      }
+      @keyframes popIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      .link-popup button {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border: none;
+        background: transparent;
+        color: ${textColor};
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background 0.15s;
+        text-align: left;
+      }
+      .link-popup button:hover {
+        background: ${isDark ? '#374151' : '#f3f4f6'};
+      }
+      .link-popup button.primary {
+        color: ${linkColor};
+      }
+      .link-popup-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+      }
       img { max-width: 100%; height: auto; }
       table { max-width: 100%; }
       blockquote {
@@ -392,18 +446,86 @@ const EmailDetailPage = () => {
       // Run OTP detection after DOM is ready
       detectAndWrapCodes();
 
-      // Make all links open in new tab/window (prevents blank screen in iframe)
+      // Link popup functionality
+      let currentPopup = null;
+      let currentOverlay = null;
+
+      function closePopup() {
+        if (currentPopup) {
+          currentPopup.remove();
+          currentPopup = null;
+        }
+        if (currentOverlay) {
+          currentOverlay.remove();
+          currentOverlay = null;
+        }
+      }
+
+      function showLinkPopup(link, e) {
+        e.preventDefault();
+        closePopup();
+
+        const href = link.href;
+        const rect = link.getBoundingClientRect();
+
+        // Create overlay
+        currentOverlay = document.createElement('div');
+        currentOverlay.className = 'link-popup-overlay';
+        currentOverlay.onclick = closePopup;
+        document.body.appendChild(currentOverlay);
+
+        // Create popup
+        currentPopup = document.createElement('div');
+        currentPopup.className = 'link-popup';
+        
+        currentPopup.innerHTML = \`
+          <button class="primary" data-action="open">
+            <span>🔗</span> Open Link
+          </button>
+          <button data-action="copy">
+            <span>📋</span> Copy Link
+          </button>
+        \`;
+
+        // Position popup
+        let top = rect.bottom + 8;
+        let left = rect.left;
+        
+        // Adjust if too close to bottom
+        if (top + 100 > window.innerHeight) {
+          top = rect.top - 100;
+        }
+        // Adjust if too close to right
+        if (left + 160 > window.innerWidth) {
+          left = window.innerWidth - 170;
+        }
+
+        currentPopup.style.top = top + 'px';
+        currentPopup.style.left = Math.max(10, left) + 'px';
+
+        // Add click handlers
+        currentPopup.querySelector('[data-action="open"]').onclick = () => {
+          window.open(href, '_blank', 'noopener,noreferrer');
+          closePopup();
+        };
+
+        currentPopup.querySelector('[data-action="copy"]').onclick = () => {
+          navigator.clipboard.writeText(href).then(() => {
+            showCopyToast('✓ Link copied!');
+          });
+          closePopup();
+        };
+
+        document.body.appendChild(currentPopup);
+      }
+
+      // Make all links interactive with popup
       document.querySelectorAll('a[href]').forEach(link => {
-        // Set target to open in new tab
         link.setAttribute('target', '_blank');
         link.setAttribute('rel', 'noopener noreferrer');
         
-        // Double-click to copy link instead of navigating
-        link.addEventListener('dblclick', (e) => {
-          e.preventDefault();
-          navigator.clipboard.writeText(link.href).then(() => {
-            showCopyToast('✓ Link copied!');
-          });
+        link.addEventListener('click', (e) => {
+          showLinkPopup(link, e);
         });
       });
 
