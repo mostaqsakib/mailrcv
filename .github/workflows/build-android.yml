@@ -163,43 +163,6 @@ jobs:
       # APK is uploaded to GitHub Releases instead of Supabase Storage
       # No SUPABASE_SERVICE_ROLE_KEY needed!
 
-      - name: Update app version in database
-        run: |
-          SUPABASE_URL="https://euiqflvrdraydkhwksmh.supabase.co"
-          ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1aXFmbHZyZHJheWRraHdrc21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjQyNjAsImV4cCI6MjA4NDYwMDI2MH0.BL1146FYVxNnsz_eGASMlILgQCDNfmTMPZQMOsEZA3o"
-          VERSION_NAME="${{ steps.version.outputs.version_name }}"
-          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
-          FORCE_UPDATE="${{ github.event.inputs.force_update }}"
-          
-          # Default release notes if not provided
-          if [ -z "$RELEASE_NOTES" ]; then
-            RELEASE_NOTES="🚀 Version ${VERSION_NAME}\\n\\n• Latest improvements and bug fixes\\n• Build #${VERSION_CODE}"
-          fi
-          
-          # Default force_update to false
-          if [ -z "$FORCE_UPDATE" ] || [ "$FORCE_UPDATE" != "true" ]; then
-            FORCE_UPDATE="false"
-          fi
-          
-          echo "Updating app version in database: version_code=${VERSION_CODE}, version_name=${VERSION_NAME}"
-          
-          # First, try to insert a new record. If fails (conflict), update existing.
-          # Using upsert pattern with version_code as the primary identifier
-          curl -X POST "${SUPABASE_URL}/rest/v1/app_version" \
-            -H "apikey: ${ANON_KEY}" \
-            -H "Authorization: Bearer ${ANON_KEY}" \
-            -H "Content-Type: application/json" \
-            -H "Prefer: resolution=merge-duplicates,return=representation" \
-            -d "{
-              \"version_code\": ${VERSION_CODE},
-              \"version_name\": \"${VERSION_NAME}\",
-              \"release_notes\": \"${RELEASE_NOTES}\",
-              \"is_force_update\": ${FORCE_UPDATE},
-              \"download_url\": \"https://mailrcv.site/download\"
-            }" \
-            && echo "✅ App version updated in database: v${VERSION_NAME} (code: ${VERSION_CODE})" \
-            || echo "⚠️ Version update failed (may need manual update)"
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -224,3 +187,47 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update app version in database (use GitHub Release APK URL)
+        run: |
+          SUPABASE_URL="https://euiqflvrdraydkhwksmh.supabase.co"
+          ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1aXFmbHZyZHJheWRraHdrc21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjQyNjAsImV4cCI6MjA4NDYwMDI2MH0.BL1146FYVxNnsz_eGASMlILgQCDNfmTMPZQMOsEZA3o"
+          VERSION_NAME="${{ steps.version.outputs.version_name }}"
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+          FORCE_UPDATE="${{ github.event.inputs.force_update }}"
+
+          # Tag name exactly matches what we used in the release step
+          TAG_NAME="${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version_name) }}"
+
+          # Direct GitHub release asset URL (stable)
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/app-debug.apk"
+
+          # Default release notes if not provided
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="🚀 Version ${VERSION_NAME}\\n\\n• Latest improvements and bug fixes\\n• Build #${VERSION_CODE}"
+          fi
+
+          # Default force_update to false
+          if [ -z "$FORCE_UPDATE" ] || [ "$FORCE_UPDATE" != "true" ]; then
+            FORCE_UPDATE="false"
+          fi
+
+          echo "Updating app version in database: version_code=${VERSION_CODE}, version_name=${VERSION_NAME}"
+          echo "Download URL: ${DOWNLOAD_URL}"
+
+          # Upsert a version row keyed by version_code (requires unique constraint to truly dedupe,
+          # but works fine for append-only history; SELECT uses latest by version_code)
+          curl -X POST "${SUPABASE_URL}/rest/v1/app_version" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Authorization: Bearer ${ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates,return=representation" \
+            -d "{
+              \"version_code\": ${VERSION_CODE},
+              \"version_name\": \"${VERSION_NAME}\",
+              \"release_notes\": \"${RELEASE_NOTES}\",
+              \"is_force_update\": ${FORCE_UPDATE},
+              \"download_url\": \"${DOWNLOAD_URL}\"
+            }" \
+            && echo "✅ App version updated in database: v${VERSION_NAME} (code: ${VERSION_CODE})" \
+            || echo "⚠️ Version update failed (may need manual update)"
