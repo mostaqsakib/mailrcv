@@ -221,14 +221,18 @@ const EmailDetailPage = () => {
         setTimeout(() => toast.remove(), 2000);
       }
 
+      // Make all links open in new tab/window (prevents blank screen in iframe)
       document.querySelectorAll('a[href]').forEach(link => {
-        link.addEventListener('click', (e) => {
-          if (e.detail === 2) {
-            e.preventDefault();
-            navigator.clipboard.writeText(link.href).then(() => {
-              showCopyToast('✓ Link copied!');
-            });
-          }
+        // Set target to open in new tab
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+        
+        // Double-click to copy link instead of navigating
+        link.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          navigator.clipboard.writeText(link.href).then(() => {
+            showCopyToast('✓ Link copied!');
+          });
         });
       });
 
