@@ -30,6 +30,7 @@ jobs:
     env:
       # For tag-based releases: extract version from tag (v1.0.5 -> 1.0.5)
       # For manual dispatch: use input version_name
+      # For push to main: auto-generate version name using run_number (e.g., 1.0.78)
       # VERSION_CODE is still run_number to ensure unique incrementing build numbers
       VERSION_CODE: ${{ github.run_number }}
     
@@ -46,6 +47,13 @@ jobs:
             VERSION_NAME="${TAG_NAME#v}"
             echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
             echo "📦 Building from tag: ${TAG_NAME} -> version ${VERSION_NAME}"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            # Auto-generate a monotonically increasing version name on main pushes.
+            # This avoids accidentally reusing the default '1.0.0' and ensures users
+            # always download an APK that actually installs as a newer version.
+            VERSION_NAME="1.0.${{ github.run_number }}"
+            echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+            echo "📦 Building from push: auto version ${VERSION_NAME}"
           else
             # Use manual input or default
             VERSION_NAME="${{ github.event.inputs.version_name || '1.0.0' }}"
