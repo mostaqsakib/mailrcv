@@ -254,17 +254,23 @@ const EmailDetailPage = () => {
       }
       hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
       .tap-copy-hint {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #22c55e;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        z-index: 9999;
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: #22c55e !important;
+        color: white !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        z-index: 99999 !important;
+        width: auto !important;
+        max-width: 280px !important;
+        height: auto !important;
+        min-height: unset !important;
+        text-align: center !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
         animation: fadeInOut 2s ease-in-out forwards;
       }
       @keyframes fadeInOut {
