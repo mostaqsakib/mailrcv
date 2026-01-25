@@ -87,6 +87,7 @@ const App = () => (
               <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />
               <Route path="/secure/:username" element={<SecureInboxPage />} />
               <Route path="/domains" element={<DomainsPage />} />
+              <Route path="/domain" element={<DomainsPage />} />
               <Route path="/download" element={<DownloadPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
