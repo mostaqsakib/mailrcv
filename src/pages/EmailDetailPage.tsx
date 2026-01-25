@@ -128,9 +128,11 @@ const EmailDetailPage = () => {
     const treatAsPlainTextHtml = (hasNewlines && isSinglePWrapper) || (!hasMeaningfulHtml && raw.length > 0);
 
     const styleText = `
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box !important; }
       html {
         background: ${bgColor} !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
       body {
         background: ${bgColor} !important;
@@ -159,11 +161,27 @@ const EmailDetailPage = () => {
         .otp-code, .otp-code * { color: inherit !important; }
         .verify-code, .verify-code * { color: inherit !important; }
       ` : ''}
-      /* Ensure content doesn't stick to edges */
-      body > table, body > div, body > center {
-        margin: 0 auto !important;
+      /* Force all wrapper elements to use full width and remove margins that push content to corners */
+      body > *, body > table, body > div, body > center, body > span,
+      table, .wrapper, #wrapper, .container, #container, .content, #content,
+      [class*="wrapper"], [class*="container"], [class*="content"], [class*="body"],
+      [id*="wrapper"], [id*="container"], [id*="content"], [id*="body"] {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
+        float: none !important;
+        position: relative !important;
+        left: 0 !important;
+        right: 0 !important;
       }
+      /* But keep vertical spacing intact */
+      table, div, p { margin-top: revert; margin-bottom: revert; }
+      /* Email content table cells should have their padding */
+      td, th { padding: revert; }
       ${
         treatAsPlainTextHtml
           ? `
