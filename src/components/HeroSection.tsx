@@ -75,9 +75,10 @@ export const HeroSection = () => {
 
     const cleanUsername = username.trim().toLowerCase();
 
-    // If no password, go to public inbox
+    // If no password, go to public inbox with domain
     if (!password) {
-      navigate(`/inbox/${cleanUsername}`);
+      const params = selectedDomain !== DEFAULT_DOMAINS[0] ? `?domain=${encodeURIComponent(selectedDomain)}` : '';
+      navigate(`/inbox/${cleanUsername}${params}`);
       return;
     }
 
@@ -111,16 +112,18 @@ export const HeroSection = () => {
           return;
         }
 
-        // Save session
+        // Save session with domain info
         localStorage.setItem(`${SESSION_KEY_PREFIX}${cleanUsername}`, JSON.stringify({
           alias_id: loginData.alias_id,
           token: loginData.session_token,
           password: password,
+          domain: selectedDomain,
           created_at: Date.now()
         }));
 
         toast.success("Login successful!");
-        navigate(`/inbox/${cleanUsername}`);
+        const params = selectedDomain !== DEFAULT_DOMAINS[0] ? `?domain=${encodeURIComponent(selectedDomain)}` : '';
+        navigate(`/inbox/${cleanUsername}${params}`);
       } else {
         // Create new secure inbox
         if (password.length < 6) {
@@ -141,16 +144,18 @@ export const HeroSection = () => {
           return;
         }
 
-        // Save session
+        // Save session with domain info
         localStorage.setItem(`${SESSION_KEY_PREFIX}${cleanUsername}`, JSON.stringify({
           alias_id: registerData.alias_id,
           token: registerData.session_token,
           password: password,
+          domain: selectedDomain,
           created_at: Date.now()
         }));
 
         toast.success("Secure inbox created!");
-        navigate(`/inbox/${cleanUsername}`);
+        const params = selectedDomain !== DEFAULT_DOMAINS[0] ? `?domain=${encodeURIComponent(selectedDomain)}` : '';
+        navigate(`/inbox/${cleanUsername}${params}`);
       }
     } catch (error) {
       console.error('Auth error:', error);

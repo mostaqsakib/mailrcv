@@ -69,6 +69,34 @@ export async function getOrCreateDefaultDomain(): Promise<Domain | null> {
   return cachedDefaultDomain;
 }
 
+// Get or create domain by name (for multi-domain support)
+export async function getOrCreateDomainByName(domainName: string): Promise<Domain | null> {
+  // Check if domain exists
+  const { data: existing } = await supabase
+    .from("domains")
+    .select("id, domain_name, is_verified, verification_code, forward_to_email, created_at")
+    .eq("domain_name", domainName.toLowerCase())
+    .maybeSingle();
+
+  if (existing) {
+    return existing as Domain;
+  }
+
+  // Create domain if it doesn't exist
+  const { data: created, error } = await supabase
+    .from("domains")
+    .insert({ domain_name: domainName.toLowerCase(), is_verified: true })
+    .select("id, domain_name, is_verified, verification_code, forward_to_email, created_at")
+    .single();
+
+  if (error) {
+    console.error("Error creating domain:", error);
+    return null;
+  }
+
+  return created as Domain;
+}
+
 export async function getAllDomains(): Promise<Domain[]> {
   const { data, error } = await supabase
     .from("domains")
