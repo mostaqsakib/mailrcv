@@ -272,7 +272,7 @@ export const HeroSection = () => {
           {/* Main heading */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight">
             Instant Email
-            <span className="block gradient-text drop-shadow-sm">Forwarding</span>
+            <span className="block gradient-text drop-shadow-sm pb-2">Forwarding</span>
           </h1>
 
           <p className="text-base sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-xl mx-auto leading-relaxed">
