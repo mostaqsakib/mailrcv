@@ -48,11 +48,10 @@ function extractVersionCode(body: string): number | null {
 }
 
 /**
- * Check if release notes indicate a force update
- * Convention: Include "[FORCE]" or "[FORCE UPDATE]" in release body
+ * All updates are force updates - users must update to continue
  */
-function isForceUpdate(body: string): boolean {
-  return /\[FORCE(?:\s*UPDATE)?\]/i.test(body);
+function isForceUpdate(): boolean {
+  return true;
 }
 
 export const useAppUpdate = () => {
@@ -125,7 +124,7 @@ export const useAppUpdate = () => {
         version_name: latestVersionName,
         release_notes: release.body || null,
         download_url: downloadUrl,
-        is_force_update: isForceUpdate(release.body || ''),
+        is_force_update: isForceUpdate(),
       };
 
       setLatestVersion(appVersion);
