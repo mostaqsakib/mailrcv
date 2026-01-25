@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 // Session storage key prefix
 const SESSION_KEY_PREFIX = "mailrcv_session_";
+
+// Default domains list (always available)
+const DEFAULT_DOMAINS = ["mailrcv.site", "getemail.cfd"];
 
 // Random word generator for fun email names
 const adjectives = ["swift", "cosmic", "stellar", "pixel", "cyber", "neon", "turbo", "hyper", "ultra", "mega", "quantum", "ninja", "shadow", "thunder", "frost", "blaze", "storm", "vapor", "drift", "glitch"];
@@ -36,8 +40,31 @@ export const HeroSection = () => {
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [domains, setDomains] = useState<string[]>(DEFAULT_DOMAINS);
+  const [selectedDomain, setSelectedDomain] = useState(DEFAULT_DOMAINS[0]);
   const navigate = useNavigate();
-  const domain = "mailrcv.site";
+
+  // Fetch available domains from database
+  useEffect(() => {
+    const fetchDomains = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('domains')
+          .select('domain_name')
+          .eq('is_verified', true);
+        
+        if (!error && data && data.length > 0) {
+          const dbDomains = data.map(d => d.domain_name);
+          // Merge with default domains, avoiding duplicates
+          const allDomains = [...new Set([...DEFAULT_DOMAINS, ...dbDomains])];
+          setDomains(allDomains);
+        }
+      } catch (err) {
+        console.error('Error fetching domains:', err);
+      }
+    };
+    fetchDomains();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +86,7 @@ export const HeroSection = () => {
     try {
       // First check if inbox exists
       const { data: checkData, error: checkError } = await supabase.functions.invoke('inbox-auth', {
-        body: { action: 'check', username: cleanUsername, domain }
+        body: { action: 'check', username: cleanUsername, domain: selectedDomain }
       });
 
       if (checkError) throw checkError;
@@ -73,7 +100,7 @@ export const HeroSection = () => {
 
         // Try to login
         const { data: loginData, error: loginError } = await supabase.functions.invoke('inbox-auth', {
-          body: { action: 'login', username: cleanUsername, domain, password }
+          body: { action: 'login', username: cleanUsername, domain: selectedDomain, password }
         });
 
         if (loginError) throw loginError;
@@ -103,7 +130,7 @@ export const HeroSection = () => {
         }
 
         const { data: registerData, error: registerError } = await supabase.functions.invoke('inbox-auth', {
-          body: { action: 'register', username: cleanUsername, domain, password }
+          body: { action: 'register', username: cleanUsername, domain: selectedDomain, password }
         });
 
         if (registerError) throw registerError;
@@ -150,7 +177,7 @@ export const HeroSection = () => {
       toast.error("Please enter a name first");
       return;
     }
-    const fullEmail = `${username.trim().toLowerCase()}@${domain}`;
+    const fullEmail = `${username.trim().toLowerCase()}@${selectedDomain}`;
     await navigator.clipboard.writeText(fullEmail);
     setCopied(true);
     toast.success("Email address copied!");
@@ -236,13 +263,25 @@ export const HeroSection = () => {
                 </Button>
               </div>
 
-              {/* Email preview with copy */}
+              {/* Email preview with domain selector and copy */}
               <div className="flex items-center justify-between gap-2 py-3 px-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 group hover:border-primary/40 transition-colors">
                 <div className="flex items-center gap-1 min-w-0 flex-1">
                   <span className="font-mono text-base sm:text-lg font-semibold text-foreground truncate">
                     {username || <span className="text-muted-foreground/50">your-name</span>}
                   </span>
-                  <span className="font-mono text-base sm:text-lg font-semibold text-primary shrink-0">@{domain}</span>
+                  <span className="font-mono text-base sm:text-lg font-semibold text-primary shrink-0">@</span>
+                  <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                    <SelectTrigger className="h-auto p-0 border-0 bg-transparent font-mono text-base sm:text-lg font-semibold text-primary focus:ring-0 focus:ring-offset-0 w-auto gap-1 [&>svg]:w-4 [&>svg]:h-4 [&>svg]:text-primary/60">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border shadow-lg">
+                      {domains.map((d) => (
+                        <SelectItem key={d} value={d} className="font-mono text-sm cursor-pointer">
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <Button
                   type="button"
