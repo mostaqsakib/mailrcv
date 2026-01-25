@@ -161,8 +161,13 @@ const EmailDetailPage = () => {
         .otp-code, .otp-code * { color: inherit !important; }
         .verify-code, .verify-code * { color: inherit !important; }
       ` : ''}
-      /* Force all wrapper elements to use full width and remove margins that push content to corners */
-      body > *, body > table, body > div, body > center, body > span,
+       /* Force all wrapper elements to use full width and remove margins that push content to corners */
+       /* IMPORTANT: exclude our own UI overlays/popups */
+       body > *:not(.link-popup):not(.link-popup-overlay),
+       body > table:not(.link-popup):not(.link-popup-overlay),
+       body > div:not(.link-popup):not(.link-popup-overlay),
+       body > center:not(.link-popup):not(.link-popup-overlay),
+       body > span:not(.link-popup):not(.link-popup-overlay),
       table, .wrapper, #wrapper, .container, #container, .content, #content,
       [class*="wrapper"], [class*="container"], [class*="content"], [class*="body"],
       [id*="wrapper"], [id*="container"], [id*="content"], [id*="body"] {
@@ -203,7 +208,7 @@ const EmailDetailPage = () => {
       }
       /* Link action popup */
       .link-popup {
-        position: fixed;
+         position: fixed !important;
         background: ${isDark ? '#1f2937' : '#ffffff'};
         border: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
         border-radius: 12px;
@@ -214,6 +219,8 @@ const EmailDetailPage = () => {
         flex-direction: column;
         gap: 4px;
         min-width: 160px;
+         width: max-content !important;
+         max-width: calc(100vw - 20px) !important;
         animation: popIn 0.15s ease-out;
       }
       @keyframes popIn {
@@ -242,7 +249,7 @@ const EmailDetailPage = () => {
         color: ${linkColor};
       }
       .link-popup-overlay {
-        position: fixed;
+         position: fixed !important;
         inset: 0;
         z-index: 9999;
       }
@@ -629,8 +636,9 @@ const EmailDetailPage = () => {
           top = window.innerHeight - popupHeight - 10;
         }
 
-        currentPopup.style.top = top + 'px';
-        currentPopup.style.left = left + 'px';
+        // Use !important so our layout-normalization CSS can't override positioning
+        currentPopup.style.setProperty('top', top + 'px', 'important');
+        currentPopup.style.setProperty('left', left + 'px', 'important');
 
         // Add click handlers
         currentPopup.querySelector('[data-action="open"]').onclick = () => {
