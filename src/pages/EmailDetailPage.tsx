@@ -129,11 +129,15 @@ const EmailDetailPage = () => {
 
     const styleText = `
       * { box-sizing: border-box; }
+      html {
+        background: ${bgColor} !important;
+      }
       body {
         background: ${bgColor} !important;
         color: ${textColor} !important;
-        margin: 0;
-        padding: ${treatAsPlainTextHtml ? "24px" : "0"};
+        margin: 0 !important;
+        padding: 24px !important;
+        min-height: 100%;
         ${treatAsPlainTextHtml ? "white-space: pre-wrap;" : ""}
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
@@ -155,6 +159,11 @@ const EmailDetailPage = () => {
         .otp-code, .otp-code * { color: inherit !important; }
         .verify-code, .verify-code * { color: inherit !important; }
       ` : ''}
+      /* Ensure content doesn't stick to edges */
+      body > table, body > div, body > center {
+        margin: 0 auto !important;
+        max-width: 100% !important;
+      }
       ${
         treatAsPlainTextHtml
           ? `
