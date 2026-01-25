@@ -130,8 +130,8 @@ const EmailDetailPage = () => {
     const styleText = `
       * { box-sizing: border-box; }
       body {
-        background: ${bgColor};
-        color: ${textColor};
+        background: ${bgColor} !important;
+        color: ${textColor} !important;
         margin: 0;
         padding: ${treatAsPlainTextHtml ? "24px" : "0"};
         ${treatAsPlainTextHtml ? "white-space: pre-wrap;" : ""}
@@ -142,6 +142,19 @@ const EmailDetailPage = () => {
         overflow-wrap: anywhere;
         word-break: break-word;
       }
+      /* Force readable text colors in dark mode - override sender's light gray colors */
+      ${isDark ? `
+        body, body *, p, span, div, td, th, li, dt, dd, label, 
+        h1, h2, h3, h4, h5, h6, strong, b, em, i, u, small, 
+        font, center, article, section, header, footer, main, aside {
+          color: ${textColor} !important;
+        }
+        /* Preserve link colors */
+        a, a * { color: ${linkColor} !important; }
+        /* Preserve OTP/code colors */
+        .otp-code, .otp-code * { color: inherit !important; }
+        .verify-code, .verify-code * { color: inherit !important; }
+      ` : ''}
       ${
         treatAsPlainTextHtml
           ? `
