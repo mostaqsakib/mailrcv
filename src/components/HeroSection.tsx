@@ -276,12 +276,16 @@ export const HeroSection = () => {
                   </span>
                   <span className="font-mono text-base sm:text-lg font-semibold text-primary shrink-0">@</span>
                   <Select value={selectedDomain} onValueChange={setSelectedDomain}>
-                    <SelectTrigger className="h-auto p-0 border-0 bg-transparent font-mono text-base sm:text-lg font-semibold text-primary focus:ring-0 focus:ring-offset-0 w-auto gap-1 [&>svg]:w-4 [&>svg]:h-4 [&>svg]:text-primary/60">
+                    <SelectTrigger className="h-auto px-2 py-1 border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 rounded-lg font-mono text-base sm:text-lg font-semibold text-primary focus:ring-1 focus:ring-primary/50 focus:ring-offset-0 w-auto gap-1.5 transition-all duration-200 group/domain [&>svg]:w-4 [&>svg]:h-4 [&>svg]:text-primary [&>svg]:transition-transform [&>svg]:duration-200 hover:[&>svg]:translate-y-0.5">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border shadow-lg">
+                    <SelectContent className="bg-popover/95 backdrop-blur-xl border border-primary/20 shadow-xl shadow-primary/10 rounded-xl overflow-hidden">
                       {domains.map((d) => (
-                        <SelectItem key={d} value={d} className="font-mono text-sm cursor-pointer">
+                        <SelectItem 
+                          key={d} 
+                          value={d} 
+                          className="font-mono text-sm cursor-pointer py-2.5 px-3 focus:bg-primary/10 focus:text-primary transition-colors"
+                        >
                           {d}
                         </SelectItem>
                       ))}
