@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  getOrCreateDefaultDomain, 
+  getOrCreateDomainByName, 
   getOrCreateAlias,
   getEmailsForAlias,
   markEmailAsRead,
@@ -145,8 +145,11 @@ const EmailItem = memo(({
 
 EmailItem.displayName = "EmailItem";
 
+const DEFAULT_DOMAIN = "mailrcv.site";
+
 const InboxPage = () => {
   const { username } = useParams<{ username: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { permission, requestPermission, showNotification, isSupported } = useNotifications();
   const { playSound } = useNotificationSound();
@@ -170,23 +173,26 @@ const InboxPage = () => {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
+  // Get domain from query params or default
+  const domainName = useMemo(() => {
+    return searchParams.get('domain') || DEFAULT_DOMAIN;
+  }, [searchParams]);
   
-  const domainName = "mailrcv.site";
-  const email = useMemo(() => `${username}@${domainName}`, [username]);
+  const email = useMemo(() => `${username}@${domainName}`, [username, domainName]);
 
   const initializeInbox = useCallback(async () => {
     setLoading(true);
     setEmailsLoading(true);
     try {
-      // Get default domain first (cached after first call)
-      const defaultDomain = await getOrCreateDefaultDomain();
-      if (!defaultDomain) {
+      // Get or create the domain based on URL param
+      const domain = await getOrCreateDomainByName(domainName);
+      if (!domain) {
         toast.error("Failed to initialize inbox");
         return;
       }
 
-      // Get or create alias
-      const aliasData = await getOrCreateAlias(username!, defaultDomain.id);
+      // Get or create alias for this domain
+      const aliasData = await getOrCreateAlias(username!, domain.id);
       if (!aliasData) {
         toast.error("Failed to create inbox");
         return;
@@ -208,7 +214,7 @@ const InboxPage = () => {
       setLoading(false);
       setEmailsLoading(false);
     }
-  }, [username]);
+  }, [username, domainName]);
 
   useEffect(() => {
     const checkAuthAndInit = async () => {
@@ -370,18 +376,19 @@ const InboxPage = () => {
   }, [alias?.id, showNotification, playSound]);
 
   const copyToClipboard = useCallback(async () => {
-    const productionEmail = `${username}@mailrcv.site`;
+    const productionEmail = `${username}@${domainName}`;
     await navigator.clipboard.writeText(productionEmail);
     setCopied(true);
     toast.success("Email address copied!");
     setTimeout(() => setCopied(false), 2000);
-  }, [username]);
+  }, [username, domainName]);
 
   const copyInboxUrl = useCallback(async () => {
-    const cleanUrl = `https://mailrcv.site/inbox/${username}`;
+    const domainParam = domainName !== DEFAULT_DOMAIN ? `?domain=${encodeURIComponent(domainName)}` : '';
+    const cleanUrl = `https://mailrcv.site/inbox/${username}${domainParam}`;
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
-  }, [username]);
+  }, [username, domainName]);
 
   const copyPassword = useCallback(async () => {
     if (savedPassword) {
