@@ -13,15 +13,74 @@ const SESSION_KEY_PREFIX = "mailrcv_session_";
 // Default domains list (always available)
 const DEFAULT_DOMAINS = ["mailrcv.site", "getemail.cfd"];
 
-// Random word generator for fun email names
-const adjectives = ["swift", "cosmic", "stellar", "pixel", "cyber", "neon", "turbo", "hyper", "ultra", "mega", "quantum", "ninja", "shadow", "thunder", "frost", "blaze", "storm", "vapor", "drift", "glitch"];
-const nouns = ["fox", "wolf", "hawk", "tiger", "dragon", "phoenix", "raven", "falcon", "cobra", "viper", "panther", "lion", "eagle", "shark", "bear", "owl", "lynx", "puma", "jaguar", "leopard"];
+// Diverse collection of first names from various regions
+const firstNames = [
+  // American/English
+  "james", "john", "robert", "michael", "david", "william", "richard", "joseph", "thomas", "christopher",
+  "mary", "patricia", "jennifer", "linda", "elizabeth", "barbara", "susan", "jessica", "sarah", "karen",
+  "daniel", "matthew", "anthony", "mark", "donald", "steven", "paul", "andrew", "joshua", "kenneth",
+  "emma", "olivia", "sophia", "isabella", "mia", "charlotte", "amelia", "harper", "evelyn", "abigail",
+  // Hispanic/Latino
+  "carlos", "miguel", "jose", "juan", "luis", "diego", "alejandro", "gabriel", "rafael", "pablo",
+  "maria", "carmen", "rosa", "lucia", "elena", "sofia", "valentina", "camila", "mariana", "isabella",
+  // European
+  "lucas", "liam", "noah", "oliver", "felix", "max", "leon", "theo", "oscar", "hugo",
+  "anna", "julia", "laura", "clara", "marie", "nina", "eva", "lisa", "sara", "hanna",
+  // Asian
+  "wei", "chen", "ming", "jin", "hao", "yan", "lei", "feng", "yuki", "kenji",
+  "mei", "lin", "xiao", "ying", "sakura", "hana", "yuna", "mina", "sora", "aiko",
+  // Middle Eastern
+  "omar", "ali", "ahmed", "hassan", "karim", "tariq", "malik", "yusuf", "amir", "rami",
+  "fatima", "layla", "amira", "nadia", "sara", "leila", "yasmin", "zahra", "dina", "rania",
+  // South Asian
+  "arjun", "raj", "vikram", "arun", "rohan", "kiran", "sanjay", "amit", "rahul", "varun",
+  "priya", "ananya", "divya", "neha", "riya", "pooja", "shreya", "kavya", "aisha", "zara",
+  // African
+  "kwame", "kofi", "adebayo", "chidi", "emeka", "olu", "sekou", "amadou", "mamadou", "ibrahima",
+  "amara", "ayana", "zuri", "nia", "imani", "adaora", "chiamaka", "folake", "ngozi", "adeola"
+];
 
+// Last names from various regions
+const lastNames = [
+  // American/English
+  "smith", "johnson", "williams", "brown", "jones", "garcia", "miller", "davis", "rodriguez", "martinez",
+  "wilson", "anderson", "taylor", "thomas", "hernandez", "moore", "martin", "jackson", "thompson", "white",
+  // European
+  "mueller", "schmidt", "schneider", "fischer", "weber", "meyer", "wagner", "becker", "hoffmann", "schulz",
+  "rossi", "russo", "ferrari", "esposito", "bianchi", "romano", "colombo", "ricci", "marino", "greco",
+  "dubois", "moreau", "laurent", "simon", "michel", "leroy", "roux", "david", "bertrand", "morel",
+  // Hispanic
+  "gonzalez", "lopez", "perez", "sanchez", "ramirez", "torres", "flores", "rivera", "gomez", "diaz",
+  // Asian
+  "wang", "li", "zhang", "liu", "chen", "yang", "huang", "zhao", "wu", "zhou",
+  "kim", "lee", "park", "choi", "jung", "kang", "cho", "yoon", "jang", "lim",
+  "tanaka", "yamamoto", "suzuki", "watanabe", "ito", "yamada", "nakamura", "kobayashi", "kato", "yoshida",
+  // South Asian
+  "patel", "sharma", "singh", "kumar", "gupta", "das", "reddy", "khan", "ali", "malik",
+  // African
+  "okonkwo", "adeyemi", "mensah", "diallo", "traore", "coulibaly", "ndiaye", "sy", "ba", "sow"
+];
+
+// Generate random name that looks like real person email
 const generateRandomName = () => {
-  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const noun = nouns[Math.floor(Math.random() * nouns.length)];
-  const num = Math.floor(Math.random() * 99) + 1;
-  return `${adj}${noun}${num}`;
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+  
+  // Various email format patterns
+  const patterns = [
+    () => `${firstName}.${lastName}`,
+    () => `${firstName}${lastName}`,
+    () => `${firstName}_${lastName}`,
+    () => `${firstName}.${lastName}${Math.floor(Math.random() * 99) + 1}`,
+    () => `${firstName}${Math.floor(Math.random() * 999) + 1}`,
+    () => `${firstName[0]}${lastName}`,
+    () => `${firstName}${lastName[0]}`,
+    () => `${firstName}.${lastName[0]}`,
+    () => `${lastName}.${firstName}`,
+  ];
+  
+  const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+  return pattern();
 };
 
 const generateStrongPassword = () => {
