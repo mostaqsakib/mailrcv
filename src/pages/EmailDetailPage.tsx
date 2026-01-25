@@ -148,45 +148,14 @@ const EmailDetailPage = () => {
         overflow-wrap: anywhere;
         word-break: break-word;
       }
-      /* Force readable text colors in dark mode - override sender's light gray colors */
-      ${isDark ? `
-        body, body *, p, span, div, td, th, li, dt, dd, label, 
-        h1, h2, h3, h4, h5, h6, strong, b, em, i, u, small, 
-        font, center, article, section, header, footer, main, aside {
-          color: ${textColor} !important;
-        }
-        /* Preserve link colors */
-        a, a * { color: ${linkColor} !important; }
-        /* Preserve OTP/code colors */
-        .otp-code, .otp-code * { color: inherit !important; }
-        .verify-code, .verify-code * { color: inherit !important; }
-      ` : ''}
-       /* Force all wrapper elements to use full width and remove margins that push content to corners */
-       /* IMPORTANT: exclude our own UI overlays/popups */
-       body > *:not(.link-popup):not(.link-popup-overlay),
-       body > table:not(.link-popup):not(.link-popup-overlay),
-       body > div:not(.link-popup):not(.link-popup-overlay),
-       body > center:not(.link-popup):not(.link-popup-overlay),
-       body > span:not(.link-popup):not(.link-popup-overlay),
-      table, .wrapper, #wrapper, .container, #container, .content, #content,
-      [class*="wrapper"], [class*="container"], [class*="content"], [class*="body"],
-      [id*="wrapper"], [id*="container"], [id*="content"], [id*="body"] {
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        float: none !important;
-        position: relative !important;
-        left: 0 !important;
-        right: 0 !important;
+      /* Preserve link colors */
+      a { color: ${linkColor} !important; text-decoration: underline; }
+      /* Center email content nicely without forcing full width */
+      body > table, body > div, body > center {
+        margin-left: auto !important;
+        margin-right: auto !important;
       }
-      /* But keep vertical spacing intact */
-      table, div, p { margin-top: revert; margin-bottom: revert; }
-      /* Email content table cells should have their padding */
-      td, th { padding: revert; }
+      img { max-width: 100%; height: auto; }
       ${
         treatAsPlainTextHtml
           ? `
