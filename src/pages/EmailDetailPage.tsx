@@ -309,81 +309,6 @@ const EmailDetailPage = () => {
         outline-offset: 2px;
         background: rgba(34, 211, 238, 0.1) !important;
       }
-      /* OTP Code Styling */
-      .otp-code {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: linear-gradient(135deg, ${isDark ? '#22c55e20' : '#22c55e15'}, ${isDark ? '#10b98120' : '#10b98110'});
-        border: 2px solid #22c55e;
-        border-radius: 8px;
-        padding: 8px 14px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: 3px;
-        color: ${isDark ? '#4ade80' : '#16a34a'};
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin: 4px 2px;
-        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
-      }
-      .otp-code:hover {
-        background: linear-gradient(135deg, ${isDark ? '#22c55e30' : '#22c55e25'}, ${isDark ? '#10b98130' : '#10b98120'});
-        transform: scale(1.02);
-        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-      }
-      .otp-code:active {
-        transform: scale(0.98);
-      }
-      .otp-code::after {
-        content: '📋';
-        font-size: 14px;
-        opacity: 0.8;
-      }
-      .otp-code.copied {
-        border-color: #22c55e;
-        background: #22c55e;
-        color: white;
-      }
-      .otp-code.copied::after {
-        content: '✓';
-      }
-      /* Alphanumeric verification code styling */
-      .verify-code {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: linear-gradient(135deg, ${isDark ? '#3b82f620' : '#3b82f615'}, ${isDark ? '#6366f120' : '#6366f110'});
-        border: 2px solid #3b82f6;
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 15px;
-        font-weight: 600;
-        letter-spacing: 1px;
-        color: ${isDark ? '#60a5fa' : '#2563eb'};
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin: 2px;
-      }
-      .verify-code:hover {
-        background: linear-gradient(135deg, ${isDark ? '#3b82f630' : '#3b82f625'}, ${isDark ? '#6366f130' : '#6366f120'});
-        transform: scale(1.02);
-      }
-      .verify-code::after {
-        content: '📋';
-        font-size: 12px;
-        opacity: 0.7;
-      }
-      .verify-code.copied {
-        border-color: #22c55e;
-        background: #22c55e;
-        color: white;
-      }
-      .verify-code.copied::after {
-        content: '✓';
-      }
     `;
 
     const scriptText = `
@@ -397,13 +322,6 @@ const EmailDetailPage = () => {
         setTimeout(() => toast.remove(), 2000);
       }
 
-      function copyCode(element, code) {
-        navigator.clipboard.writeText(code).then(() => {
-          element.classList.add('copied');
-          showCopyToast('✓ Code copied: ' + code);
-          setTimeout(() => element.classList.remove('copied'), 1500);
-        });
-      }
 
       // Convert plain text URLs to clickable links
       function detectAndWrapUrls() {
@@ -472,102 +390,6 @@ const EmailDetailPage = () => {
       // Run URL detection first
       detectAndWrapUrls();
 
-      // OTP/Verification code detection and wrapping
-      function detectAndWrapCodes() {
-        const walker = document.createTreeWalker(
-          document.body,
-          NodeFilter.SHOW_TEXT,
-          null,
-          false
-        );
-
-        const textNodes = [];
-        while (walker.nextNode()) {
-          const node = walker.currentNode;
-          // Skip if parent is already a code element or script/style
-          if (node.parentElement && 
-              !['SCRIPT', 'STYLE', 'CODE', 'PRE', 'A'].includes(node.parentElement.tagName) &&
-              !node.parentElement.classList.contains('otp-code') &&
-              !node.parentElement.classList.contains('verify-code')) {
-            textNodes.push(node);
-          }
-        }
-
-        textNodes.forEach(node => {
-          const text = node.textContent;
-          
-          // Pattern 1: Pure numeric OTP codes (4-8 digits, standalone)
-          // Matches: 123456, 1234, 12345678
-          const otpPattern = /\\b(\\d{4,8})\\b/g;
-          
-          // Pattern 2: Alphanumeric verification codes (mixed letters and numbers, 6-12 chars)
-          // Matches: ABC123, A1B2C3, 12AB34CD
-          const verifyPattern = /\\b([A-Z0-9]{6,12})\\b/gi;
-          
-          let hasOtp = otpPattern.test(text);
-          let hasVerify = false;
-          
-          // Check for alphanumeric codes (must have both letters and numbers)
-          const verifyMatches = text.match(verifyPattern);
-          if (verifyMatches) {
-            hasVerify = verifyMatches.some(m => /[A-Za-z]/.test(m) && /\\d/.test(m));
-          }
-          
-          if (!hasOtp && !hasVerify) return;
-          
-          // Reset patterns
-          otpPattern.lastIndex = 0;
-          
-          let html = text;
-          
-          // Wrap numeric OTPs first (higher priority)
-          if (hasOtp) {
-            html = html.replace(/\\b(\\d{4,8})\\b/g, (match, code) => {
-              // Skip if it looks like a year (1900-2100) or common non-OTP numbers
-              const num = parseInt(code);
-              if (code.length === 4 && num >= 1900 && num <= 2100) return match;
-              if (code.length === 4 && ['0000', '1111', '1234', '4321'].includes(code)) return match;
-              return '<span class="otp-code" data-code="' + code + '">' + code + '</span>';
-            });
-          }
-          
-          // Wrap alphanumeric verification codes
-          if (hasVerify && verifyMatches) {
-            verifyMatches.forEach(match => {
-              // Must have both letters and numbers
-              if (/[A-Za-z]/.test(match) && /\\d/.test(match)) {
-                // Skip common words/abbreviations
-                if (['HTTPS', 'HTTP', 'HTML', 'JSON', 'UTF8'].includes(match.toUpperCase())) return;
-                
-                // Skip if this looks like part of an email address (followed by @)
-                const emailCheckRegex = new RegExp('\\\\b' + match + '@', 'i');
-                if (emailCheckRegex.test(text)) return;
-                
-                // Skip if preceded by @ (part of email domain or mention)
-                const atPrefixRegex = new RegExp('@' + match + '\\\\b', 'i');
-                if (atPrefixRegex.test(text)) return;
-                
-                const regex = new RegExp('\\\\b' + match + '\\\\b', 'g');
-                html = html.replace(regex, '<span class="verify-code" data-code="' + match + '">' + match + '</span>');
-              }
-            });
-          }
-          
-          if (html !== text) {
-            const span = document.createElement('span');
-            span.innerHTML = html;
-            node.parentNode.replaceChild(span, node);
-          }
-        });
-
-        // Add click handlers to all OTP codes
-        document.querySelectorAll('.otp-code, .verify-code').forEach(el => {
-          el.onclick = () => copyCode(el, el.dataset.code);
-        });
-      }
-
-      // Run OTP detection after DOM is ready
-      detectAndWrapCodes();
 
       // Link popup functionality
       let currentPopup = null;
