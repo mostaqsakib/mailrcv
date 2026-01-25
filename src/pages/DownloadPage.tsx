@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
+const GITHUB_REPO = "mostaqsakib/mailrcv";
+const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases/latest`;
+const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 
 const DownloadPage = () => {
   const [error, setError] = useState(false);
@@ -8,23 +11,32 @@ const DownloadPage = () => {
   useEffect(() => {
     const fetchLatestAPK = async () => {
       try {
-        const { data, error } = await supabase
-          .from("app_version")
-          .select("download_url, version_name")
-          .order("version_code", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        // Fetch latest release from GitHub API to get direct APK link
+        const response = await fetch(GITHUB_API_URL, {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        });
 
-        if (error || !data?.download_url) {
-          // Fallback to GitHub releases
-          window.location.href = "https://github.com/mostaqsakib/mailrcv/releases/latest";
+        if (!response.ok) {
+          // Fallback to releases page
+          window.location.href = GITHUB_RELEASES_URL;
           return;
         }
 
-        // Redirect to the latest APK from storage
-        window.location.href = data.download_url;
-      } catch (err) {
-        console.error("Error fetching APK:", err);
+        const release = await response.json();
+        
+        // Find APK asset
+        const apkAsset = release.assets?.find((a: any) => a.name.endsWith('.apk'));
+        
+        if (apkAsset?.browser_download_url) {
+          // Redirect directly to APK download
+          window.location.href = apkAsset.browser_download_url;
+        } else {
+          // No APK found, redirect to releases page
+          window.location.href = GITHUB_RELEASES_URL;
+        }
+      } catch {
         setError(true);
       }
     };
@@ -40,7 +52,7 @@ const DownloadPage = () => {
           <p className="text-muted-foreground">
             Try downloading from{" "}
             <a 
-              href="https://github.com/mostaqsakib/mailrcv/releases/latest"
+              href={GITHUB_RELEASES_URL}
               className="text-primary hover:underline"
             >
               GitHub Releases
@@ -59,7 +71,7 @@ const DownloadPage = () => {
         <p className="text-muted-foreground">
           If download doesn't start,{" "}
           <a 
-            href="https://github.com/mostaqsakib/mailrcv/releases/latest"
+            href={GITHUB_RELEASES_URL}
             className="text-primary hover:underline"
           >
             click here

@@ -1,11 +1,25 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 
-// Current app version - increment this when releasing new APK
+// GitHub repository for releases
+const GITHUB_REPO = 'mostaqsakib/mailrcv';
+const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+
+// Fallback constants for web preview
 export const CURRENT_VERSION_CODE = 1;
 export const CURRENT_VERSION_NAME = '1.0.0';
+
+interface GitHubRelease {
+  tag_name: string;
+  name: string;
+  body: string;
+  html_url: string;
+  assets: Array<{
+    name: string;
+    browser_download_url: string;
+  }>;
+}
 
 interface AppVersion {
   version_code: number;
@@ -13,6 +27,32 @@ interface AppVersion {
   release_notes: string | null;
   download_url: string | null;
   is_force_update: boolean;
+}
+
+/**
+ * Parse version string like "1.0.80" into a comparable number (e.g., 1000080)
+ */
+function parseVersionToNumber(version: string): number {
+  const parts = version.replace(/^v/, '').split('.').map(Number);
+  // major * 1000000 + minor * 1000 + patch
+  return (parts[0] || 0) * 1000000 + (parts[1] || 0) * 1000 + (parts[2] || 0);
+}
+
+/**
+ * Extract version code (build number) from release body if present
+ * Looks for pattern like "Build #80" or "(Build #80)"
+ */
+function extractVersionCode(body: string): number | null {
+  const match = body.match(/Build\s*#(\d+)/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Check if release notes indicate a force update
+ * Convention: Include "[FORCE]" or "[FORCE UPDATE]" in release body
+ */
+function isForceUpdate(body: string): boolean {
+  return /\[FORCE(?:\s*UPDATE)?\]/i.test(body);
 }
 
 export const useAppUpdate = () => {
@@ -27,7 +67,6 @@ export const useAppUpdate = () => {
 
   useEffect(() => {
     // On native builds, read the real installed version/build number.
-    // This avoids having to keep CURRENT_VERSION_* in sync manually.
     const loadNativeVersion = async () => {
       if (!Capacitor.isNativePlatform()) return;
       try {
@@ -40,7 +79,6 @@ export const useAppUpdate = () => {
           setCurrentVersionName(info.version);
         }
 
-        // Debug: Helps verify what the native app reports on real devices.
         console.log('[update] native App.getInfo()', { version: info.version, build: info.build });
       } catch (err) {
         console.warn('Failed to read native app version info; falling back to constants.', err);
@@ -53,53 +91,59 @@ export const useAppUpdate = () => {
   }, []);
 
   const checkForUpdate = async () => {
-    // Prevent a false-positive update prompt on native while we haven't loaded
-    // the real installed build/version yet.
+    // Prevent check while native version is loading
     if (Capacitor.isNativePlatform() && !isNativeVersionResolved) return;
 
     setIsChecking(true);
     try {
-      const { data, error } = await supabase
-        .from('app_version')
-        .select('version_code, version_name, release_notes, download_url, is_force_update')
-        .order('version_code', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        console.error('Error checking for updates:', error);
-        return;
-      }
-
-      if (!data) return;
-
-      // If the installed app already matches the latest release (by name OR build code),
-      // do not show any update prompt.
-      const isSameVersionName =
-        Boolean(currentVersionName) && data.version_name === currentVersionName;
-      const isSameVersionCode = data.version_code === currentVersionCode;
-
-      // Debug: helps diagnose false-positive prompts.
-      console.log('[update] compare', {
-        installed: { version_name: currentVersionName, version_code: currentVersionCode },
-        latest: { version_name: data.version_name, version_code: data.version_code },
-        isSameVersionName,
-        isSameVersionCode,
+      const response = await fetch(GITHUB_API_URL, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+        },
       });
 
-      if (isSameVersionName || isSameVersionCode) {
-        setUpdateAvailable(false);
-        setLatestVersion(data);
+      if (!response.ok) {
+        console.error('GitHub API error:', response.status);
         return;
       }
 
-      // Only show prompt when backend version is strictly newer than installed app.
-      if (data.version_code > currentVersionCode) {
+      const release: GitHubRelease = await response.json();
+      
+      // Extract version from tag (e.g., "v1.0.80" -> "1.0.80")
+      const latestVersionName = release.tag_name.replace(/^v/, '');
+      
+      // Try to get version code from release body, fallback to parsing version name
+      const latestVersionCode = extractVersionCode(release.body || '') 
+        || parseVersionToNumber(latestVersionName);
+      
+      // Find APK download URL
+      const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
+      const downloadUrl = apkAsset?.browser_download_url || release.html_url;
+
+      const appVersion: AppVersion = {
+        version_code: latestVersionCode,
+        version_name: latestVersionName,
+        release_notes: release.body || null,
+        download_url: downloadUrl,
+        is_force_update: isForceUpdate(release.body || ''),
+      };
+
+      setLatestVersion(appVersion);
+
+      // Compare versions
+      const installedVersionNum = parseVersionToNumber(currentVersionName);
+      const latestVersionNum = parseVersionToNumber(latestVersionName);
+
+      console.log('[update] compare', {
+        installed: { version_name: currentVersionName, version_code: currentVersionCode, parsed: installedVersionNum },
+        latest: { version_name: latestVersionName, version_code: latestVersionCode, parsed: latestVersionNum },
+      });
+
+      // Only show update if latest is strictly newer
+      if (latestVersionNum > installedVersionNum) {
         setUpdateAvailable(true);
-        setLatestVersion(data);
       } else {
         setUpdateAvailable(false);
-        setLatestVersion(data);
       }
     } catch (err) {
       console.error('Update check failed:', err);
@@ -117,12 +161,12 @@ export const useAppUpdate = () => {
   };
 
   const goToDownload = () => {
-    const url = latestVersion?.download_url || 'https://mailrcv.site/download';
+    const url = latestVersion?.download_url || `https://github.com/${GITHUB_REPO}/releases/latest`;
     window.open(url, '_blank');
   };
 
   useEffect(() => {
-    // Check for updates on mount
+    // Check for updates on mount (after native version is resolved)
     checkForUpdate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVersionCode, isNativeVersionResolved]);
