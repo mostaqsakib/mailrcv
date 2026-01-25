@@ -287,9 +287,9 @@ export const HeroSection = () => {
               <div className="flex items-center gap-3">
                 {/* Main input container */}
                 <div className="flex-1 relative group">
-                  <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-4 gap-3 border border-border/50 dark:border-primary/20 group-hover:border-primary/40 transition-all duration-300 group-focus-within:border-primary group-focus-within:shadow-[0_0_20px_-5px] group-focus-within:shadow-primary/50">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                      <Mail className="w-5 h-5 text-primary" />
+                  <div className="relative flex items-center bg-background dark:bg-background/70 rounded-lg px-4 py-3 gap-3 border border-border/50 dark:border-primary/20 group-hover:border-primary/40 transition-all duration-300 group-focus-within:border-primary group-focus-within:shadow-[0_0_20px_-5px] group-focus-within:shadow-primary/50">
+                    <div className="w-9 h-9 rounded-md bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                      <Mail className="w-4 h-4 text-primary" />
                     </div>
                     <Input
                       type="text"
@@ -309,7 +309,7 @@ export const HeroSection = () => {
                         }
                         setUsername(value.replace(/[^a-zA-Z0-9._-]/g, ""));
                       }}
-                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-1"
                     />
                   </div>
                 </div>
