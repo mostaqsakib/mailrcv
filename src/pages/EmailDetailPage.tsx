@@ -582,7 +582,10 @@ const EmailDetailPage = () => {
         closePopup();
 
         const href = link.href;
-        const rect = link.getBoundingClientRect();
+        
+        // Use click/touch position for popup placement
+        const clickX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clickY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
 
         // Create overlay
         currentOverlay = document.createElement('div');
@@ -603,21 +606,31 @@ const EmailDetailPage = () => {
           </button>
         \`;
 
-        // Position popup
-        let top = rect.bottom + 8;
-        let left = rect.left;
+        // Position popup near click/cursor position
+        const popupWidth = 160;
+        const popupHeight = 90;
         
-        // Adjust if too close to bottom
-        if (top + 100 > window.innerHeight) {
-          top = rect.top - 100;
+        let top = clickY - popupHeight - 10; // Show above cursor
+        let left = clickX - (popupWidth / 2); // Center on cursor
+        
+        // If popup would go above viewport, show below cursor
+        if (top < 10) {
+          top = clickY + 15;
         }
-        // Adjust if too close to right
-        if (left + 160 > window.innerWidth) {
-          left = window.innerWidth - 170;
+        // Keep within horizontal bounds
+        if (left < 10) {
+          left = 10;
+        }
+        if (left + popupWidth > window.innerWidth - 10) {
+          left = window.innerWidth - popupWidth - 10;
+        }
+        // Keep within vertical bounds
+        if (top + popupHeight > window.innerHeight - 10) {
+          top = window.innerHeight - popupHeight - 10;
         }
 
         currentPopup.style.top = top + 'px';
-        currentPopup.style.left = Math.max(10, left) + 'px';
+        currentPopup.style.left = left + 'px';
 
         // Add click handlers
         currentPopup.querySelector('[data-action="open"]').onclick = () => {
