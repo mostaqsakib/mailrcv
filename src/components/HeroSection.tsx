@@ -284,7 +284,7 @@ export const HeroSection = () => {
                         <SelectItem 
                           key={d} 
                           value={d} 
-                          className="font-mono text-sm cursor-pointer py-2.5 px-3 focus:bg-primary/10 focus:text-primary transition-colors"
+                          className="font-mono text-sm cursor-pointer py-2.5 pl-8 pr-4 focus:bg-primary/10 focus:text-primary transition-colors"
                         >
                           {d}
                         </SelectItem>
