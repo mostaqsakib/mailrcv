@@ -307,6 +307,12 @@ const EmailDetailPage = () => {
         line-height: 1.75;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       }
+      pre.plaintext a {
+        color: ${linkColor} !important;
+        text-decoration: underline !important;
+        cursor: pointer !important;
+        display: inline !important;
+      }
       hr { border: none; border-top: 1px solid ${hrColor}; margin: 16px 0; }
       .tap-copy-hint {
         position: fixed !important;
@@ -567,16 +573,27 @@ const EmailDetailPage = () => {
     doc.write(htmlContent);
     doc.close();
     setContentWritten(true);
-  }, [email?.body_html, resolvedTheme, contentWritten]);
+  }, [email?.body_html, email?.body_text, resolvedTheme, contentWritten]);
 
   // Reset contentWritten when email changes
   useEffect(() => {
     setContentWritten(false);
   }, [emailId]);
 
+  // Write content when email is loaded
+  useEffect(() => {
+    if (email && (email.body_html || email.body_text) && iframeRef.current && !contentWritten) {
+      // Small delay to ensure iframe is ready
+      const timeoutId = setTimeout(() => {
+        writeIframeContent();
+      }, 50);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [email, contentWritten, writeIframeContent]);
+
   // Re-write on theme change (force write)
   useEffect(() => {
-    if (email?.body_html && contentWritten && resolvedTheme) {
+    if ((email?.body_html || email?.body_text) && contentWritten && resolvedTheme) {
       writeIframeContent(true);
     }
   }, [resolvedTheme]);
@@ -684,7 +701,8 @@ const EmailDetailPage = () => {
     );
   }
 
-  const hasHtml = !!email.body_html;
+  // Use iframe for both HTML and plain text (to get linkification and proper styling)
+  const hasContent = !!(email.body_html || email.body_text);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -758,7 +776,7 @@ const EmailDetailPage = () => {
       <main className="flex-1 relative z-10 pb-safe">
         <div className="container mx-auto px-4 py-6">
           <div className="glass rounded-2xl border border-border/50 overflow-hidden shadow-elegant">
-            {hasHtml ? (
+            {hasContent ? (
               <iframe
                 ref={iframeRef}
                 title="Email Content"
@@ -775,7 +793,7 @@ const EmailDetailPage = () => {
                     className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground/90"
                     style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
                   >
-                    {email.body_text || "(No content)"}
+                    (No content)
                   </div>
                 </div>
               </ScrollArea>
