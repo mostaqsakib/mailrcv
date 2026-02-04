@@ -109,6 +109,57 @@ const EmailDetailPage = () => {
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#039;");
 
+    // Convert URLs in plain text to clickable links BEFORE escaping
+    const linkifyText = (text: string): string => {
+      // URL pattern - matches http, https, and www URLs
+      const urlPattern = /(https?:\/\/[^\s<>]+|www\.[^\s<>]+)/gi;
+      
+      return text.replace(urlPattern, (match) => {
+        let url = match;
+        // Add protocol if missing
+        if (url.startsWith('www.')) {
+          url = 'https://' + url;
+        }
+        // Escape the display text, but keep the href clean
+        const escapedDisplay = match
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${escapedDisplay}</a>`;
+      });
+    };
+
+    // Process plain text: linkify URLs first, then escape remaining text
+    const processPlainText = (text: string): string => {
+      const urlPattern = /(https?:\/\/[^\s<>]+|www\.[^\s<>]+)/gi;
+      const parts: string[] = [];
+      let lastIndex = 0;
+      let match;
+
+      while ((match = urlPattern.exec(text)) !== null) {
+        // Escape text before URL
+        if (match.index > lastIndex) {
+          parts.push(escapeHtml(text.slice(lastIndex, match.index)));
+        }
+        
+        // Create link for URL
+        let url = match[0];
+        if (url.startsWith('www.')) {
+          url = 'https://' + url;
+        }
+        parts.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(match[0])}</a>`);
+        
+        lastIndex = match.index + match[0].length;
+      }
+
+      // Escape remaining text
+      if (lastIndex < text.length) {
+        parts.push(escapeHtml(text.slice(lastIndex)));
+      }
+
+      return parts.join('');
+    };
+
     // Some providers send "HTML" that is basically plain text with newlines.
     // In that case we must preserve line breaks, otherwise everything collapses into one line.
     const hasNewlines = raw.includes("\n") || raw.includes("\r");
@@ -490,7 +541,7 @@ const EmailDetailPage = () => {
     } else {
       const contentHtml =
         treatAsPlainTextHtml && email.body_text
-          ? `<pre class="plaintext">${escapeHtml(email.body_text)}</pre>`
+          ? `<pre class="plaintext">${processPlainText(email.body_text)}</pre>`
           : raw;
 
       htmlContent = `
