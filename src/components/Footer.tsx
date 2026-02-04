@@ -1,4 +1,5 @@
 import { Send } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export const Footer = () => {
@@ -42,12 +43,12 @@ export const Footer = () => {
             © 2026 MailRCV. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy
-            </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms
-            </a>
+            </Link>
           </div>
         </div>
       </div>
