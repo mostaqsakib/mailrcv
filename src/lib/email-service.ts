@@ -114,7 +114,10 @@ export async function getAllDomains(): Promise<Domain[]> {
 export async function addDomain(domainName: string): Promise<Domain | null> {
   const { data, error } = await supabase
     .from("domains")
-    .insert({ domain_name: domainName.toLowerCase() })
+    .insert({ 
+      domain_name: domainName.toLowerCase(),
+      is_verified: true // Auto-verify on add
+    })
     .select()
     .single();
 
