@@ -124,6 +124,47 @@ export type Database = {
           },
         ]
       }
+      email_attachments: {
+        Row: {
+          content_id: string
+          content_type: string | null
+          created_at: string
+          email_id: string
+          filename: string | null
+          id: string
+          storage_path: string
+          storage_url: string
+        }
+        Insert: {
+          content_id: string
+          content_type?: string | null
+          created_at?: string
+          email_id: string
+          filename?: string | null
+          id?: string
+          storage_path: string
+          storage_url: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string | null
+          created_at?: string
+          email_id?: string
+          filename?: string | null
+          id?: string
+          storage_path?: string
+          storage_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_attachments_email_id_fkey"
+            columns: ["email_id"]
+            isOneToOne: false
+            referencedRelation: "received_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_tokens: {
         Row: {
           alias_id: string | null

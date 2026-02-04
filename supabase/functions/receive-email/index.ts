@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface InlineAttachment {
+  content_id: string;
+  filename?: string;
+  content_type: string;
+  data: string; // base64 encoded
+}
+
 interface CloudflareEmailPayload {
   from: string;
   to: string;
@@ -13,6 +20,7 @@ interface CloudflareEmailPayload {
   html?: string;
   headers?: Record<string, string>;
   raw?: string;
+  attachments?: InlineAttachment[];
 }
 
 interface SendGridWebhook {
@@ -22,6 +30,17 @@ interface SendGridWebhook {
   text?: string;
   html?: string;
   envelope?: string;
+}
+
+// Convert base64 to Uint8Array
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 }
 
 Deno.serve(async (req) => {
@@ -50,13 +69,14 @@ Deno.serve(async (req) => {
     let subject = "";
     let bodyText = "";
     let bodyHtml = "";
+    let inlineAttachments: InlineAttachment[] = [];
 
     // Detect source based on headers or content
     const isCloudflare = req.headers.get("cf-worker") || req.headers.get("x-source") === "cloudflare";
     
     if (contentType.includes("application/json")) {
       const jsonData = await req.json();
-      console.log("Received JSON webhook:", JSON.stringify(jsonData, null, 2));
+      console.log("Received JSON webhook:", JSON.stringify(jsonData, null, 2).slice(0, 2000));
       
       // Cloudflare Email Workers format
       if (isCloudflare || jsonData.raw || jsonData.headers) {
@@ -66,9 +86,9 @@ Deno.serve(async (req) => {
         subject = cfData.subject || "";
         bodyText = cfData.text || "";
         bodyHtml = cfData.html || "";
+        inlineAttachments = cfData.attachments || [];
         
-        // If raw email provided, we already have parsed data from worker
-        console.log("Processing Cloudflare Email Workers payload");
+        console.log(`Processing Cloudflare Email Workers payload with ${inlineAttachments.length} attachments`);
       } else {
         // Generic JSON format (SendGrid JSON mode or custom)
         fromEmail = jsonData.from || "";
@@ -217,7 +237,7 @@ Deno.serve(async (req) => {
     const fromMatch = fromEmail.match(/<?([^<>\s]+@[^<>\s]+)>?/);
     const senderEmail = fromMatch ? fromMatch[1] : fromEmail || "unknown@unknown.com";
 
-    // Store the email
+    // Store the email first (we need the email_id for attachments)
     const { data: savedEmail, error: saveError } = await supabase
       .from("received_emails")
       .insert({
@@ -240,6 +260,93 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log("Email saved successfully:", savedEmail.id);
+
+    // Process inline attachments
+    const cidToUrl: Record<string, string> = {};
+    
+    if (inlineAttachments.length > 0) {
+      console.log(`Processing ${inlineAttachments.length} inline attachments...`);
+      
+      for (const attachment of inlineAttachments) {
+        try {
+          // Clean content_id (remove angle brackets if present)
+          const cleanCid = attachment.content_id.replace(/^<|>$/g, "");
+          
+          // Generate unique filename
+          const ext = attachment.content_type.split("/")[1] || "bin";
+          const filename = attachment.filename || `${cleanCid}.${ext}`;
+          const storagePath = `${savedEmail.id}/${filename}`;
+          
+          // Convert base64 to binary
+          const fileData = base64ToUint8Array(attachment.data);
+          
+          // Upload to storage
+          const { error: uploadError } = await supabase.storage
+            .from("email-attachments")
+            .upload(storagePath, fileData, {
+              contentType: attachment.content_type,
+              upsert: true,
+            });
+          
+          if (uploadError) {
+            console.error(`Failed to upload attachment ${cleanCid}:`, uploadError);
+            continue;
+          }
+          
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from("email-attachments")
+            .getPublicUrl(storagePath);
+          
+          const publicUrl = urlData.publicUrl;
+          console.log(`Uploaded attachment: ${cleanCid} -> ${publicUrl}`);
+          
+          // Store mapping
+          cidToUrl[cleanCid] = publicUrl;
+          
+          // Save attachment record
+          await supabase.from("email_attachments").insert({
+            email_id: savedEmail.id,
+            content_id: cleanCid,
+            filename: filename,
+            content_type: attachment.content_type,
+            storage_path: storagePath,
+            storage_url: publicUrl,
+          });
+          
+        } catch (attachErr) {
+          console.error("Error processing attachment:", attachErr);
+        }
+      }
+      
+      // Rewrite cid: URLs in HTML body
+      if (bodyHtml && Object.keys(cidToUrl).length > 0) {
+        let rewrittenHtml = bodyHtml;
+        
+        for (const [cid, url] of Object.entries(cidToUrl)) {
+          // Replace cid:xxx with actual URL
+          const cidPatterns = [
+            new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "gi"),
+            new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/@/g, "%40")}`, "gi"),
+          ];
+          
+          for (const pattern of cidPatterns) {
+            rewrittenHtml = rewrittenHtml.replace(pattern, url);
+          }
+        }
+        
+        // Update the email with rewritten HTML
+        if (rewrittenHtml !== bodyHtml) {
+          console.log("Updating email with rewritten HTML (cid: replaced with URLs)");
+          await supabase
+            .from("received_emails")
+            .update({ body_html: rewrittenHtml })
+            .eq("id", savedEmail.id);
+        }
+      }
+    }
+
     // Update email count for the alias
     const { data: currentAlias } = await supabase
       .from("email_aliases")
@@ -253,8 +360,6 @@ Deno.serve(async (req) => {
         .update({ email_count: (currentAlias.email_count || 0) + 1 })
         .eq("id", alias.id);
     }
-
-    console.log("Email saved successfully:", savedEmail.id);
 
     // Send push notification
     try {
@@ -292,7 +397,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: "Email received and stored",
-        email_id: savedEmail.id 
+        email_id: savedEmail.id,
+        attachments_processed: Object.keys(cidToUrl).length,
       }),
       {
         status: 200,
