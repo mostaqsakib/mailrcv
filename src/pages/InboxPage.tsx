@@ -124,14 +124,14 @@ const EmailItem = memo(({
             {!mail.is_read && (
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
             )}
-            <span className={`font-mono text-sm truncate ${!mail.is_read ? "text-primary" : "text-muted-foreground"}`}>
+            <span className={`font-mono text-base truncate ${!mail.is_read ? "text-primary" : "text-muted-foreground"}`}>
               {mail.from_email}
             </span>
           </div>
-          <h4 className={`font-semibold text-lg mb-1 ${!mail.is_read ? "text-foreground" : "text-foreground/80"}`}>
+          <h4 className={`font-semibold text-xl mb-1.5 ${!mail.is_read ? "text-foreground" : "text-foreground/80"}`}>
             {mail.subject || "(No subject)"}
           </h4>
-          <p className="text-muted-foreground line-clamp-1">
+          <p className="text-base text-muted-foreground line-clamp-1">
             {mail.body_text?.substring(0, 150) || "(No content)"}
           </p>
         </div>
