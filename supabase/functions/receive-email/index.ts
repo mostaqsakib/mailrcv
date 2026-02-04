@@ -5,19 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface MailgunWebhook {
-  sender: string;
+interface SendGridWebhook {
   from: string;
-  recipient: string;
-  To?: string;
+  to: string;
   subject?: string;
-  "body-plain"?: string;
-  "body-html"?: string;
-  "stripped-text"?: string;
-  "stripped-html"?: string;
-  timestamp?: string;
-  token?: string;
-  signature?: string;
+  text?: string;
+  html?: string;
+  envelope?: string; // JSON string containing to/from arrays
+  charsets?: string;
+  SPF?: string;
 }
 
 Deno.serve(async (req) => {
@@ -40,34 +36,55 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Parse the incoming email data from Mailgun
+    // Parse the incoming email data from SendGrid Inbound Parse
     const contentType = req.headers.get("content-type") || "";
-    let emailData: MailgunWebhook;
+    let emailData: SendGridWebhook;
 
-    if (contentType.includes("application/json")) {
-      emailData = await req.json();
-    } else if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+    if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
       const formData = await req.formData();
       emailData = {
-        sender: formData.get("sender") as string || "",
         from: formData.get("from") as string || "",
-        recipient: formData.get("recipient") as string || "",
-        To: formData.get("To") as string || "",
+        to: formData.get("to") as string || "",
         subject: formData.get("subject") as string || "",
-        "body-plain": formData.get("body-plain") as string || "",
-        "body-html": formData.get("body-html") as string || "",
-        "stripped-text": formData.get("stripped-text") as string || "",
-        "stripped-html": formData.get("stripped-html") as string || "",
+        text: formData.get("text") as string || "",
+        html: formData.get("html") as string || "",
+        envelope: formData.get("envelope") as string || "",
       };
-    } else {
-      // Try JSON as fallback
+    } else if (contentType.includes("application/json")) {
       emailData = await req.json();
+    } else {
+      // Try form data as fallback (SendGrid typically uses multipart)
+      try {
+        const formData = await req.formData();
+        emailData = {
+          from: formData.get("from") as string || "",
+          to: formData.get("to") as string || "",
+          subject: formData.get("subject") as string || "",
+          text: formData.get("text") as string || "",
+          html: formData.get("html") as string || "",
+          envelope: formData.get("envelope") as string || "",
+        };
+      } catch {
+        emailData = await req.json();
+      }
     }
 
-    console.log("Received Mailgun webhook:", JSON.stringify(emailData, null, 2));
+    console.log("Received SendGrid webhook:", JSON.stringify(emailData, null, 2));
 
-    // Extract recipient address - Mailgun uses 'recipient' field
-    const toAddress = emailData.recipient || emailData.To || "";
+    // Extract recipient address - SendGrid uses 'to' field or envelope
+    let toAddress = emailData.to || "";
+    
+    // If envelope exists, parse it for more accurate recipient info
+    if (emailData.envelope) {
+      try {
+        const envelope = JSON.parse(emailData.envelope);
+        if (envelope.to && envelope.to.length > 0) {
+          toAddress = envelope.to[0];
+        }
+      } catch (e) {
+        console.log("Failed to parse envelope, using 'to' field:", e);
+      }
+    }
     
     if (!toAddress) {
       console.error("No recipient address found");
@@ -158,20 +175,20 @@ Deno.serve(async (req) => {
       alias = newAlias;
     }
 
-    // Extract sender email
+    // Extract sender email - SendGrid format: "Name <email@example.com>" or just "email@example.com"
     const fromEmail = emailData.from || "unknown@unknown.com";
     const fromMatch = fromEmail.match(/<?([^<>\s]+@[^<>\s]+)>?/);
     const senderEmail = fromMatch ? fromMatch[1] : fromEmail;
 
-    // Store the email - Mailgun uses body-plain and body-html
+    // Store the email - SendGrid uses text and html fields
     const { data: savedEmail, error: saveError } = await supabase
       .from("received_emails")
       .insert({
         alias_id: alias.id,
         from_email: senderEmail,
         subject: emailData.subject || "(No Subject)",
-        body_text: emailData["body-plain"] || emailData["stripped-text"] || null,
-        body_html: emailData["body-html"] || emailData["stripped-html"] || null,
+        body_text: emailData.text || null,
+        body_html: emailData.html || null,
         is_read: false,
         is_forwarded: false,
       })
