@@ -175,11 +175,17 @@ function parseBody(headerSection, bodySection) {
         const trimmedPart = part.trim();
         if (!trimmedPart || trimmedPart === "--") continue;
         
-        const partHeaderEnd = trimmedPart.indexOf("\r\n\r\n");
+        // Support both \r\n\r\n and \n\n as header/body separator
+        let partHeaderEnd = trimmedPart.indexOf("\r\n\r\n");
+        let separatorLength = 4;
+        if (partHeaderEnd < 0) {
+          partHeaderEnd = trimmedPart.indexOf("\n\n");
+          separatorLength = 2;
+        }
         if (partHeaderEnd < 0) continue;
         
         const partHeaders = trimmedPart.substring(0, partHeaderEnd);
-        let partBody = trimmedPart.substring(partHeaderEnd + 4);
+        let partBody = trimmedPart.substring(partHeaderEnd + separatorLength);
         
         // Remove trailing boundary marker
         if (partBody.endsWith("--")) {
