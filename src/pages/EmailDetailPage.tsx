@@ -79,7 +79,9 @@ const EmailDetailPage = () => {
   }, [emailId, username, navigate]);
 
   const writeIframeContent = useCallback((forceWrite = false) => {
-    if (!email?.body_html || !iframeRef.current) return;
+    if (!iframeRef.current) return;
+    // Support emails that only have plain text (body_html may be null)
+    if (!email?.body_html && !email?.body_text) return;
     
     // Prevent double-writes unless forced (for theme changes)
     if (contentWritten && !forceWrite) return;
@@ -98,7 +100,7 @@ const EmailDetailPage = () => {
     const codeBorder = isDark ? '#27272a' : '#e4e4e7';
     const hrColor = isDark ? '#3f3f46' : '#e4e4e7';
 
-    const raw = email.body_html;
+    const raw = email.body_html ?? "";
     const looksLikeFullDoc = /<!doctype/i.test(raw) || /<html[\s>]/i.test(raw) || /<head[\s>]/i.test(raw);
 
     const escapeHtml = (value: string) =>
@@ -162,7 +164,8 @@ const EmailDetailPage = () => {
 
     // Some providers send "HTML" that is basically plain text with newlines.
     // In that case we must preserve line breaks, otherwise everything collapses into one line.
-    const hasNewlines = raw.includes("\n") || raw.includes("\r");
+    const textSource = email.body_text ?? raw;
+    const hasNewlines = textSource.includes("\n") || textSource.includes("\r");
     // NOTE: Some senders wrap plain text in a single <div>/<span>/etc. That should still be treated as plain text.
     // We only consider it "meaningful HTML" if it contains true layout/line-break elements.
     const hasMeaningfulHtml = /<(br\s*\/?>|p|pre|blockquote|table|tr|td|th|ul|ol|li|h1|h2|h3)[\s>]/i.test(raw);
@@ -176,7 +179,8 @@ const EmailDetailPage = () => {
       !/<br\s*\/?>/i.test(trimmed);
 
     // If there's no real structure tags OR it's the "single <p> + \n" case, render with pre-wrap.
-    const treatAsPlainTextHtml = (hasNewlines && isSinglePWrapper) || (!hasMeaningfulHtml && raw.length > 0);
+    const treatAsPlainTextHtml =
+      !!email.body_text || (hasNewlines && isSinglePWrapper) || (!hasMeaningfulHtml && raw.length > 0);
 
     const styleText = `
       * { box-sizing: border-box !important; }
@@ -539,10 +543,9 @@ const EmailDetailPage = () => {
 
       htmlContent = '<!DOCTYPE html>\n' + parsed.documentElement.outerHTML;
     } else {
-      const contentHtml =
-        treatAsPlainTextHtml && email.body_text
-          ? `<pre class="plaintext">${processPlainText(email.body_text)}</pre>`
-          : raw;
+      const contentHtml = treatAsPlainTextHtml
+        ? `<pre class="plaintext">${processPlainText(email.body_text ?? textSource)}</pre>`
+        : raw;
 
       htmlContent = `
         <!DOCTYPE html>
