@@ -5,15 +5,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface CloudflareEmailPayload {
+  from: string;
+  to: string;
+  subject?: string;
+  text?: string;
+  html?: string;
+  headers?: Record<string, string>;
+  raw?: string;
+}
+
 interface SendGridWebhook {
   from: string;
   to: string;
   subject?: string;
   text?: string;
   html?: string;
-  envelope?: string; // JSON string containing to/from arrays
-  charsets?: string;
-  SPF?: string;
+  envelope?: string;
 }
 
 Deno.serve(async (req) => {
@@ -36,13 +44,43 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Parse the incoming email data from SendGrid Inbound Parse
     const contentType = req.headers.get("content-type") || "";
-    let emailData: SendGridWebhook;
+    let fromEmail = "";
+    let toAddress = "";
+    let subject = "";
+    let bodyText = "";
+    let bodyHtml = "";
 
-    if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+    // Detect source based on headers or content
+    const isCloudflare = req.headers.get("cf-worker") || req.headers.get("x-source") === "cloudflare";
+    
+    if (contentType.includes("application/json")) {
+      const jsonData = await req.json();
+      console.log("Received JSON webhook:", JSON.stringify(jsonData, null, 2));
+      
+      // Cloudflare Email Workers format
+      if (isCloudflare || jsonData.raw || jsonData.headers) {
+        const cfData = jsonData as CloudflareEmailPayload;
+        fromEmail = cfData.from || "";
+        toAddress = cfData.to || "";
+        subject = cfData.subject || "";
+        bodyText = cfData.text || "";
+        bodyHtml = cfData.html || "";
+        
+        // If raw email provided, we already have parsed data from worker
+        console.log("Processing Cloudflare Email Workers payload");
+      } else {
+        // Generic JSON format (SendGrid JSON mode or custom)
+        fromEmail = jsonData.from || "";
+        toAddress = jsonData.to || "";
+        subject = jsonData.subject || "";
+        bodyText = jsonData.text || jsonData.body_text || "";
+        bodyHtml = jsonData.html || jsonData.body_html || "";
+      }
+    } else if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+      // SendGrid Inbound Parse format
       const formData = await req.formData();
-      emailData = {
+      const emailData: SendGridWebhook = {
         from: formData.get("from") as string || "",
         to: formData.get("to") as string || "",
         subject: formData.get("subject") as string || "",
@@ -50,42 +88,43 @@ Deno.serve(async (req) => {
         html: formData.get("html") as string || "",
         envelope: formData.get("envelope") as string || "",
       };
-    } else if (contentType.includes("application/json")) {
-      emailData = await req.json();
-    } else {
-      // Try form data as fallback (SendGrid typically uses multipart)
-      try {
-        const formData = await req.formData();
-        emailData = {
-          from: formData.get("from") as string || "",
-          to: formData.get("to") as string || "",
-          subject: formData.get("subject") as string || "",
-          text: formData.get("text") as string || "",
-          html: formData.get("html") as string || "",
-          envelope: formData.get("envelope") as string || "",
-        };
-      } catch {
-        emailData = await req.json();
-      }
-    }
-
-    console.log("Received SendGrid webhook:", JSON.stringify(emailData, null, 2));
-
-    // Extract recipient address - SendGrid uses 'to' field or envelope
-    let toAddress = emailData.to || "";
-    
-    // If envelope exists, parse it for more accurate recipient info
-    if (emailData.envelope) {
-      try {
-        const envelope = JSON.parse(emailData.envelope);
-        if (envelope.to && envelope.to.length > 0) {
-          toAddress = envelope.to[0];
+      
+      console.log("Received SendGrid form-data webhook:", JSON.stringify(emailData, null, 2));
+      
+      fromEmail = emailData.from;
+      toAddress = emailData.to;
+      subject = emailData.subject || "";
+      bodyText = emailData.text || "";
+      bodyHtml = emailData.html || "";
+      
+      // Parse envelope for more accurate recipient
+      if (emailData.envelope) {
+        try {
+          const envelope = JSON.parse(emailData.envelope);
+          if (envelope.to && envelope.to.length > 0) {
+            toAddress = envelope.to[0];
+          }
+        } catch (e) {
+          console.log("Failed to parse envelope:", e);
         }
-      } catch (e) {
-        console.log("Failed to parse envelope, using 'to' field:", e);
+      }
+    } else {
+      // Try JSON as fallback
+      try {
+        const jsonData = await req.json();
+        fromEmail = jsonData.from || "";
+        toAddress = jsonData.to || "";
+        subject = jsonData.subject || "";
+        bodyText = jsonData.text || "";
+        bodyHtml = jsonData.html || "";
+      } catch {
+        return new Response(JSON.stringify({ error: "Unsupported content type" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
-    
+
     if (!toAddress) {
       console.error("No recipient address found");
       return new Response(JSON.stringify({ error: "No recipient address" }), {
@@ -124,7 +163,6 @@ Deno.serve(async (req) => {
 
     if (!domain) {
       console.log(`Domain not found: ${domainName}, creating it...`);
-      // Create the domain if it doesn't exist
       const { data: newDomain, error: createDomainError } = await supabase
         .from("domains")
         .insert({ domain_name: domainName.toLowerCase(), is_verified: true })
@@ -175,20 +213,19 @@ Deno.serve(async (req) => {
       alias = newAlias;
     }
 
-    // Extract sender email - SendGrid format: "Name <email@example.com>" or just "email@example.com"
-    const fromEmail = emailData.from || "unknown@unknown.com";
+    // Extract sender email
     const fromMatch = fromEmail.match(/<?([^<>\s]+@[^<>\s]+)>?/);
-    const senderEmail = fromMatch ? fromMatch[1] : fromEmail;
+    const senderEmail = fromMatch ? fromMatch[1] : fromEmail || "unknown@unknown.com";
 
-    // Store the email - SendGrid uses text and html fields
+    // Store the email
     const { data: savedEmail, error: saveError } = await supabase
       .from("received_emails")
       .insert({
         alias_id: alias.id,
         from_email: senderEmail,
-        subject: emailData.subject || "(No Subject)",
-        body_text: emailData.text || null,
-        body_html: emailData.html || null,
+        subject: subject || "(No Subject)",
+        body_text: bodyText || null,
+        body_html: bodyHtml || null,
         is_read: false,
         is_forwarded: false,
       })
@@ -219,7 +256,7 @@ Deno.serve(async (req) => {
 
     console.log("Email saved successfully:", savedEmail.id);
 
-    // Send push notification to registered devices
+    // Send push notification
     try {
       const pushResponse = await fetch(
         `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`,
@@ -232,25 +269,23 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             alias_id: alias.id,
             title: `New Email from ${senderEmail}`,
-            body: emailData.subject || "(No Subject)",
+            body: subject || "(No Subject)",
             data: {
               email_id: savedEmail.id,
               from: senderEmail,
-              subject: emailData.subject || "(No Subject)",
+              subject: subject || "(No Subject)",
             },
           }),
         }
       );
       
       if (pushResponse.ok) {
-        const pushResult = await pushResponse.json();
-        console.log("Push notification result:", pushResult);
+        console.log("Push notification sent successfully");
       } else {
         console.error("Push notification failed:", await pushResponse.text());
       }
     } catch (pushError) {
       console.error("Error sending push notification:", pushError);
-      // Don't fail the whole request if push fails
     }
 
     return new Response(
