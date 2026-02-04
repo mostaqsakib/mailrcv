@@ -217,3 +217,24 @@ export async function updateDomainForwarding(domainId: string, forwardTo: string
     .update({ forward_to_email: forwardTo })
     .eq("id", domainId);
 }
+
+export async function deleteAlias(aliasId: string): Promise<boolean> {
+  // First delete all emails for this alias
+  await supabase
+    .from("received_emails")
+    .delete()
+    .eq("alias_id", aliasId);
+
+  // Then delete the alias itself
+  const { error } = await supabase
+    .from("email_aliases")
+    .delete()
+    .eq("id", aliasId);
+
+  if (error) {
+    console.error("Error deleting alias:", error);
+    return false;
+  }
+
+  return true;
+}

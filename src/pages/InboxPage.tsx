@@ -30,9 +30,21 @@ import {
   markEmailAsRead,
   deleteEmail,
   updateAliasForwarding,
+  deleteAlias,
   type ReceivedEmail,
   type EmailAlias
 } from "@/lib/email-service";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import EmailDetailDialog from "@/components/EmailDetailDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -163,6 +175,7 @@ const InboxPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [emailsLoading, setEmailsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<ReceivedEmail | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -471,6 +484,28 @@ const InboxPage = () => {
     navigate("/");
   }, [username, navigate]);
 
+  const handleDeleteInbox = useCallback(async () => {
+    if (!alias) return;
+    
+    setIsDeleting(true);
+    try {
+      const success = await deleteAlias(alias.id);
+      if (success) {
+        // Also clear any session data
+        localStorage.removeItem(`mailrcv_session_${username}`);
+        toast.success("Inbox deleted successfully");
+        navigate("/");
+      } else {
+        toast.error("Failed to delete inbox");
+      }
+    } catch (error) {
+      console.error("Error deleting inbox:", error);
+      toast.error("Failed to delete inbox");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [alias, username, navigate]);
+
   // Login screen for password protected inbox
   if (needsAuth) {
     return (
@@ -614,6 +649,45 @@ const InboxPage = () => {
                 >
                   <Forward className="w-4 h-4" />
                 </Button>
+                
+                {/* Delete Inbox Button with Confirmation */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      title="Delete inbox"
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="glass-strong">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this inbox?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete <strong className="text-primary">{email}</strong> and all {emails.length} emails in it. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteInbox}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 mr-2" />
+                        )}
+                        Delete Inbox
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
                 {isPasswordProtected && (
                   <Button
                     variant="ghost"
