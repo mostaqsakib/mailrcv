@@ -1,9 +1,27 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
+
+const SOUND_ENABLED_KEY = "mailrcv_sound_enabled";
 
 export const useNotificationSound = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    const stored = localStorage.getItem(SOUND_ENABLED_KEY);
+    return stored === null ? true : stored === "true";
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem(SOUND_ENABLED_KEY, String(soundEnabled));
+  }, [soundEnabled]);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prev => !prev);
+  }, []);
 
   const playSound = useCallback(() => {
+    // Don't play if disabled
+    if (!soundEnabled) return;
+
     try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -44,7 +62,7 @@ export const useNotificationSound = () => {
     } catch (error) {
       console.warn("Could not play notification sound:", error);
     }
-  }, []);
+  }, [soundEnabled]);
 
-  return { playSound };
+  return { playSound, soundEnabled, toggleSound };
 };
