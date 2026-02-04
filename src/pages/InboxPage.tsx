@@ -19,7 +19,9 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  LogOut
+  LogOut,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -164,7 +166,7 @@ const InboxPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { permission, requestPermission, showNotification, isSupported } = useNotifications();
-  const { playSound } = useNotificationSound();
+  const { playSound, soundEnabled, toggleSound } = useNotificationSound();
   const { isNative, registerPush, isRegistered } = usePushNotifications();
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [emails, setEmails] = useState<ReceivedEmail[]>([]);
@@ -640,6 +642,19 @@ const InboxPage = () => {
                     )}
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSound}
+                  className={`h-9 w-9 ${soundEnabled ? "text-primary" : "text-muted-foreground"}`}
+                  title={soundEnabled ? "Sound enabled - Click to mute" : "Sound muted - Click to enable"}
+                >
+                  {soundEnabled ? (
+                    <Volume2 className="w-4 h-4" />
+                  ) : (
+                    <VolumeX className="w-4 h-4" />
+                  )}
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
