@@ -10,11 +10,7 @@ export const Footer = () => {
       <div className="container px-4 relative z-10">
         {/* Telegram CTA Card - Centered with max-width */}
         <div className="max-w-2xl mx-auto mb-10">
-          <div className="relative group">
-            {/* Glow behind card */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <div className="relative bg-card/80 backdrop-blur-sm border border-primary/20 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="bg-card/80 backdrop-blur-sm border border-primary/20 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
               {/* Left side with icon and text */}
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shrink-0">
@@ -37,7 +33,6 @@ export const Footer = () => {
                   <span>Join Now</span>
                 </a>
               </Button>
-            </div>
           </div>
         </div>
 
