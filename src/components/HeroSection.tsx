@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useDomains } from "@/hooks/use-domains";
 
 // Session storage key prefix
 const SESSION_KEY_PREFIX = "mailrcv_session_";
@@ -99,31 +100,9 @@ export const HeroSection = () => {
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [domains, setDomains] = useState<string[]>(DEFAULT_DOMAINS);
+  const { domains } = useDomains();
   const [selectedDomain, setSelectedDomain] = useState(DEFAULT_DOMAINS[0]);
   const navigate = useNavigate();
-
-  // Fetch available domains from database
-  useEffect(() => {
-    const fetchDomains = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('domains')
-          .select('domain_name')
-          .eq('is_verified', true);
-        
-        if (!error && data && data.length > 0) {
-          const dbDomains = data.map(d => d.domain_name);
-          // Merge with default domains, avoiding duplicates
-          const allDomains = [...new Set([...DEFAULT_DOMAINS, ...dbDomains])];
-          setDomains(allDomains);
-        }
-      } catch (err) {
-        console.error('Error fetching domains:', err);
-      }
-    };
-    fetchDomains();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
