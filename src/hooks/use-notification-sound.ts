@@ -36,10 +36,10 @@ export const useNotificationSound = () => {
         oscillator.stop(startTime + duration);
       };
 
-      // Tri-tone (iPhone style)
-      playTone(1046.5, now, 0.1, 0.15);         // C6
-      playTone(1318.5, now + 0.12, 0.1, 0.12);  // E6
-      playTone(1568, now + 0.24, 0.15, 0.1);    // G6
+      // Tri-tone (iPhone style) - increased volume for better audibility
+      playTone(1046.5, now, 0.12, 0.5);         // C6
+      playTone(1318.5, now + 0.12, 0.12, 0.45); // E6
+      playTone(1568, now + 0.24, 0.18, 0.4);    // G6
       
     } catch (error) {
       console.warn("Could not play notification sound:", error);
