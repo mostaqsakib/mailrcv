@@ -132,34 +132,43 @@ const EmailDetailPage = () => {
     };
 
     // Process plain text: linkify URLs first, then escape remaining text
+    // Also normalize excessive blank lines to avoid huge gaps in-app.
     const processPlainText = (text: string): string => {
+      const normalized = text
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .replace(/[ \t]+\n/g, "\n")
+        .trimEnd();
+
       const urlPattern = /(https?:\/\/[^\s<>]+|www\.[^\s<>]+)/gi;
       const parts: string[] = [];
       let lastIndex = 0;
       let match;
 
-      while ((match = urlPattern.exec(text)) !== null) {
+      while ((match = urlPattern.exec(normalized)) !== null) {
         // Escape text before URL
         if (match.index > lastIndex) {
-          parts.push(escapeHtml(text.slice(lastIndex, match.index)));
+          parts.push(escapeHtml(normalized.slice(lastIndex, match.index)));
         }
-        
+
         // Create link for URL
         let url = match[0];
-        if (url.startsWith('www.')) {
-          url = 'https://' + url;
+        if (url.startsWith("www.")) {
+          url = "https://" + url;
         }
-        parts.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(match[0])}</a>`);
-        
+        parts.push(
+          `<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(match[0])}</a>`
+        );
+
         lastIndex = match.index + match[0].length;
       }
 
       // Escape remaining text
-      if (lastIndex < text.length) {
-        parts.push(escapeHtml(text.slice(lastIndex)));
+      if (lastIndex < normalized.length) {
+        parts.push(escapeHtml(normalized.slice(lastIndex)));
       }
 
-      return parts.join('');
+      return parts.join("");
     };
 
     // Some providers send "HTML" that is basically plain text with newlines.
@@ -314,14 +323,14 @@ const EmailDetailPage = () => {
       pre code { padding: 0; background: transparent; }
       pre.plaintext {
         margin: 0;
-        padding: 24px;
+        padding: 16px;
         background: transparent;
         border: 0;
-        white-space: pre-wrap;
+        white-space: pre-line;
         overflow-wrap: anywhere;
         word-break: break-word;
-        font-size: 16px;
-        line-height: 1.75;
+        font-size: 15px;
+        line-height: 1.55;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       }
       pre.plaintext a {
