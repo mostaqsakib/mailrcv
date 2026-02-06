@@ -411,6 +411,38 @@ const EmailDetailPage = () => {
         }
         makeEmailResponsive();
 
+        // Stripe receipts often include large spacer blocks for email clients.
+        // In-app we can safely reduce them so the content appears immediately.
+        function cleanupStripeSpacing() {
+          if (!document.querySelector('.st-Wrapper') && !document.querySelector('.st-Background')) return;
+
+          // Remove/compact very tall spacer rows (common in Stripe templates)
+          document.querySelectorAll('.st-Spacer td[height], td[height] .st-Spacer--filler').forEach(function(node) {
+            var td = node.tagName === 'TD' ? node : (node.closest ? node.closest('td') : null);
+            if (!td) return;
+            var h = parseInt(td.getAttribute('height') || '0', 10);
+            if (h >= 40) {
+              td.setAttribute('height', '16');
+              td.style.height = '16px';
+              td.style.lineHeight = '16px';
+              td.style.fontSize = '1px';
+              td.style.padding = '0';
+            }
+          });
+
+          // Stripe background tables sometimes add a left gutter cell with lots of nbsp
+          // Shrink it so the card stays centered on mobile.
+          var bg = document.querySelector('.st-Background');
+          if (bg) {
+            var firstTd = bg.querySelector('tr > td');
+            if (firstTd) {
+              firstTd.style.width = '8px';
+              firstTd.style.fontSize = '0';
+            }
+          }
+        }
+        cleanupStripeSpacing();
+
         function showCopyToast(msg) {
           var existing = document.querySelector('.copy-toast');
           if (existing) existing.remove();
