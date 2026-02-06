@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { cleanSenderEmail } from "@/lib/clean-sender";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,7 +151,7 @@ const EmailItem = memo(({
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
             )}
             <span className={`font-mono text-base truncate ${!mail.is_read ? "text-primary" : "text-muted-foreground"}`}>
-              {mail.from_email}
+              {cleanSenderEmail(mail.from_email)}
             </span>
           </div>
           <h4 className={`font-semibold text-xl mb-1.5 ${!mail.is_read ? "text-foreground" : "text-foreground/80"}`}>
@@ -436,7 +437,7 @@ const InboxPage = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-muted-foreground">New email from</p>
-                <p className="text-sm font-semibold truncate">{newEmail.from_email}</p>
+                <p className="text-sm font-semibold truncate">{cleanSenderEmail(newEmail.from_email)}</p>
                 <p className="text-sm text-muted-foreground truncate mt-0.5">
                   {newEmail.subject || "(No subject)"}
                 </p>
@@ -454,7 +455,7 @@ const InboxPage = () => {
           
           // Show browser notification
           showNotification("📧 New Email", {
-            body: `From: ${newEmail.from_email}\n${newEmail.subject || "(No subject)"}`,
+            body: `From: ${cleanSenderEmail(newEmail.from_email)}\n${newEmail.subject || "(No subject)"}`,
             tag: newEmail.id,
           });
         }

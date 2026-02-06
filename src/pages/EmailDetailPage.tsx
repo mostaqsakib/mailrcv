@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { cleanSenderEmail } from "@/lib/clean-sender";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -896,7 +897,7 @@ const EmailDetailPage = () => {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4" />
-              <span className="font-mono">{email.from_email}</span>
+              <span className="font-mono">{cleanSenderEmail(email.from_email)}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
