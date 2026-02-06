@@ -13,14 +13,13 @@ export function cleanSenderEmail(rawFrom: string): string {
   if (!email.includes("@")) return email;
 
   // Detect bounce/return-path: bounces+NNNNN-XXXX-recipient=recipientdomain@senderdomain
-  // The part after @ is the SENDER's domain (e.g. em5716.symbolab.com → symbolab.com)
   const bounceMatch = email.match(/^bounces\+[^@]+@(.+)$/i);
   if (bounceMatch) {
     const bounceDomain = bounceMatch[1];
     // Strip subdomain prefix like "em5716." to get root domain
     const parts = bounceDomain.split(".");
     const rootDomain = parts.length > 2 ? parts.slice(-2).join(".") : bounceDomain;
-    return rootDomain;
+    return `noreply@${rootDomain}`;
   }
 
   // BATV: prvs=XXXXX=user@domain
