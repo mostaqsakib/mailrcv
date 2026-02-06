@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import PostalMime from "npm:postal-mime@2.4.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +20,8 @@ interface CloudflareEmailPayload {
   text?: string;
   html?: string;
   headers?: Record<string, string>;
-  raw?: string;
+  raw?: string; // full raw RFC822 email as text
+  raw_base64?: string; // full raw RFC822 email as base64
   attachments?: InlineAttachment[];
 }
 
@@ -87,7 +89,29 @@ Deno.serve(async (req) => {
         bodyText = cfData.text || "";
         bodyHtml = cfData.html || "";
         inlineAttachments = cfData.attachments || [];
-        
+
+        // If worker couldn't parse (text/html empty), fall back to parsing raw RFC822 here.
+        if (!bodyText && !bodyHtml && (cfData.raw || cfData.raw_base64)) {
+          try {
+            const rawBytes = cfData.raw_base64
+              ? base64ToUint8Array(cfData.raw_base64)
+              : new TextEncoder().encode(cfData.raw ?? "");
+
+            const parser = new PostalMime();
+            const parsed = await parser.parse(rawBytes);
+
+            bodyText = parsed.text || bodyText;
+            bodyHtml = parsed.html || bodyHtml;
+            if (!subject) subject = parsed.subject || subject;
+
+            console.log(
+              `Parsed raw RFC822 fallback: subject=${parsed.subject || ""}, text=${parsed.text?.length || 0}, html=${parsed.html?.length || 0}`
+            );
+          } catch (e) {
+            console.error("Raw RFC822 fallback parse failed:", e);
+          }
+        }
+
         console.log(`Processing Cloudflare Email Workers payload with ${inlineAttachments.length} attachments`);
       } else {
         // Generic JSON format (SendGrid JSON mode or custom)
