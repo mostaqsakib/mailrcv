@@ -93,7 +93,7 @@ const EmailDetailPage = () => {
     const isDark = resolvedTheme === 'dark';
     const bgColor = isDark ? '#0d1117' : '#ffffff';
     const textColor = isDark ? '#f4f4f5' : '#18181b';
-    const linkColor = isDark ? '#6b9eed' : '#3c78d8'; // Dark cornflower blue 2
+    const linkColor = '#3c78d8'; // Dark cornflower blue 2 - same in both modes
     const quoteColor = isDark ? '#a1a1aa' : '#71717a';
     const quoteBorder = isDark ? '#3f3f46' : '#d4d4d8';
     const codeBg = isDark ? '#18181b' : '#f4f4f5';
@@ -201,7 +201,7 @@ const EmailDetailPage = () => {
         max-width: 100vw !important;
       }
       body {
-        color: ${textColor} !important;
+        ${looksLikeFullDoc ? '' : `color: ${textColor} !important;`}
         min-height: 100%;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
@@ -231,9 +231,11 @@ const EmailDetailPage = () => {
         margin-right: auto !important;
       }
       /* Override inline styles - these need !important */
+      ${looksLikeFullDoc ? '' : `
       table, td, th, div, span {
         max-width: 100% !important;
       }
+      `}
       /* Force tables to shrink */
       table {
         table-layout: auto !important;
@@ -248,7 +250,7 @@ const EmailDetailPage = () => {
         height: auto !important; 
       }
       /* Preserve link colors */
-      a { color: ${linkColor} !important; text-decoration: underline; }
+      ${looksLikeFullDoc ? `a { color: ${linkColor}; text-decoration: underline; }` : `a { color: ${linkColor} !important; text-decoration: underline; }`}
       a { 
         color: ${linkColor}; 
         text-decoration: underline;
