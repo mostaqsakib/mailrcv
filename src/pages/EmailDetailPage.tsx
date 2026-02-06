@@ -203,13 +203,17 @@ const EmailDetailPage = () => {
       body {
         color: ${textColor} !important;
         min-height: 100%;
-        ${treatAsPlainTextHtml ? "white-space: pre-wrap;" : ""}
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
         line-height: 1.8;
         word-wrap: break-word;
         overflow-wrap: anywhere;
         word-break: break-word;
+      }
+      /* Plain-text emails: spacing is controlled by pre.plaintext (avoid overriding it via body white-space) */
+      pre.plaintext {
+        white-space: pre-line !important;
+        line-height: 1.55 !important;
       }
       /* CRITICAL: Override ALL fixed widths with !important */
       .st-Wrapper, .st-Width, .st-Width--mobile,
@@ -238,14 +242,6 @@ const EmailDetailPage = () => {
       }
       /* Preserve link colors */
       a { color: ${linkColor} !important; text-decoration: underline; }
-      ${
-        treatAsPlainTextHtml
-          ? `
-      /* Preserve newlines even if the sender wrapped the text inside elements */
-      body * { white-space: inherit; }
-      `
-          : ""
-      }
       a { 
         color: ${linkColor}; 
         text-decoration: underline;
