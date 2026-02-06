@@ -21,7 +21,10 @@ import {
   KeyRound,
   LogOut,
   Volume2,
-  VolumeX
+  VolumeX,
+  CheckSquare,
+  X,
+  MailOpen
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,13 +81,19 @@ const EmailItem = memo(({
   onRead, 
   onDelete, 
   onSelect,
-  username
+  username,
+  selectionMode,
+  isSelected,
+  onToggleSelect
 }: { 
   mail: ReceivedEmail; 
   onRead: (id: string) => void;
   onDelete: (id: string) => void;
   onSelect: (mail: ReceivedEmail) => void;
   username: string;
+  selectionMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
 }) => {
   const navigate = useNavigate();
   const formatTime = (dateStr: string) => {
@@ -99,10 +108,13 @@ const EmailItem = memo(({
   };
 
   const handleClick = useCallback(() => {
+    if (selectionMode) {
+      onToggleSelect(mail.id);
+      return;
+    }
     onRead(mail.id);
-    // Navigate to email detail page
     navigate(`/inbox/${username}/email/${mail.id}`);
-  }, [mail, onRead, navigate, username]);
+  }, [mail, onRead, navigate, username, selectionMode, onToggleSelect]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -112,13 +124,24 @@ const EmailItem = memo(({
   return (
     <div
       className={`group p-5 rounded-xl transition-all duration-300 cursor-pointer ${
-        mail.is_read 
-          ? "glass hover:bg-white/5" 
-          : "glass glow hover:bg-white/5"
+        isSelected
+          ? "glass ring-2 ring-primary bg-primary/5"
+          : mail.is_read 
+            ? "glass hover:bg-white/5" 
+            : "glass glow hover:bg-white/5"
       }`}
       onClick={handleClick}
     >
       <div className="flex items-start justify-between gap-4">
+        {selectionMode && (
+          <div className="flex items-center pt-1 shrink-0">
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+              isSelected ? "bg-primary border-primary" : "border-muted-foreground/40"
+            }`}>
+              {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+            </div>
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             {!mail.is_read && (
@@ -187,6 +210,8 @@ const InboxPage = () => {
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   
   // Get domain from query params or default
   const domainName = useMemo(() => {
@@ -458,6 +483,49 @@ const InboxPage = () => {
     setShowForward(prev => !prev);
   }, []);
 
+  // Bulk action handlers
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode(prev => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === emails.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(emails.map(e => e.id)));
+    }
+  }, [emails, selectedIds.size]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await Promise.all(ids.map(id => deleteEmail(id)));
+    setEmails(prev => prev.filter(e => !selectedIds.has(e.id)));
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+    toast.success(`${ids.length} emails deleted`);
+  }, [selectedIds]);
+
+  const handleBulkMarkRead = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await Promise.all(ids.map(id => markEmailAsRead(id)));
+    setEmails(prev => prev.map(e => selectedIds.has(e.id) ? { ...e, is_read: true } : e));
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+    toast.success(`${ids.length} emails marked as read`);
+  }, [selectedIds]);
+
   const handleNotificationToggle = useCallback(async () => {
     if (permission === "granted") {
       toast.info("Notifications already enabled!");
@@ -617,6 +685,17 @@ const InboxPage = () => {
               </div>
               
               <div className="flex items-center gap-2">
+                {emails.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSelectionMode}
+                    className={`h-9 w-9 ${selectionMode ? "bg-primary/10 text-primary" : ""}`}
+                    title="Select emails"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -826,6 +905,48 @@ const InboxPage = () => {
         </div>
       </header>
 
+      {/* Bulk action bar */}
+      {selectionMode && emails.length > 0 && (
+        <div className="sticky top-[140px] z-30 container mx-auto px-4 mt-4">
+          <div className="glass-strong rounded-xl p-3 flex items-center justify-between gap-3 border border-primary/30 animate-slide-up">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={handleSelectAll} className="gap-2">
+                <CheckSquare className="w-4 h-4" />
+                {selectedIds.size === emails.length ? "Deselect All" : "Select All"}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {selectedIds.size} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBulkMarkRead}
+                disabled={selectedIds.size === 0}
+                className="gap-1.5"
+              >
+                <MailOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Mark Read</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={selectedIds.size === 0}
+                className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSelectionMode}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email list */}
       <main className="container mx-auto px-4 py-8 relative z-10">
         {emailsLoading ? (
@@ -855,6 +976,9 @@ const InboxPage = () => {
                 onDelete={handleDeleteEmail}
                 onSelect={handleSelectEmail}
                 username={username!}
+                selectionMode={selectionMode}
+                isSelected={selectedIds.has(mail.id)}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>
