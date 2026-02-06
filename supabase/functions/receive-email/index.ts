@@ -90,8 +90,9 @@ Deno.serve(async (req) => {
         bodyHtml = cfData.html || "";
         inlineAttachments = cfData.attachments || [];
 
-        // If worker couldn't parse (text/html empty), fall back to parsing raw RFC822 here.
-        if (!bodyText && !bodyHtml && (cfData.raw || cfData.raw_base64)) {
+        // If worker couldn't parse (text/html empty OR subject is placeholder), fall back to parsing raw RFC822 here.
+        const needsFallbackParse = (!bodyText && !bodyHtml) || !subject || subject === "(unknown)";
+        if (needsFallbackParse && (cfData.raw || cfData.raw_base64)) {
           try {
             const rawBytes = cfData.raw_base64
               ? base64ToUint8Array(cfData.raw_base64)
@@ -100,9 +101,12 @@ Deno.serve(async (req) => {
             const parser = new PostalMime();
             const parsed = await parser.parse(rawBytes);
 
-            bodyText = parsed.text || bodyText;
-            bodyHtml = parsed.html || bodyHtml;
-            if (!subject) subject = parsed.subject || subject;
+            // Override with parsed values
+            if (parsed.text) bodyText = parsed.text;
+            if (parsed.html) bodyHtml = parsed.html;
+            if (parsed.subject && (!subject || subject === "(unknown)")) {
+              subject = parsed.subject;
+            }
 
             console.log(
               `Parsed raw RFC822 fallback: subject=${parsed.subject || ""}, text=${parsed.text?.length || 0}, html=${parsed.html?.length || 0}`
