@@ -24,7 +24,8 @@ import {
   VolumeX,
   CheckSquare,
   X,
-  MailOpen
+  MailOpen,
+  Search
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +57,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useNotificationSound } from "@/hooks/use-notification-sound";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 // Skeleton component for email items
 const EmailItemSkeleton = memo(() => (
@@ -212,6 +214,8 @@ const InboxPage = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   
   // Get domain from query params or default
   const domainName = useMemo(() => {
@@ -449,6 +453,22 @@ const InboxPage = () => {
     toast.info("Inbox refreshed");
   }, [alias]);
 
+  // Pull to refresh
+  const { pullDistance, isRefreshing: isPullRefreshing } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
+  // Filtered emails based on search query
+  const filteredEmails = useMemo(() => {
+    if (!searchQuery.trim()) return emails;
+    const q = searchQuery.toLowerCase();
+    return emails.filter(
+      (e) =>
+        (e.subject && e.subject.toLowerCase().includes(q)) ||
+        e.from_email.toLowerCase().includes(q)
+    );
+  }, [emails, searchQuery]);
+
   const handleSaveForward = useCallback(async () => {
     if (!alias) return;
     
@@ -656,6 +676,18 @@ const InboxPage = () => {
 
   return (
     <div className="min-h-screen bg-background relative pt-safe pb-safe">
+      {/* Pull to refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center transition-transform"
+          style={{ transform: `translateY(${pullDistance - 40}px)` }}
+        >
+          <div className={`w-8 h-8 border-2 border-primary border-t-transparent rounded-full ${isPullRefreshing ? 'animate-spin' : ''}`}
+            style={{ opacity: Math.min(pullDistance / 80, 1) }}
+          />
+        </div>
+      )}
+
       {/* Background effects */}
       <div className="fixed inset-0 grid-dots opacity-30 pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
@@ -685,6 +717,17 @@ const InboxPage = () => {
               </div>
               
               <div className="flex items-center gap-2">
+                {emails.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => { setShowSearch(prev => !prev); if (showSearch) setSearchQuery(""); }}
+                    className={`h-9 w-9 ${showSearch ? "bg-primary/10 text-primary" : ""}`}
+                    title="Search emails"
+                  >
+                    <Search className="w-4 h-4" />
+                  </Button>
+                )}
                 {emails.length > 0 && (
                   <Button
                     variant="ghost"
@@ -901,6 +944,33 @@ const InboxPage = () => {
                 </div>
               </div>
             )}
+
+            {/* Search bar */}
+            {showSearch && (
+              <div className="mt-4 animate-slide-up">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by subject or sender..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 font-mono text-sm rounded-xl"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -966,9 +1036,15 @@ const InboxPage = () => {
               Emails sent to <strong className="text-primary font-mono">{email}</strong> will appear here in real-time.
             </p>
           </div>
+        ) : filteredEmails.length === 0 ? (
+          <div className="text-center py-16">
+            <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No results found</h3>
+            <p className="text-muted-foreground">No emails match "{searchQuery}"</p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {emails.map((mail) => (
+            {filteredEmails.map((mail) => (
               <EmailItem
                 key={mail.id}
                 mail={mail}
