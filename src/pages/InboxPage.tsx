@@ -739,8 +739,16 @@ const InboxPage = () => {
                   <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
                     <Mail className="w-4 h-4 text-primary-foreground" />
                   </div>
-                  <span className="text-base sm:text-lg font-semibold hidden sm:block">MailRCV</span>
+                  <span className="text-base sm:text-lg font-semibold hidden sm:block">Inbox</span>
                 </Link>
+                {/* Unread / total count badge */}
+                {!emailsLoading && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tabular-nums">
+                    {emails.filter(e => !e.is_read).length > 0
+                      ? `${emails.filter(e => !e.is_read).length} new`
+                      : `${emails.length} emails`}
+                  </span>
+                )}
               </div>
               
               <div className="flex items-center gap-2">
