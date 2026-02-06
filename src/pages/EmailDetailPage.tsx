@@ -391,6 +391,29 @@ const EmailDetailPage = () => {
         outline-offset: 2px;
         background: rgba(34, 211, 238, 0.1) !important;
       }
+      .copy-toast {
+        position: fixed !important;
+        bottom: 24px !important;
+        right: 24px !important;
+        background: ${isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)'} !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        color: ${textColor} !important;
+        padding: 10px 18px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        z-index: 99999 !important;
+        border: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'} !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+      }
+      .copy-toast.show {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+      }
     `;
 
     const scriptText = `
