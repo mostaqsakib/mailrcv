@@ -184,20 +184,15 @@ const EmailDetailPage = () => {
 
     const styleText = `
       * { box-sizing: border-box !important; }
-      html {
-        background: ${bgColor} !important;
-        padding: 0 !important;
+      html, body {
         margin: 0 !important;
+        padding: 0 !important;
         overflow-x: hidden !important;
+        max-width: 100vw !important;
       }
       body {
-        background: ${bgColor} !important;
         color: ${textColor} !important;
-        margin: 0 !important;
-        padding: 16px !important;
         min-height: 100%;
-        max-width: 100% !important;
-        overflow-x: hidden !important;
         ${treatAsPlainTextHtml ? "white-space: pre-wrap;" : ""}
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
@@ -206,36 +201,33 @@ const EmailDetailPage = () => {
         overflow-wrap: anywhere;
         word-break: break-word;
       }
-      /* Override email fixed widths - scale down to fit container */
-      .st-Wrapper, table.st-Wrapper, 
-      [class*="Wrapper"], [style*="min-width: 480"], [style*="width: 480"] {
-        min-width: unset !important;
-        max-width: 100% !important;
+      /* CRITICAL: Override ALL fixed widths with !important */
+      .st-Wrapper, .st-Width, .st-Width--mobile,
+      table.st-Wrapper, table[width="480"],
+      [class*="Wrapper"], [class*="Width"] {
         width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
       }
-      /* Force all tables to be responsive */
+      /* Override inline styles - these need !important */
+      table, td, th, div, span {
+        max-width: 100% !important;
+      }
+      /* Force tables to shrink */
       table {
-        max-width: 100% !important;
-        width: auto !important;
+        table-layout: auto !important;
       }
-      table[width="480"], table[style*="480px"], 
-      table[style*="min-width"] {
-        width: 100% !important;
-        min-width: unset !important;
+      /* Cells should wrap */
+      td, th {
+        word-break: break-word !important;
+      }
+      /* Images must fit */
+      img { 
+        max-width: 100% !important; 
+        height: auto !important; 
       }
       /* Preserve link colors */
       a { color: ${linkColor} !important; text-decoration: underline; }
-      /* Center email content nicely without forcing full width */
-      body > table, body > div, body > center {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        max-width: 100% !important;
-      }
-      img { max-width: 100% !important; height: auto !important; }
-      td, th { 
-        max-width: 100% !important;
-        word-break: break-word !important;
-      }
       ${
         treatAsPlainTextHtml
           ? `
@@ -374,27 +366,50 @@ const EmailDetailPage = () => {
 
     const scriptText = `
       (function() {
-        // Fix email layout FIRST - remove fixed widths from all elements
-        function fixEmailLayout() {
+        // Make fixed-width emails responsive
+        function makeEmailResponsive() {
+          var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+          var targetWidth = viewportWidth - 16; // 8px padding each side
+          
           document.querySelectorAll('*').forEach(function(el) {
-            var style = el.getAttribute('style');
-            if (style) {
-              var newStyle = style
-                .replace(/width\\s*:\\s*\\d+px/gi, 'width: auto')
-                .replace(/min-width\\s*:\\s*\\d+px/gi, 'min-width: 0')
-                .replace(/max-width\\s*:\\s*\\d+px/gi, 'max-width: 100%');
-              el.setAttribute('style', newStyle);
+            // Get computed width
+            var style = el.getAttribute('style') || '';
+            
+            // Check for fixed width in style attribute
+            var widthMatch = style.match(/width\\s*:\\s*(\\d+)px/i);
+            var minWidthMatch = style.match(/min-width\\s*:\\s*(\\d+)px/i);
+            
+            if (widthMatch) {
+              var w = parseInt(widthMatch[1], 10);
+              if (w > targetWidth) {
+                el.style.width = targetWidth + 'px';
+              }
             }
-            if (el.tagName === 'TABLE' || el.tagName === 'TD' || el.tagName === 'TH') {
-              el.removeAttribute('width');
-              el.style.maxWidth = '100%';
-              el.style.width = 'auto';
+            
+            if (minWidthMatch) {
+              var mw = parseInt(minWidthMatch[1], 10);
+              if (mw > targetWidth) {
+                el.style.minWidth = '0';
+              }
             }
+            
+            // Handle width attribute on tables
+            var widthAttr = el.getAttribute('width');
+            if (widthAttr) {
+              var attrWidth = parseInt(widthAttr, 10);
+              if (attrWidth > targetWidth) {
+                el.setAttribute('width', targetWidth);
+              }
+            }
+            
+            // Force max-width on all elements
+            el.style.maxWidth = '100%';
           });
-          document.body.style.maxWidth = '100%';
+          
           document.body.style.overflowX = 'hidden';
+          document.body.style.padding = '8px';
         }
-        fixEmailLayout();
+        makeEmailResponsive();
 
         function showCopyToast(msg) {
           var existing = document.querySelector('.copy-toast');
