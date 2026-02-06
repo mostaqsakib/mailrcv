@@ -557,6 +557,39 @@ const EmailDetailPage = () => {
           });
         };
       });
+
+      // Fix email layout - remove fixed widths from all elements
+      function fixEmailLayout() {
+        // Remove fixed width inline styles from all elements
+        document.querySelectorAll('*').forEach(el => {
+          const style = el.getAttribute('style');
+          if (style) {
+            // Remove width, min-width, max-width declarations
+            const newStyle = style
+              .replace(/\\bwidth\\s*:\\s*\\d+px\\s*;?/gi, '')
+              .replace(/\\bmin-width\\s*:\\s*\\d+px\\s*;?/gi, '')
+              .replace(/\\bmax-width\\s*:\\s*\\d+px\\s*;?/gi, '')
+              .trim();
+            if (newStyle) {
+              el.setAttribute('style', newStyle);
+            } else {
+              el.removeAttribute('style');
+            }
+          }
+          // Also remove width/height attributes from tables
+          if (el.tagName === 'TABLE' || el.tagName === 'TD' || el.tagName === 'TH') {
+            el.removeAttribute('width');
+            el.style.maxWidth = '100%';
+            el.style.width = 'auto';
+          }
+        });
+        
+        // Force body to be responsive
+        document.body.style.maxWidth = '100%';
+        document.body.style.overflowX = 'hidden';
+      }
+      
+      fixEmailLayout();
     `;
 
     let htmlContent = '';
