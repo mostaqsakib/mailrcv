@@ -224,34 +224,53 @@ const InboxPage = () => {
   
   const email = useMemo(() => `${username}@${domainName}`, [username, domainName]);
 
+  // Fast initialization: use alias_id directly if available (skips domain+alias queries)
+  const initializeWithAliasId = useCallback(async (aliasId: string) => {
+    setLoading(false);
+    setEmailsLoading(true);
+    
+    // Fetch alias details and emails in parallel
+    const [aliasRes, emailsData] = await Promise.all([
+      supabase
+        .from("email_aliases")
+        .select("*")
+        .eq("id", aliasId)
+        .maybeSingle(),
+      getEmailsForAlias(aliasId),
+    ]);
+
+    if (aliasRes.data) {
+      setAlias(aliasRes.data as EmailAlias);
+      setForwardEmail(aliasRes.data.forward_to_email || "");
+    }
+    setEmails(emailsData);
+    setEmailsLoading(false);
+  }, []);
+
+  // Fallback: full initialization when alias_id is not available (new inbox)
   const initializeInbox = useCallback(async () => {
     setLoading(true);
     setEmailsLoading(true);
     try {
-      // Get or create the domain based on URL param
       const domain = await getOrCreateDomainByName(domainName);
       if (!domain) {
         toast.error("Failed to initialize inbox");
         return;
       }
 
-      // Get or create alias for this domain
       const aliasData = await getOrCreateAlias(username!, domain.id);
       if (!aliasData) {
         toast.error("Failed to create inbox");
         return;
       }
       
-      // Set alias immediately so UI can render, then fetch emails
       setAlias(aliasData);
       setForwardEmail(aliasData.forward_to_email || "");
       setLoading(false);
 
-      // Fetch emails in background (non-blocking for UI)
-      getEmailsForAlias(aliasData.id).then((data) => {
-        setEmails(data);
-        setEmailsLoading(false);
-      });
+      const data = await getEmailsForAlias(aliasData.id);
+      setEmails(data);
+      setEmailsLoading(false);
     } catch (error) {
       console.error("Error initializing inbox:", error);
       toast.error("Failed to load inbox");
@@ -290,49 +309,53 @@ const InboxPage = () => {
             try {
               const session = JSON.parse(sessionData);
               if (session.password) {
-                // Verify the session is still valid
                 const { data: loginData, error: loginError } = await supabase.functions.invoke('inbox-auth', {
                   body: { action: 'login', username: username.toLowerCase(), domain: domainName, password: session.password }
                 });
                 
                 if (loginError || loginData.error) {
-                  // Session invalid, need to re-auth
                   localStorage.removeItem(sessionKey);
                   setNeedsAuth(true);
                   setLoading(false);
                   return;
                 }
                 
-                // Session valid
                 setSavedPassword(session.password);
-                initializeInbox();
+                // Fast path: use alias_id from auth response
+                if (data.alias_id) {
+                  initializeWithAliasId(data.alias_id);
+                } else {
+                  initializeInbox();
+                }
                 return;
               }
             } catch {
-              // Parse error, need to re-auth
               setNeedsAuth(true);
               setLoading(false);
               return;
             }
           }
           
-          // No session, need auth
           setNeedsAuth(true);
           setLoading(false);
           return;
         }
         
-        // Public inbox or new inbox
-        initializeInbox();
+        // Public inbox — fast path: use alias_id if inbox exists
+        if (data.exists && data.alias_id) {
+          initializeWithAliasId(data.alias_id);
+        } else {
+          // New inbox, need full initialization
+          initializeInbox();
+        }
       } catch (error) {
         console.error('Auth check error:', error);
-        // Fall back to regular init
         initializeInbox();
       }
     };
     
     checkAuthAndInit();
-  }, [username, initializeInbox]);
+  }, [username, initializeInbox, initializeWithAliasId]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -365,7 +388,11 @@ const InboxPage = () => {
       setSavedPassword(loginPassword);
       setNeedsAuth(false);
       toast.success("Login successful!");
-      initializeInbox();
+      if (data.alias_id) {
+        initializeWithAliasId(data.alias_id);
+      } else {
+        initializeInbox();
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error("Login failed");

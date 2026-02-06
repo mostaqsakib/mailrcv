@@ -69,16 +69,24 @@ export async function getOrCreateDefaultDomain(): Promise<Domain | null> {
   return cachedDefaultDomain;
 }
 
+// Cache for domain lookups
+const domainCache = new Map<string, Domain>();
+
 // Get or create domain by name (for multi-domain support)
 export async function getOrCreateDomainByName(domainName: string): Promise<Domain | null> {
+  const key = domainName.toLowerCase();
+  const cached = domainCache.get(key);
+  if (cached) return cached;
+
   // Check if domain exists
   const { data: existing } = await supabase
     .from("domains")
     .select("id, domain_name, is_verified, verification_code, forward_to_email, created_at")
-    .eq("domain_name", domainName.toLowerCase())
+    .eq("domain_name", key)
     .maybeSingle();
 
   if (existing) {
+    domainCache.set(key, existing as Domain);
     return existing as Domain;
   }
 
@@ -180,10 +188,10 @@ export async function getAliasByUsername(username: string, domainName: string): 
 export async function getEmailsForAlias(aliasId: string): Promise<ReceivedEmail[]> {
   const { data, error } = await supabase
     .from("received_emails")
-    .select("id, alias_id, from_email, subject, body_text, body_html, received_at, is_read, is_forwarded")
+    .select("id, alias_id, from_email, subject, body_text, received_at, is_read, is_forwarded")
     .eq("alias_id", aliasId)
     .order("received_at", { ascending: false })
-    .limit(50); // Limit initial load for performance
+    .limit(50);
 
   if (error) {
     console.error("Error fetching emails:", error);
