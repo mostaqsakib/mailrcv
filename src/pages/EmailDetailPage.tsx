@@ -93,7 +93,7 @@ const EmailDetailPage = () => {
     const isDark = resolvedTheme === 'dark';
     const bgColor = isDark ? '#0d1117' : '#ffffff';
     const textColor = isDark ? '#f4f4f5' : '#18181b';
-    const linkColor = isDark ? '#22d3ee' : '#0891b2';
+    const linkColor = isDark ? '#6b9eed' : '#3c78d8'; // Dark cornflower blue 2
     const quoteColor = isDark ? '#a1a1aa' : '#71717a';
     const quoteBorder = isDark ? '#3f3f46' : '#d4d4d8';
     const codeBg = isDark ? '#18181b' : '#f4f4f5';
