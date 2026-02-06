@@ -319,16 +319,17 @@ const EmailDetailPage = () => {
       code { padding: 2px 6px; }
       pre code { padding: 0; background: transparent; }
       pre.plaintext {
-        margin: 0;
+        margin: 0 auto;
         padding: 16px;
         background: transparent;
         border: 0;
-        white-space: pre-line;
+        white-space: pre-line !important;
         overflow-wrap: anywhere;
         word-break: break-word;
         font-size: 15px;
-        line-height: 1.55;
+        line-height: 1.55 !important;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        max-width: 600px;
       }
       pre.plaintext a {
         color: ${linkColor} !important;
