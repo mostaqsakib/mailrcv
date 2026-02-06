@@ -215,28 +215,20 @@ const EmailDetailPage = () => {
       /* Wrapper to center + constrain email content like Gmail */
       .email-content-wrapper {
         width: 100% !important;
-        max-width: 680px !important;
+        max-width: 600px !important;
         margin-left: auto !important;
         margin-right: auto !important;
         padding: 16px !important;
       }
-      /* Ensure common full-width email containers don't escape the wrapper */
-      .email-content-wrapper * {
-        max-width: 100% !important;
-      }
 
-      /* Plain-text emails: spacing is controlled by pre.plaintext (avoid overriding it via body white-space) */
-      pre.plaintext {
-        white-space: pre-line !important;
-        line-height: 1.55 !important;
-      }
-      /* CRITICAL: Override ALL fixed widths with !important */
+      /* Stripe/receipt layouts: keep background full-width, but cap the inner width */
       .st-Wrapper, .st-Width, .st-Width--mobile,
-      table.st-Wrapper, table[width="480"],
-      [class*="Wrapper"], [class*="Width"] {
+      table.st-Wrapper, table[width="480"] {
         width: 100% !important;
         min-width: 0 !important;
-        max-width: 100% !important;
+        max-width: 600px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
       }
       /* Override inline styles - these need !important */
       table, td, th, div, span {
@@ -391,6 +383,27 @@ const EmailDetailPage = () => {
         // Wrap content so HTML emails don't stretch edge-to-edge (works even for full HTML docs)
         function ensureWrapper() {
           try {
+            // Stripe-like templates: keep their full-width background table; just cap the inner wrapper/table
+            var stripeBg = document.querySelector('.st-Background');
+            if (stripeBg) {
+              try {
+                var bgColor = window.getComputedStyle(stripeBg).backgroundColor;
+                if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+                  document.body.style.backgroundColor = bgColor;
+                }
+              } catch (e) {}
+
+              var inner = document.querySelector('.st-Wrapper') || document.querySelector('.st-Width') || document.querySelector('table[width="480"]');
+              if (inner) {
+                inner.style.marginLeft = 'auto';
+                inner.style.marginRight = 'auto';
+                inner.style.width = '100%';
+                inner.style.maxWidth = '600px';
+              }
+              return;
+            }
+
+            // Generic templates: if we don't already have a wrapper, create one and move body nodes into it
             if (document.querySelector('.email-content-wrapper')) return;
 
             var wrapper = document.createElement('div');
