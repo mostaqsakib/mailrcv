@@ -112,9 +112,8 @@ Deno.serve(async (req) => {
         bodyHtml = cfData.html || "";
         inlineAttachments = cfData.attachments || [];
 
-        // If worker couldn't parse (text/html empty OR subject is placeholder), fall back to parsing raw RFC822 here.
-        const needsFallbackParse = (!bodyText && !bodyHtml) || !subject || subject === "(unknown)";
-        if (needsFallbackParse && (cfData.raw || cfData.raw_base64)) {
+        // Always try to parse raw RFC822 for accurate From header and missing fields
+        if (cfData.raw || cfData.raw_base64) {
           try {
             const rawBytes = cfData.raw_base64
               ? base64ToUint8Array(cfData.raw_base64)
@@ -123,18 +122,24 @@ Deno.serve(async (req) => {
             const parser = new PostalMime();
             const parsed = await parser.parse(rawBytes);
 
-            // Override with parsed values
-            if (parsed.text) bodyText = parsed.text;
-            if (parsed.html) bodyHtml = parsed.html;
+            // Use parsed From header (real sender, not bounce address)
+            if (parsed.from?.address) {
+              fromEmail = parsed.from.address;
+              console.log(`Parsed real sender from RFC822 From header: ${fromEmail}`);
+            }
+
+            // Override with parsed values if missing
+            if (parsed.text && !bodyText) bodyText = parsed.text;
+            if (parsed.html && !bodyHtml) bodyHtml = parsed.html;
             if (parsed.subject && (!subject || subject === "(unknown)")) {
               subject = parsed.subject;
             }
 
             console.log(
-              `Parsed raw RFC822 fallback: subject=${parsed.subject || ""}, text=${parsed.text?.length || 0}, html=${parsed.html?.length || 0}`
+              `Parsed raw RFC822: from=${parsed.from?.address || ""}, subject=${parsed.subject || ""}, text=${parsed.text?.length || 0}, html=${parsed.html?.length || 0}`
             );
           } catch (e) {
-            console.error("Raw RFC822 fallback parse failed:", e);
+            console.error("Raw RFC822 parse failed:", e);
           }
         }
 
