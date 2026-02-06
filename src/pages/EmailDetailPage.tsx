@@ -201,6 +201,7 @@ const EmailDetailPage = () => {
         max-width: 100vw !important;
       }
       body {
+        background-color: ${bgColor} !important;
         ${looksLikeFullDoc ? '' : `color: ${textColor} !important;`}
         min-height: 100%;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
