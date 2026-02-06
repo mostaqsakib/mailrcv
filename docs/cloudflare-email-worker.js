@@ -204,8 +204,36 @@ function parseBody(headerSection, bodySection) {
         const isInline = contentDisposition && contentDisposition[1].toLowerCase().includes("inline");
         const isAttachment = contentDisposition && contentDisposition[1].toLowerCase().includes("attachment");
         
+        // Handle message/rfc822 (forwarded email) - parse recursively
+        if (pCt.includes("message/rfc822")) {
+          console.log("Found embedded message/rfc822 (forwarded email), parsing recursively...");
+          
+          // Decode the part body first if needed
+          let embeddedEmail = pEnc ? decodeBody(partBody, pEnc) : partBody;
+          
+          // Find header/body split in embedded email
+          let embeddedHeaderEnd = embeddedEmail.indexOf("\r\n\r\n");
+          let embeddedSepLen = 4;
+          if (embeddedHeaderEnd < 0) {
+            embeddedHeaderEnd = embeddedEmail.indexOf("\n\n");
+            embeddedSepLen = 2;
+          }
+          
+          if (embeddedHeaderEnd > 0) {
+            const embeddedHeaders = embeddedEmail.substring(0, embeddedHeaderEnd);
+            const embeddedBody = embeddedEmail.substring(embeddedHeaderEnd + embeddedSepLen);
+            
+            // Recursively parse the embedded email
+            const nested = parseBody(embeddedHeaders, embeddedBody);
+            if (nested.text && !text) text = nested.text;
+            if (nested.html && !html) html = nested.html;
+            if (nested.attachments) {
+              attachments.push(...nested.attachments);
+            }
+          }
+        }
         // If it has Content-ID or is an inline image, treat as attachment
-        if (cidMatch || (isInline && pCt.startsWith("image/"))) {
+        else if (cidMatch || (isInline && pCt.startsWith("image/"))) {
           const cid = cidMatch ? cidMatch[1].trim() : `auto_${Date.now()}_${Math.random().toString(36).slice(2)}`;
           
           // Extract filename
