@@ -8,6 +8,9 @@ interface Stats {
   activeToday: number;
 }
 
+// Module-level cache for stats
+let cachedStats: Stats | null = null;
+
 // Custom hook for count-up animation
 const useCountUp = (end: number, duration: number = 2000, isLoading: boolean) => {
   const [count, setCount] = useState(0);
@@ -68,13 +71,13 @@ const AnimatedNumber = ({ value, isLoading }: { value: number; isLoading: boolea
 };
 
 export const StatsSection = () => {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState<Stats>(cachedStats || {
     totalInboxes: 0,
     totalEmails: 0,
     activeToday: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(!cachedStats);
+  const [isVisible, setIsVisible] = useState(!!cachedStats);
   const sectionRef = useRef<HTMLElement>(null);
 
   // Intersection observer for triggering animation when visible
@@ -106,11 +109,13 @@ export const StatsSection = () => {
           .gte("updated_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
       ]);
 
-      setStats({
+      const newStats = {
         totalInboxes: inboxRes.count || 0,
         totalEmails: emailRes.count || 0,
         activeToday: activeRes.count || 0,
-      });
+      };
+      cachedStats = newStats;
+      setStats(newStats);
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
