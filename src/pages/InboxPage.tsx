@@ -427,7 +427,27 @@ const InboxPage = () => {
         (payload) => {
           const newEmail = payload.new as ReceivedEmail;
           setEmails((prev) => [newEmail, ...prev]);
-          toast.info("New email received!");
+          
+          // Rich in-app popup notification
+          toast(
+            <div className="flex items-start gap-3 w-full">
+              <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Mail className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground">New email from</p>
+                <p className="text-sm font-semibold truncate">{newEmail.from_email}</p>
+                <p className="text-sm text-muted-foreground truncate mt-0.5">
+                  {newEmail.subject || "(No subject)"}
+                </p>
+              </div>
+            </div>,
+            {
+              duration: 5000,
+              position: "top-right",
+              className: "!bg-card !border-border !shadow-xl",
+            }
+          );
           
           // Play subtle notification sound
           playSound();
