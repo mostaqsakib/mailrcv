@@ -209,16 +209,22 @@ const EmailDetailPage = () => {
         word-wrap: break-word;
         overflow-wrap: anywhere;
         word-break: break-word;
-        display: flex;
-        justify-content: center;
+        /* Important: email HTML often injects its own layout rules; keep ours strong */
+        display: block !important;
       }
-      /* Wrapper to center and constrain email content like Gmail */
+      /* Wrapper to center + constrain email content like Gmail */
       .email-content-wrapper {
-        width: 100%;
-        max-width: 680px;
-        margin: 0 auto;
-        padding: 16px;
+        width: 100% !important;
+        max-width: 680px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding: 16px !important;
       }
+      /* Ensure common full-width email containers don't escape the wrapper */
+      .email-content-wrapper * {
+        max-width: 100% !important;
+      }
+
       /* Plain-text emails: spacing is controlled by pre.plaintext (avoid overriding it via body white-space) */
       pre.plaintext {
         white-space: pre-line !important;
@@ -382,6 +388,31 @@ const EmailDetailPage = () => {
 
     const scriptText = `
       (function() {
+        // Wrap content so HTML emails don't stretch edge-to-edge (works even for full HTML docs)
+        function ensureWrapper() {
+          try {
+            if (document.querySelector('.email-content-wrapper')) return;
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'email-content-wrapper';
+
+            var nodes = Array.prototype.slice.call(document.body.childNodes);
+            nodes.forEach(function(node) {
+              if (!node) return;
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                var el = node;
+                if (el.tagName === 'SCRIPT') return;
+                if (el.classList && (el.classList.contains('link-popup') || el.classList.contains('link-popup-overlay') || el.classList.contains('tap-copy-hint'))) return;
+              }
+              wrapper.appendChild(node);
+            });
+
+            document.body.appendChild(wrapper);
+          } catch (e) {
+            // ignore
+          }
+        }
+
         // Make fixed-width emails responsive
         function makeEmailResponsive() {
           var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
@@ -423,9 +454,13 @@ const EmailDetailPage = () => {
           });
           
           document.body.style.overflowX = 'hidden';
-          document.body.style.padding = '8px';
+          // Don't add body padding here; wrapper controls padding so centering works.
+          document.body.style.padding = '0';
         }
+
+        ensureWrapper();
         makeEmailResponsive();
+
 
         // Stripe receipts often include large spacer blocks for email clients.
         // In-app we can safely reduce them so the content appears immediately.
