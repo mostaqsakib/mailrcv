@@ -373,223 +373,173 @@ const EmailDetailPage = () => {
     `;
 
     const scriptText = `
-      function showCopyToast(message) {
-        const existing = document.querySelector('.tap-copy-hint');
-        if (existing) existing.remove();
-        const toast = document.createElement('div');
-        toast.className = 'tap-copy-hint';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-      }
-
-
-      // Convert plain text URLs to clickable links
-      function detectAndWrapUrls() {
-        const walker = document.createTreeWalker(
-          document.body,
-          NodeFilter.SHOW_TEXT,
-          null,
-          false
-        );
-
-        const textNodes = [];
-        while (walker.nextNode()) {
-          const node = walker.currentNode;
-          // Skip if parent is already a link, script, style
-          if (node.parentElement && 
-              !['SCRIPT', 'STYLE', 'A'].includes(node.parentElement.tagName)) {
-            textNodes.push(node);
-          }
-        }
-
-        // URL pattern - matches http, https, and www URLs
-        const urlPattern = /(https?:\\/\\/[^\\s<>]+|www\\.[^\\s<>]+)/gi;
-
-        textNodes.forEach(node => {
-          const text = node.textContent;
-          if (!urlPattern.test(text)) return;
-          urlPattern.lastIndex = 0;
-
-          const fragment = document.createDocumentFragment();
-          let lastIndex = 0;
-          let match;
-
-          while ((match = urlPattern.exec(text)) !== null) {
-            // Add text before the URL
-            if (match.index > lastIndex) {
-              fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-            }
-
-            // Create link element
-            const link = document.createElement('a');
-            let url = match[0];
-            // Add protocol if missing
-            if (url.startsWith('www.')) {
-              url = 'https://' + url;
-            }
-            link.href = url;
-            link.textContent = match[0];
-            link.setAttribute('target', '_blank');
-            link.setAttribute('rel', 'noopener noreferrer');
-            fragment.appendChild(link);
-
-            lastIndex = match.index + match[0].length;
-          }
-
-          // Add remaining text
-          if (lastIndex < text.length) {
-            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-          }
-
-          if (fragment.childNodes.length > 0) {
-            node.parentNode.replaceChild(fragment, node);
-          }
-        });
-      }
-
-      // Run URL detection first
-      detectAndWrapUrls();
-
-
-      // Link popup functionality
-      let currentPopup = null;
-      let currentOverlay = null;
-
-      function closePopup() {
-        if (currentPopup) {
-          currentPopup.remove();
-          currentPopup = null;
-        }
-        if (currentOverlay) {
-          currentOverlay.remove();
-          currentOverlay = null;
-        }
-      }
-
-      function showLinkPopup(link, e) {
-        e.preventDefault();
-        closePopup();
-
-        const href = link.href;
-        
-        // Use click/touch position for popup placement
-        const clickX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-        const clickY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-
-        // Create overlay
-        currentOverlay = document.createElement('div');
-        currentOverlay.className = 'link-popup-overlay';
-        currentOverlay.onclick = closePopup;
-        document.body.appendChild(currentOverlay);
-
-        // Create popup
-        currentPopup = document.createElement('div');
-        currentPopup.className = 'link-popup';
-        
-        currentPopup.innerHTML = \`
-          <button class="primary" data-action="open">
-            <span>🔗</span> Open Link
-          </button>
-          <button data-action="copy">
-            <span>📋</span> Copy Link
-          </button>
-        \`;
-
-        // Position popup near click/cursor position
-        const popupWidth = 160;
-        const popupHeight = 90;
-        
-        let top = clickY - popupHeight - 10; // Show above cursor
-        let left = clickX - (popupWidth / 2); // Center on cursor
-        
-        // If popup would go above viewport, show below cursor
-        if (top < 10) {
-          top = clickY + 15;
-        }
-        // Keep within horizontal bounds
-        if (left < 10) {
-          left = 10;
-        }
-        if (left + popupWidth > window.innerWidth - 10) {
-          left = window.innerWidth - popupWidth - 10;
-        }
-        // Keep within vertical bounds
-        if (top + popupHeight > window.innerHeight - 10) {
-          top = window.innerHeight - popupHeight - 10;
-        }
-
-        // Use !important so our layout-normalization CSS can't override positioning
-        currentPopup.style.setProperty('top', top + 'px', 'important');
-        currentPopup.style.setProperty('left', left + 'px', 'important');
-
-        // Add click handlers
-        currentPopup.querySelector('[data-action="open"]').onclick = () => {
-          window.open(href, '_blank', 'noopener,noreferrer');
-          closePopup();
-        };
-
-        currentPopup.querySelector('[data-action="copy"]').onclick = () => {
-          navigator.clipboard.writeText(href).then(() => {
-            showCopyToast('✓ Link copied!');
-          });
-          closePopup();
-        };
-
-        document.body.appendChild(currentPopup);
-      }
-
-      // Make all links interactive with popup
-      document.querySelectorAll('a[href]').forEach(link => {
-        link.setAttribute('target', '_blank');
-        link.setAttribute('rel', 'noopener noreferrer');
-        
-        link.addEventListener('click', (e) => {
-          showLinkPopup(link, e);
-        });
-      });
-
-      document.querySelectorAll('code:not(pre code)').forEach(code => {
-        code.style.cursor = 'pointer';
-        code.onclick = () => {
-          navigator.clipboard.writeText(code.textContent).then(() => {
-            showCopyToast('✓ Copied!');
-          });
-        };
-      });
-
-      // Fix email layout - remove fixed widths from all elements
-      function fixEmailLayout() {
-        // Remove fixed width inline styles from all elements
-        document.querySelectorAll('*').forEach(el => {
-          const style = el.getAttribute('style');
-          if (style) {
-            // Remove width, min-width, max-width declarations
-            const newStyle = style
-              .replace(/\\bwidth\\s*:\\s*\\d+px\\s*;?/gi, '')
-              .replace(/\\bmin-width\\s*:\\s*\\d+px\\s*;?/gi, '')
-              .replace(/\\bmax-width\\s*:\\s*\\d+px\\s*;?/gi, '')
-              .trim();
-            if (newStyle) {
+      (function() {
+        // Fix email layout FIRST - remove fixed widths from all elements
+        function fixEmailLayout() {
+          document.querySelectorAll('*').forEach(function(el) {
+            var style = el.getAttribute('style');
+            if (style) {
+              var newStyle = style
+                .replace(/width\\s*:\\s*\\d+px/gi, 'width: auto')
+                .replace(/min-width\\s*:\\s*\\d+px/gi, 'min-width: 0')
+                .replace(/max-width\\s*:\\s*\\d+px/gi, 'max-width: 100%');
               el.setAttribute('style', newStyle);
-            } else {
-              el.removeAttribute('style');
+            }
+            if (el.tagName === 'TABLE' || el.tagName === 'TD' || el.tagName === 'TH') {
+              el.removeAttribute('width');
+              el.style.maxWidth = '100%';
+              el.style.width = 'auto';
+            }
+          });
+          document.body.style.maxWidth = '100%';
+          document.body.style.overflowX = 'hidden';
+        }
+        fixEmailLayout();
+
+        function showCopyToast(msg) {
+          var existing = document.querySelector('.copy-toast');
+          if (existing) existing.remove();
+          var toast = document.createElement('div');
+          toast.className = 'copy-toast';
+          toast.textContent = msg;
+          document.body.appendChild(toast);
+          setTimeout(function() { toast.classList.add('show'); }, 10);
+          setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 300);
+          }, 1500);
+        }
+
+        function processTextNodes(root, pattern, callback) {
+          var walker = document.createTreeWalker(
+            root,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+          var textNodes = [];
+          var node;
+          while (node = walker.nextNode()) {
+            var parent = node.parentNode;
+            if (!parent) continue;
+            var tag = parent.tagName ? parent.tagName.toUpperCase() : '';
+            if (tag === 'A' || tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'CODE') continue;
+            if (pattern.test(node.textContent)) {
+              textNodes.push(node);
             }
           }
-          // Also remove width/height attributes from tables
-          if (el.tagName === 'TABLE' || el.tagName === 'TD' || el.tagName === 'TH') {
-            el.removeAttribute('width');
-            el.style.maxWidth = '100%';
-            el.style.width = 'auto';
+          textNodes.forEach(callback);
+        }
+
+        function detectAndWrapUrls() {
+          var urlPattern = /(https?:\\/\\/[^\\s<>"']+)/gi;
+          processTextNodes(document.body, urlPattern, function(node) {
+            var text = node.textContent;
+            var fragment = document.createDocumentFragment();
+            var lastIndex = 0;
+            var match;
+            urlPattern.lastIndex = 0;
+            while ((match = urlPattern.exec(text)) !== null) {
+              if (match.index > lastIndex) {
+                fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+              }
+              var a = document.createElement('a');
+              a.href = match[0];
+              a.textContent = match[0];
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              fragment.appendChild(a);
+              lastIndex = urlPattern.lastIndex;
+            }
+            if (lastIndex < text.length) {
+              fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+            }
+            if (fragment.childNodes.length > 0 && node.parentNode) {
+              node.parentNode.replaceChild(fragment, node);
+            }
+          });
+        }
+
+        detectAndWrapUrls();
+
+        var currentPopup = null;
+        var currentOverlay = null;
+
+        function closePopup() {
+          if (currentPopup) {
+            currentPopup.remove();
+            currentPopup = null;
           }
+          if (currentOverlay) {
+            currentOverlay.remove();
+            currentOverlay = null;
+          }
+        }
+
+        function showLinkPopup(link, e) {
+          e.preventDefault();
+          closePopup();
+
+          var href = link.href;
+          var clickX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+          var clickY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+          currentOverlay = document.createElement('div');
+          currentOverlay.className = 'link-popup-overlay';
+          currentOverlay.onclick = closePopup;
+          document.body.appendChild(currentOverlay);
+
+          currentPopup = document.createElement('div');
+          currentPopup.className = 'link-popup';
+          
+          currentPopup.innerHTML = '<button class="primary" data-action="open"><span>🔗</span> Open Link</button><button data-action="copy"><span>📋</span> Copy Link</button>';
+
+          var popupWidth = 160;
+          var popupHeight = 90;
+          
+          var top = clickY - popupHeight - 10;
+          var left = clickX - (popupWidth / 2);
+          
+          if (top < 10) top = clickY + 15;
+          if (left < 10) left = 10;
+          if (left + popupWidth > window.innerWidth - 10) left = window.innerWidth - popupWidth - 10;
+          if (top + popupHeight > window.innerHeight - 10) top = window.innerHeight - popupHeight - 10;
+
+          currentPopup.style.setProperty('top', top + 'px', 'important');
+          currentPopup.style.setProperty('left', left + 'px', 'important');
+
+          currentPopup.querySelector('[data-action="open"]').onclick = function() {
+            window.open(href, '_blank', 'noopener,noreferrer');
+            closePopup();
+          };
+
+          currentPopup.querySelector('[data-action="copy"]').onclick = function() {
+            navigator.clipboard.writeText(href).then(function() {
+              showCopyToast('✓ Link copied!');
+            });
+            closePopup();
+          };
+
+          document.body.appendChild(currentPopup);
+        }
+
+        document.querySelectorAll('a[href]').forEach(function(link) {
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+          link.addEventListener('click', function(e) {
+            showLinkPopup(link, e);
+          });
         });
-        
-        // Force body to be responsive
-        document.body.style.maxWidth = '100%';
-        document.body.style.overflowX = 'hidden';
-      }
-      
-      fixEmailLayout();
+
+        document.querySelectorAll('code:not(pre code)').forEach(function(code) {
+          code.style.cursor = 'pointer';
+          code.onclick = function() {
+            navigator.clipboard.writeText(code.textContent).then(function() {
+              showCopyToast('✓ Copied!');
+            });
+          };
+        });
+      })();
     `;
 
     let htmlContent = '';
