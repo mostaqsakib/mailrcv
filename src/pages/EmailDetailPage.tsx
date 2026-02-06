@@ -188,13 +188,16 @@ const EmailDetailPage = () => {
         background: ${bgColor} !important;
         padding: 0 !important;
         margin: 0 !important;
+        overflow-x: hidden !important;
       }
       body {
         background: ${bgColor} !important;
         color: ${textColor} !important;
         margin: 0 !important;
-        padding: 24px !important;
+        padding: 16px !important;
         min-height: 100%;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
         ${treatAsPlainTextHtml ? "white-space: pre-wrap;" : ""}
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 15px;
@@ -203,14 +206,36 @@ const EmailDetailPage = () => {
         overflow-wrap: anywhere;
         word-break: break-word;
       }
+      /* Override email fixed widths - scale down to fit container */
+      .st-Wrapper, table.st-Wrapper, 
+      [class*="Wrapper"], [style*="min-width: 480"], [style*="width: 480"] {
+        min-width: unset !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      /* Force all tables to be responsive */
+      table {
+        max-width: 100% !important;
+        width: auto !important;
+      }
+      table[width="480"], table[style*="480px"], 
+      table[style*="min-width"] {
+        width: 100% !important;
+        min-width: unset !important;
+      }
       /* Preserve link colors */
       a { color: ${linkColor} !important; text-decoration: underline; }
       /* Center email content nicely without forcing full width */
       body > table, body > div, body > center {
         margin-left: auto !important;
         margin-right: auto !important;
+        max-width: 100% !important;
       }
-      img { max-width: 100%; height: auto; }
+      img { max-width: 100% !important; height: auto !important; }
+      td, th { 
+        max-width: 100% !important;
+        word-break: break-word !important;
+      }
       ${
         treatAsPlainTextHtml
           ? `
