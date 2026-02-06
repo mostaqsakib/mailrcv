@@ -136,8 +136,8 @@ const EmailDetailPage = () => {
     const processPlainText = (text: string): string => {
       const normalized = text
         .replace(/\r\n/g, "\n")
-        // Text-only emails often contain lots of blank lines; compact them for in-app readability.
-        .replace(/\n{2,}/g, "\n")
+        // Only compact 4+ consecutive blank lines to 2 blank lines; preserve original spacing otherwise
+        .replace(/\n{4,}/g, "\n\n\n")
         .replace(/[ \t]+\n/g, "\n")
         .trimEnd();
 
