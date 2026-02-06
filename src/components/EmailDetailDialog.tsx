@@ -1,3 +1,4 @@
+import { cleanSenderEmail } from "@/lib/clean-sender";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -392,7 +393,7 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <User className="w-4 h-4" />
-                  <span className="font-mono">{email.from_email}</span>
+                  <span className="font-mono">{cleanSenderEmail(email.from_email)}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />

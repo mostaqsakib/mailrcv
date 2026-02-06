@@ -45,6 +45,28 @@ function base64ToUint8Array(base64: string): Uint8Array {
   return bytes;
 }
 
+// Clean bounce/return-path addresses to extract the real sender
+function cleanSenderEmail(rawFrom: string): string {
+  const emailMatch = rawFrom.match(/<?([^<>\s]+@[^<>\s]+)>?/);
+  const email = emailMatch ? emailMatch[1] : rawFrom;
+  
+  if (!email || !email.includes("@")) return email;
+
+  // bounces+NNNNN-XXXX-localpart=originaldomain@bouncedomain
+  const bounceMatch = email.match(/^bounces\+[^-]+-[^-]+-([^=]+)=([^@]+)@/i);
+  if (bounceMatch) return `${bounceMatch[1]}@${bounceMatch[2]}`;
+
+  // BATV: prvs=XXXXX=user@domain
+  const batvMatch = email.match(/^prvs=[^=]+=(.+@.+)$/i);
+  if (batvMatch) return batvMatch[1];
+
+  // SRS: SRS0=XXX=XX=domain=user@bouncedomain
+  const srsMatch = email.match(/^SRS[01]=[^=]+=[^=]+=([^=]+)=([^@]+)@/i);
+  if (srsMatch) return `${srsMatch[2]}@${srsMatch[1]}`;
+
+  return email;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -261,9 +283,8 @@ Deno.serve(async (req) => {
       alias = newAlias;
     }
 
-    // Extract sender email
-    const fromMatch = fromEmail.match(/<?([^<>\s]+@[^<>\s]+)>?/);
-    const senderEmail = fromMatch ? fromMatch[1] : fromEmail || "unknown@unknown.com";
+    // Extract clean sender email (strips bounce/return-path encoding)
+    const senderEmail = cleanSenderEmail(fromEmail) || "unknown@unknown.com";
 
     // Store the email first (we need the email_id for attachments)
     const { data: savedEmail, error: saveError } = await supabase
