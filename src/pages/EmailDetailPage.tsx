@@ -209,6 +209,15 @@ const EmailDetailPage = () => {
         word-wrap: break-word;
         overflow-wrap: anywhere;
         word-break: break-word;
+        display: flex;
+        justify-content: center;
+      }
+      /* Wrapper to center and constrain email content like Gmail */
+      .email-content-wrapper {
+        width: 100%;
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 16px;
       }
       /* Plain-text emails: spacing is controlled by pre.plaintext (avoid overriding it via body white-space) */
       pre.plaintext {
@@ -624,7 +633,9 @@ const EmailDetailPage = () => {
           <style>${styleText}</style>
         </head>
         <body>
-           ${contentHtml}
+          <div class="email-content-wrapper">
+            ${contentHtml}
+          </div>
           <script>${scriptText}</script>
         </body>
         </html>
