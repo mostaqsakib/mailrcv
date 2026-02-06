@@ -10,7 +10,10 @@ import {
   Copy, 
   Trash2,
   ArrowLeft,
-  Mail
+  Mail,
+  Download,
+  Paperclip,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +28,7 @@ const EmailDetailPage = () => {
   const [email, setEmail] = useState<ReceivedEmail | null>(null);
   const [loading, setLoading] = useState(true);
   const [contentWritten, setContentWritten] = useState(false);
+  const [attachments, setAttachments] = useState<any[]>([]);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -65,6 +69,13 @@ const EmailDetailPage = () => {
         if (data && !data.is_read) {
           await markEmailAsRead(emailId);
         }
+
+        // Fetch attachments
+        const { data: attachData } = await supabase
+          .from('email_attachments')
+          .select('*')
+          .eq('email_id', emailId);
+        if (attachData) setAttachments(attachData);
         
       } catch (error) {
         console.error('Error fetching email:', error);
@@ -892,7 +903,29 @@ const EmailDetailPage = () => {
               <span>{formatDate(email.received_at)}</span>
             </div>
           </div>
-          
+          {/* Attachments */}
+          {attachments.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <div className="w-full flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <Paperclip className="w-4 h-4" />
+                <span>{attachments.length} attachment{attachments.length > 1 ? 's' : ''}</span>
+              </div>
+              {attachments.map((att) => (
+                <a
+                  key={att.id}
+                  href={att.storage_url}
+                  download={att.filename || 'attachment'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg glass hover:bg-primary/10 transition-all text-sm group"
+                >
+                  <FileText className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                  <span className="truncate max-w-[180px]">{att.filename || 'Attachment'}</span>
+                  <Download className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
