@@ -10,61 +10,77 @@ export interface Domain {
 // Default domains (always available as fallback)
 const DEFAULT_DOMAINS = ["mailrcv.site", "getemail.cfd"];
 
-export const useDomains = () => {
-  const [domains, setDomains] = useState<string[]>(DEFAULT_DOMAINS);
-  const [loading, setLoading] = useState(true);
+// Module-level cache so domains persist across navigations
+let cachedDomains: string[] | null = null;
+let fetchPromise: Promise<void> | null = null;
 
-  useEffect(() => {
-    // Initial fetch
-    const fetchDomains = async () => {
+const fetchAndCacheDomains = async (setDomains: (d: string[]) => void) => {
+  if (cachedDomains) {
+    setDomains(cachedDomains);
+    return;
+  }
+
+  if (!fetchPromise) {
+    fetchPromise = (async () => {
       try {
         const { data, error } = await supabase
           .from('domains')
           .select('domain_name')
           .eq('is_verified', true)
           .order('created_at', { ascending: true });
-        
+
         if (!error && data && data.length > 0) {
           const dbDomains = data.map(d => d.domain_name);
-          // Use DB domains, ensuring defaults are included
-          const allDomains = [...new Set([...dbDomains, ...DEFAULT_DOMAINS])];
-          setDomains(allDomains);
+          cachedDomains = [...new Set([...dbDomains, ...DEFAULT_DOMAINS])];
+        } else {
+          cachedDomains = DEFAULT_DOMAINS;
         }
-      } catch (err) {
-        console.error('Error fetching domains:', err);
+      } catch {
+        cachedDomains = DEFAULT_DOMAINS;
       } finally {
-        setLoading(false);
+        fetchPromise = null;
       }
-    };
+    })();
+  }
 
-    fetchDomains();
+  await fetchPromise;
+  if (cachedDomains) setDomains(cachedDomains);
+};
 
-    // Realtime subscription for domain changes
+export const useDomains = () => {
+  const [domains, setDomains] = useState<string[]>(cachedDomains || DEFAULT_DOMAINS);
+  const [loading, setLoading] = useState(!cachedDomains);
+
+  useEffect(() => {
+    fetchAndCacheDomains((d) => {
+      setDomains(d);
+      setLoading(false);
+    });
+
     const channel = supabase
       .channel('domains-realtime')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'domains'
-        },
+        { event: '*', schema: 'public', table: 'domains' },
         (payload) => {
-          console.log('Domain change:', payload);
-          
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const newDomain = payload.new as Domain;
             if (newDomain.is_verified) {
               setDomains(prev => {
                 if (prev.includes(newDomain.domain_name)) return prev;
-                return [...prev, newDomain.domain_name];
+                const updated = [...prev, newDomain.domain_name];
+                cachedDomains = updated;
+                return updated;
               });
             }
           } else if (payload.eventType === 'DELETE') {
             const oldDomain = payload.old as Domain;
-            // Don't remove default domains
             if (!DEFAULT_DOMAINS.includes(oldDomain.domain_name)) {
-              setDomains(prev => prev.filter(d => d !== oldDomain.domain_name));
+              setDomains(prev => {
+                const updated = prev.filter(d => d !== oldDomain.domain_name);
+                cachedDomains = updated;
+                return updated;
+              });
             }
           }
         }
