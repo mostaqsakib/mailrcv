@@ -13,7 +13,12 @@ export const Header = () => {
             </div>
             <span className="text-base sm:text-lg font-semibold">MailRCV</span>
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/bulk" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary/60">
+              Bulk Generate
+            </Link>
+            <ThemeToggle />
+          </div>
         </nav>
       </div>
     </header>
