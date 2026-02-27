@@ -116,7 +116,7 @@ const EmailItem = memo(({
       return;
     }
     onRead(mail.id);
-    navigate(`/inbox/${username}/email/${mail.id}`);
+    navigate(`/inbox/${username}/email/${mail.id}`, { state: { domain: mail.id } });
   }, [mail, onRead, navigate, username, selectionMode, onToggleSelect]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
@@ -187,8 +187,18 @@ EmailItem.displayName = "EmailItem";
 
 const DEFAULT_DOMAIN = "mailrcv.site";
 
+// Parse username param: supports "user@domain" or just "user" (defaults to mailrcv.site)
+function parseUsernameParam(param: string | undefined): { user: string; domain: string } {
+  if (!param) return { user: '', domain: DEFAULT_DOMAIN };
+  const atIndex = param.indexOf('@');
+  if (atIndex > 0) {
+    return { user: param.substring(0, atIndex), domain: param.substring(atIndex + 1) };
+  }
+  return { user: param, domain: DEFAULT_DOMAIN };
+}
+
 const InboxPage = () => {
-  const { username } = useParams<{ username: string }>();
+  const { username: rawUsername } = useParams<{ username: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { permission, requestPermission, showNotification, isSupported } = useNotifications();
@@ -218,10 +228,17 @@ const InboxPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   
-  // Get domain from query params or default
+  // Parse username@domain from URL param, with legacy ?domain= query param support
+  const { user: username, domain: parsedDomain } = useMemo(() => parseUsernameParam(rawUsername), [rawUsername]);
   const domainName = useMemo(() => {
-    return searchParams.get('domain') || DEFAULT_DOMAIN;
-  }, [searchParams]);
+    // Legacy support: ?domain= query param takes priority if present
+    return searchParams.get('domain') || parsedDomain;
+  }, [searchParams, parsedDomain]);
+  
+  // Build the canonical URL param (user@domain or just user for default)
+  const urlUsername = useMemo(() => {
+    return domainName !== DEFAULT_DOMAIN ? `${username}@${domainName}` : username;
+  }, [username, domainName]);
   
   const email = useMemo(() => `${username}@${domainName}`, [username, domainName]);
 
@@ -476,11 +493,10 @@ const InboxPage = () => {
   }, [username, domainName]);
 
   const copyInboxUrl = useCallback(async () => {
-    const domainParam = domainName !== DEFAULT_DOMAIN ? `?domain=${encodeURIComponent(domainName)}` : '';
-    const cleanUrl = `https://mailrcv.site/inbox/${username}${domainParam}`;
+    const cleanUrl = `https://mailrcv.site/inbox/${urlUsername}`;
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
-  }, [username, domainName]);
+  }, [urlUsername]);
 
   const copyPassword = useCallback(async () => {
     if (savedPassword) {
@@ -1107,7 +1123,7 @@ const InboxPage = () => {
                 onRead={handleMarkAsRead}
                 onDelete={handleDeleteEmail}
                 onSelect={handleSelectEmail}
-                username={username!}
+                username={urlUsername}
                 selectionMode={selectionMode}
                 isSelected={selectedIds.has(mail.id)}
                 onToggleSelect={handleToggleSelect}

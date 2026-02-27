@@ -115,8 +115,8 @@ export const HeroSection = () => {
 
     // If no password, go to public inbox with domain
     if (!password) {
-      const params = selectedDomain !== DEFAULT_DOMAINS[0] ? `?domain=${encodeURIComponent(selectedDomain)}` : '';
-      navigate(`/inbox/${cleanUsername}${params}`);
+      const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
+      navigate(`/inbox/${urlParam}`);
       return;
     }
 
@@ -160,8 +160,8 @@ export const HeroSection = () => {
         }));
 
         toast.success("Login successful!");
-        const params = selectedDomain !== DEFAULT_DOMAINS[0] ? `?domain=${encodeURIComponent(selectedDomain)}` : '';
-        navigate(`/inbox/${cleanUsername}${params}`);
+        const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
+        navigate(`/inbox/${urlParam}`);
       } else {
         // Create new secure inbox
         if (password.length < 6) {
@@ -192,8 +192,8 @@ export const HeroSection = () => {
         }));
 
         toast.success("Secure inbox created!");
-        const params = selectedDomain !== DEFAULT_DOMAINS[0] ? `?domain=${encodeURIComponent(selectedDomain)}` : '';
-        navigate(`/inbox/${cleanUsername}${params}`);
+        const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
+        navigate(`/inbox/${urlParam}`);
       }
     } catch (error) {
       console.error('Auth error:', error);
