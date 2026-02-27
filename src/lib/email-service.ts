@@ -124,7 +124,7 @@ export async function addDomain(domainName: string): Promise<Domain | null> {
     .from("domains")
     .insert({ 
       domain_name: domainName.toLowerCase(),
-      is_verified: true // Auto-verify on add
+      is_verified: false
     })
     .select()
     .single();
