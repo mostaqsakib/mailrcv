@@ -336,7 +336,7 @@ const DomainsPage = () => {
                     )}
                     
                     {domain.is_verified && (
-                      <Link to={`/inbox/test?domain=${domain.domain_name}`}>
+                      <Link to={`/inbox/test@${domain.domain_name}`}>
                         <Button variant="glass" size="sm">
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Test
