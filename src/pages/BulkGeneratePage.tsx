@@ -92,14 +92,14 @@ const BulkGeneratePage = () => {
     }
 
     setGenerated(results);
-    toast.success(`${count}টা email address generate হয়েছে!`);
+    toast.success(`${count} email addresses generated!`);
   }, [quantity, selectedDomain]);
 
   const handleCopyAll = async () => {
     const text = generated.map((e) => `${e.email}\t${e.link}`).join("\n");
     await navigator.clipboard.writeText(text);
     setCopiedAll(true);
-    toast.success("সব email copied!");
+    toast.success("All emails copied!");
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
@@ -141,7 +141,7 @@ const BulkGeneratePage = () => {
             Bulk Email <span className="gradient-text">Generator</span>
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            একসাথে অনেকগুলো disposable email address generate করো এবং CSV/TXT এ export করো।
+            Generate multiple disposable email addresses at once and export them as CSV or TXT.
           </p>
         </div>
 
@@ -155,7 +155,7 @@ const BulkGeneratePage = () => {
               max={500}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="কতগুলো চাও?"
+              placeholder="How many?"
               className="font-mono text-lg h-12"
             />
           </div>
@@ -184,7 +184,7 @@ const BulkGeneratePage = () => {
             {/* Action bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border/50">
               <span className="text-sm text-muted-foreground font-medium">
-                {generated.length}টা email address
+                {generated.length} email addresses
               </span>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={handleCopyAll} className="gap-1.5">
