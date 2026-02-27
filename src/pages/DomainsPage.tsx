@@ -11,16 +11,21 @@ import {
   ArrowLeft,
   Mail,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import { getAllDomains, addDomain, type Domain } from "@/lib/email-service";
+import { getAllDomains, addDomain, deleteDomain, verifyDomain, type Domain } from "@/lib/email-service";
 
 const DomainsPage = () => {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDomains();
@@ -36,7 +41,6 @@ const DomainsPage = () => {
   const handleAddDomain = async () => {
     if (!newDomain.trim()) return;
     
-    // Basic domain validation
     const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
     if (!domainRegex.test(newDomain)) {
       toast.error("Invalid domain format");
@@ -60,6 +64,40 @@ const DomainsPage = () => {
     }
   };
 
+  const handleVerifyDomain = async (domain: Domain) => {
+    setVerifyingId(domain.id);
+    try {
+      const result = await verifyDomain(domain.id, domain.domain_name);
+      if (result.verified) {
+        setDomains(prev => prev.map(d => d.id === domain.id ? { ...d, is_verified: true } : d));
+        toast.success(`${domain.domain_name} verified successfully!`);
+      } else {
+        const issues = [];
+        if (!result.mx_valid) issues.push("MX record not found");
+        if (!result.txt_valid) issues.push("TXT verification record not found");
+        toast.error(issues.join(". "));
+      }
+    } catch {
+      toast.error("Verification check failed");
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const handleDeleteDomain = async (domain: Domain) => {
+    if (!confirm(`Delete ${domain.domain_name}? This will remove all associated aliases and emails.`)) return;
+    
+    setDeletingId(domain.id);
+    const success = await deleteDomain(domain.id);
+    if (success) {
+      setDomains(prev => prev.filter(d => d.id !== domain.id));
+      toast.success(`${domain.domain_name} deleted`);
+    } else {
+      toast.error("Failed to delete domain");
+    }
+    setDeletingId(null);
+  };
+
   const copyVerificationCode = async (code: string) => {
     await navigator.clipboard.writeText(code);
     toast.success("Verification code copied!");
@@ -67,11 +105,9 @@ const DomainsPage = () => {
 
   return (
     <div className="min-h-screen bg-background relative pt-safe pb-safe">
-      {/* Background effects */}
       <div className="fixed inset-0 grid-dots opacity-30 pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
       
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/50">
         <div className="glass-strong">
           <div className="container mx-auto px-4 py-4">
@@ -105,7 +141,6 @@ const DomainsPage = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 relative z-10">
-        {/* Add domain form */}
         {isAdding && (
           <div className="mb-8 p-6 rounded-2xl glass animate-slide-up">
             <h2 className="text-lg font-semibold mb-4">Add Custom Domain</h2>
@@ -128,7 +163,6 @@ const DomainsPage = () => {
           </div>
         )}
 
-        {/* Domains list */}
         {loading ? (
           <div className="text-center py-12">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
@@ -196,19 +230,52 @@ const DomainsPage = () => {
                     )}
                   </div>
                   
-                  <Link to={`/inbox/test?domain=${domain.domain_name}`}>
-                    <Button variant="glass" size="sm">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Test
+                  <div className="flex items-center gap-2">
+                    {!domain.is_verified && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleVerifyDomain(domain)}
+                        disabled={verifyingId === domain.id}
+                      >
+                        {verifyingId === domain.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                        )}
+                        Verify
+                      </Button>
+                    )}
+                    
+                    {domain.is_verified && (
+                      <Link to={`/inbox/test?domain=${domain.domain_name}`}>
+                        <Button variant="glass" size="sm">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Test
+                        </Button>
+                      </Link>
+                    )}
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteDomain(domain)}
+                      disabled={deletingId === domain.id}
+                    >
+                      {deletingId === domain.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Info box */}
         <div className="mt-12 p-6 rounded-2xl glass">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-primary" />
