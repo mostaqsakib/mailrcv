@@ -15,7 +15,7 @@ export const Header = () => {
             <span className="text-base sm:text-lg font-semibold">MailRCV</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="border-primary/50 text-primary hover:bg-primary/10 hover:border-primary font-semibold shadow-sm">
               <Link to="/bulk">Bulk Generate</Link>
             </Button>
             <ThemeToggle />
