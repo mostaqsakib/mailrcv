@@ -14,10 +14,12 @@ import {
   AlertCircle,
   Trash2,
   RefreshCw,
-  Loader2
+  Loader2,
+  Forward,
+  Save
 } from "lucide-react";
 import { toast } from "sonner";
-import { getAllDomains, addDomain, deleteDomain, verifyDomain, type Domain } from "@/lib/email-service";
+import { getAllDomains, addDomain, deleteDomain, verifyDomain, updateDomainForwarding, type Domain } from "@/lib/email-service";
 
 const DomainsPage = () => {
   const [domains, setDomains] = useState<Domain[]>([]);
@@ -26,6 +28,9 @@ const DomainsPage = () => {
   const [loading, setLoading] = useState(true);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingForwardId, setEditingForwardId] = useState<string | null>(null);
+  const [forwardEmail, setForwardEmail] = useState("");
+  const [savingForwardId, setSavingForwardId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDomains();
@@ -98,9 +103,34 @@ const DomainsPage = () => {
     setDeletingId(null);
   };
 
-  const copyVerificationCode = async (code: string) => {
-    await navigator.clipboard.writeText(code);
-    toast.success("Verification code copied!");
+  const handleSaveForwarding = async (domain: Domain) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (forwardEmail && !emailRegex.test(forwardEmail)) {
+      toast.error("Invalid email format");
+      return;
+    }
+
+    setSavingForwardId(domain.id);
+    try {
+      await updateDomainForwarding(domain.id, forwardEmail);
+      setDomains(prev => prev.map(d => d.id === domain.id ? { ...d, forward_to_email: forwardEmail || null } : d));
+      setEditingForwardId(null);
+      toast.success(forwardEmail ? "Forwarding configured!" : "Forwarding removed");
+    } catch {
+      toast.error("Failed to update forwarding");
+    } finally {
+      setSavingForwardId(null);
+    }
+  };
+
+  const startEditingForward = (domain: Domain) => {
+    setEditingForwardId(domain.id);
+    setForwardEmail(domain.forward_to_email || "");
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copied!`);
   };
 
   return (
@@ -203,13 +233,71 @@ const DomainsPage = () => {
                       )}
                     </div>
                     
+                    {/* Forwarding config */}
+                    <div className="mt-3">
+                      {editingForwardId === domain.id ? (
+                        <div className="flex items-center gap-2">
+                          <Forward className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <Input
+                            type="email"
+                            placeholder="forward-to@example.com"
+                            value={forwardEmail}
+                            onChange={(e) => setForwardEmail(e.target.value)}
+                            className="flex-1 h-8 text-sm font-mono"
+                          />
+                          <Button 
+                            variant="hero" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => handleSaveForwarding(domain)}
+                            disabled={savingForwardId === domain.id}
+                          >
+                            {savingForwardId === domain.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Save className="w-3 h-3" />
+                            )}
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8" onClick={() => setEditingForwardId(null)}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => startEditingForward(domain)}
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Forward className="w-4 h-4" />
+                          {domain.forward_to_email ? (
+                            <span>Forwarding to <span className="text-primary font-mono">{domain.forward_to_email}</span></span>
+                          ) : (
+                            <span>Set up forwarding</span>
+                          )}
+                        </button>
+                      )}
+                    </div>
+
                     {!domain.is_verified && (
                       <div className="mt-4 p-4 rounded-xl bg-secondary/50 border border-border">
                         <p className="text-sm font-medium mb-3">DNS Configuration Required:</p>
                         <div className="space-y-2 text-sm font-mono">
                           <div className="flex items-center justify-between p-2 rounded bg-background/50">
                             <span className="text-muted-foreground">MX Record:</span>
-                            <span>mx.mailrcv.site</span>
+                            <div className="flex items-center gap-2">
+                              <span>mx.mailrcv.site</span>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6"
+                                onClick={() => copyToClipboard("mx.mailrcv.site", "MX record")}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between p-2 rounded bg-background/50">
+                            <span className="text-muted-foreground">MX Priority:</span>
+                            <span>10</span>
                           </div>
                           <div className="flex items-center justify-between p-2 rounded bg-background/50">
                             <span className="text-muted-foreground">TXT Record:</span>
@@ -219,7 +307,7 @@ const DomainsPage = () => {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-6 w-6"
-                                onClick={() => copyVerificationCode(`mailrcv-verify=${domain.verification_code}`)}
+                                onClick={() => copyToClipboard(`mailrcv-verify=${domain.verification_code}`, "TXT record")}
                               >
                                 <Copy className="w-3 h-3" />
                               </Button>
@@ -276,18 +364,76 @@ const DomainsPage = () => {
           </div>
         )}
 
+        {/* Full DNS Setup Guide */}
         <div className="mt-12 p-6 rounded-2xl glass">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-primary" />
-            How It Works
+            Complete DNS Setup Guide
           </h3>
-          <ol className="space-y-2 text-muted-foreground">
-            <li>1. Add your domain above</li>
-            <li>2. Configure MX records to point to <code className="text-primary font-mono">mx.mailrcv.site</code></li>
-            <li>3. Add the TXT verification record</li>
-            <li>4. Once verified, any email to <code className="text-primary font-mono">*@yourdomain.com</code> will be received</li>
-            <li>5. Set up forwarding to get emails in your real inbox</li>
-          </ol>
+          
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 1: Add Your Domain</h4>
+              <p className="text-sm text-muted-foreground">Click "Add Domain" above and enter your domain name (e.g., <code className="text-primary font-mono">yourdomain.com</code>).</p>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 2: Configure MX Record</h4>
+              <p className="text-sm text-muted-foreground mb-3">Go to your domain's DNS settings (Cloudflare, Namecheap, GoDaddy, etc.) and add an MX record:</p>
+              <div className="rounded-xl bg-secondary/50 border border-border overflow-hidden">
+                <div className="grid grid-cols-4 gap-2 p-3 text-xs font-semibold border-b border-border bg-background/30">
+                  <span>Type</span>
+                  <span>Name</span>
+                  <span>Value</span>
+                  <span>Priority</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 p-3 text-sm font-mono items-center">
+                  <span className="text-primary">MX</span>
+                  <span>@ (root)</span>
+                  <div className="flex items-center gap-1">
+                    <span>mx.mailrcv.site</span>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => copyToClipboard("mx.mailrcv.site", "MX value")}>
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <span>10</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 3: Add TXT Verification Record</h4>
+              <p className="text-sm text-muted-foreground mb-3">Add a TXT record with the verification code shown in your domain's card above:</p>
+              <div className="rounded-xl bg-secondary/50 border border-border overflow-hidden">
+                <div className="grid grid-cols-3 gap-2 p-3 text-xs font-semibold border-b border-border bg-background/30">
+                  <span>Type</span>
+                  <span>Name</span>
+                  <span>Value</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 p-3 text-sm font-mono">
+                  <span className="text-primary">TXT</span>
+                  <span>@ (root)</span>
+                  <span>mailrcv-verify=&lt;your-code&gt;</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 4: Verify Domain</h4>
+              <p className="text-sm text-muted-foreground">After adding DNS records, wait a few minutes for propagation and click the <strong>"Verify"</strong> button. DNS changes can take up to 24-48 hours in some cases.</p>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 5: Start Receiving Emails</h4>
+              <p className="text-sm text-muted-foreground">Once verified, any email sent to <code className="text-primary font-mono">anything@yourdomain.com</code> will appear in your inbox. Optionally, set up forwarding to receive emails in your real inbox.</p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <p className="text-xs text-muted-foreground">
+                <strong className="text-primary">⚠️ Important:</strong> If your domain uses Cloudflare, make sure to set MX record Name to <code className="font-mono">@</code> for root domain and set Priority to <code className="font-mono">10</code>. Remove any existing conflicting MX records.
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
