@@ -419,18 +419,49 @@ const DomainsPage = () => {
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 4: Verify Domain</h4>
-              <p className="text-sm text-muted-foreground">After adding DNS records, wait a few minutes for propagation and click the <strong>"Verify"</strong> button. DNS changes can take up to 24-48 hours in some cases.</p>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 4: Configure Cloudflare Email Routing</h4>
+              <p className="text-sm text-muted-foreground mb-3">This is <strong>required</strong> for emails to reach MailRCV. Go to Cloudflare Dashboard:</p>
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-secondary/50 border border-border">
+                  <p className="text-sm font-medium mb-2">4.1 — Enable Email Routing</p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Go to <strong>Cloudflare Dashboard</strong> → Select your domain</li>
+                    <li>Click <strong>Email</strong> → <strong>Email Routing</strong> in the sidebar</li>
+                    <li>If not enabled, click <strong>"Get started"</strong> to enable Email Routing</li>
+                  </ol>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/50 border border-border">
+                  <p className="text-sm font-medium mb-2">4.2 — Set Up Catch-All Route</p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Go to <strong>Email Routing</strong> → <strong>Routes</strong> tab</li>
+                    <li>Find <strong>"Catch-all address"</strong> section</li>
+                    <li>Click <strong>Edit</strong> on the Catch-all</li>
+                    <li>Select action: <strong>"Send to a Worker"</strong></li>
+                    <li>Choose your <strong>MailRCV email worker</strong> from the dropdown</li>
+                    <li>Click <strong>Save</strong></li>
+                  </ol>
+                </div>
+                <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-destructive">⚠️ Without this step:</strong> DNS verification will pass, but emails will <strong>not</strong> be delivered to MailRCV inbox. The Cloudflare Worker is what processes and forwards incoming emails to the backend.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 5: Start Receiving Emails</h4>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 5: Verify Domain</h4>
+              <p className="text-sm text-muted-foreground">After adding DNS records and configuring Email Routing, wait a few minutes for DNS propagation and click the <strong>"Verify"</strong> button. DNS changes can take up to 24-48 hours in some cases.</p>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 6: Start Receiving Emails</h4>
               <p className="text-sm text-muted-foreground">Once verified, any email sent to <code className="text-primary font-mono">anything@yourdomain.com</code> will appear in your inbox. Optionally, set up forwarding to receive emails in your real inbox.</p>
             </div>
 
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
               <p className="text-xs text-muted-foreground">
-                <strong className="text-primary">⚠️ Important:</strong> If your domain uses Cloudflare, make sure to set MX record Name to <code className="font-mono">@</code> for root domain and set Priority to <code className="font-mono">10</code>. Remove any existing conflicting MX records.
+                <strong className="text-primary">💡 Tips:</strong> If your domain uses Cloudflare, set MX record Name to <code className="font-mono">@</code> and Priority to <code className="font-mono">10</code>. Remove any existing conflicting MX records. If you don't have a Cloudflare Worker yet, deploy the MailRCV email worker script first.
               </p>
             </div>
           </div>
