@@ -1,0 +1,1 @@
+CREATE POLICY "Allow public delete on domains" ON public.domains FOR DELETE USING (true);

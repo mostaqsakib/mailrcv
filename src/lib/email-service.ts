@@ -229,23 +229,47 @@ export async function updateDomainForwarding(domainId: string, forwardTo: string
     .eq("id", domainId);
 }
 
-export async function deleteAlias(aliasId: string): Promise<boolean> {
-  // First delete all emails for this alias
-  await supabase
-    .from("received_emails")
-    .delete()
-    .eq("alias_id", aliasId);
-
-  // Then delete the alias itself
-  const { error } = await supabase
+export async function deleteDomain(domainId: string): Promise<boolean> {
+  // First delete all aliases and their emails for this domain
+  const { data: aliases } = await supabase
     .from("email_aliases")
-    .delete()
-    .eq("id", aliasId);
+    .select("id")
+    .eq("domain_id", domainId);
 
+  if (aliases) {
+    for (const alias of aliases) {
+      await supabase.from("received_emails").delete().eq("alias_id", alias.id);
+    }
+    await supabase.from("email_aliases").delete().eq("domain_id", domainId);
+  }
+
+  const { error } = await supabase.from("domains").delete().eq("id", domainId);
+  if (error) {
+    console.error("Error deleting domain:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function verifyDomain(domainId: string, domainName: string): Promise<{ verified: boolean; mx_valid: boolean; txt_valid: boolean }> {
+  const { data, error } = await supabase.functions.invoke("verify-domain", {
+    body: { domain_id: domainId, domain_name: domainName },
+  });
+
+  if (error) {
+    console.error("Error verifying domain:", error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteAlias(aliasId: string): Promise<boolean> {
+  await supabase.from("received_emails").delete().eq("alias_id", aliasId);
+  const { error } = await supabase.from("email_aliases").delete().eq("id", aliasId);
   if (error) {
     console.error("Error deleting alias:", error);
     return false;
   }
-
   return true;
 }
