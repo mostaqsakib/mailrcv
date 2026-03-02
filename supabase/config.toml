@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.inbox-auth]
 verify_jwt = false
+
+[functions.verify-domain]
+verify_jwt = false
+
+[functions.download-apk]
+verify_jwt = false
