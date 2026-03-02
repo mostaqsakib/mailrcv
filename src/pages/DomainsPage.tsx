@@ -13,20 +13,18 @@ import {
   ExternalLink,
   AlertCircle,
   Trash2,
-  RefreshCw,
   Loader2,
   Forward,
   Save
 } from "lucide-react";
 import { toast } from "sonner";
-import { getAllDomains, addDomain, deleteDomain, verifyDomain, updateDomainForwarding, type Domain } from "@/lib/email-service";
+import { getAllDomains, addDomain, deleteDomain, updateDomainForwarding, type Domain } from "@/lib/email-service";
 
 const DomainsPage = () => {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingForwardId, setEditingForwardId] = useState<string | null>(null);
   const [forwardEmail, setForwardEmail] = useState("");
@@ -58,7 +56,7 @@ const DomainsPage = () => {
         setDomains([domain, ...domains]);
         setNewDomain("");
         setIsAdding(false);
-        toast.success("Domain added! Configure DNS to verify.");
+        toast.success("Domain added successfully!");
       }
     } catch (error: any) {
       if (error.code === "23505") {
@@ -66,26 +64,6 @@ const DomainsPage = () => {
       } else {
         toast.error("Failed to add domain");
       }
-    }
-  };
-
-  const handleVerifyDomain = async (domain: Domain) => {
-    setVerifyingId(domain.id);
-    try {
-      const result = await verifyDomain(domain.id, domain.domain_name);
-      if (result.verified) {
-        setDomains(prev => prev.map(d => d.id === domain.id ? { ...d, is_verified: true } : d));
-        toast.success(`${domain.domain_name} verified successfully!`);
-      } else {
-        const issues = [];
-        if (!result.mx_valid) issues.push("MX record not found");
-        if (!result.txt_valid) issues.push("TXT verification record not found");
-        toast.error(issues.join(". "));
-      }
-    } catch {
-      toast.error("Verification check failed");
-    } finally {
-      setVerifyingId(null);
     }
   };
 
@@ -220,17 +198,10 @@ const DomainsPage = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <Globe className="w-5 h-5 text-primary" />
                       <span className="text-xl font-semibold font-mono">{domain.domain_name}</span>
-                      {domain.is_verified ? (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-destructive/20 text-destructive flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          Pending
-                        </span>
-                      )}
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        Active
+                      </span>
                     </div>
                     
                     {/* Forwarding config */}
@@ -276,73 +247,15 @@ const DomainsPage = () => {
                         </button>
                       )}
                     </div>
-
-                    {!domain.is_verified && (
-                      <div className="mt-4 p-4 rounded-xl bg-secondary/50 border border-border">
-                        <p className="text-sm font-medium mb-3">DNS Configuration Required:</p>
-                        <div className="space-y-2 text-sm font-mono">
-                          <div className="flex items-center justify-between p-2 rounded bg-background/50">
-                            <span className="text-muted-foreground">MX Record:</span>
-                            <div className="flex items-center gap-2">
-                              <span>mx.mailrcv.site</span>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => copyToClipboard("mx.mailrcv.site", "MX record")}
-                              >
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between p-2 rounded bg-background/50">
-                            <span className="text-muted-foreground">MX Priority:</span>
-                            <span>10</span>
-                          </div>
-                          <div className="flex items-center justify-between p-2 rounded bg-background/50">
-                            <span className="text-muted-foreground">TXT Record:</span>
-                            <div className="flex items-center gap-2">
-                              <span className="truncate max-w-[200px]">mailrcv-verify={domain.verification_code.substring(0, 8)}...</span>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => copyToClipboard(`mailrcv-verify=${domain.verification_code}`, "TXT record")}
-                              >
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {!domain.is_verified && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleVerifyDomain(domain)}
-                        disabled={verifyingId === domain.id}
-                      >
-                        {verifyingId === domain.id ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                        )}
-                        Verify
+                    <Link to={`/inbox/test@${domain.domain_name}`}>
+                      <Button variant="glass" size="sm">
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Test
                       </Button>
-                    )}
-                    
-                    {domain.is_verified && (
-                      <Link to={`/inbox/test@${domain.domain_name}`}>
-                        <Button variant="glass" size="sm">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Test
-                        </Button>
-                      </Link>
-                    )}
+                    </Link>
                     
                     <Button 
                       variant="ghost" 
@@ -364,11 +277,11 @@ const DomainsPage = () => {
           </div>
         )}
 
-        {/* Full DNS Setup Guide */}
+        {/* Cloudflare Setup Guide */}
         <div className="mt-12 p-6 rounded-2xl glass">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-primary" />
-            Complete DNS Setup Guide
+            Cloudflare Email Routing Setup Guide
           </h3>
           
           <div className="space-y-6">
@@ -378,60 +291,25 @@ const DomainsPage = () => {
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 2: Configure MX Record</h4>
-              <p className="text-sm text-muted-foreground mb-3">Go to your domain's DNS settings (Cloudflare, Namecheap, GoDaddy, etc.) and add an MX record:</p>
-              <div className="rounded-xl bg-secondary/50 border border-border overflow-hidden">
-                <div className="grid grid-cols-4 gap-2 p-3 text-xs font-semibold border-b border-border bg-background/30">
-                  <span>Type</span>
-                  <span>Name</span>
-                  <span>Value</span>
-                  <span>Priority</span>
-                </div>
-                <div className="grid grid-cols-4 gap-2 p-3 text-sm font-mono items-center">
-                  <span className="text-primary">MX</span>
-                  <span>@ (root)</span>
-                  <div className="flex items-center gap-1">
-                    <span>mx.mailrcv.site</span>
-                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => copyToClipboard("mx.mailrcv.site", "MX value")}>
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  <span>10</span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 3: Add TXT Verification Record</h4>
-              <p className="text-sm text-muted-foreground mb-3">Add a TXT record with the verification code shown in your domain's card above:</p>
-              <div className="rounded-xl bg-secondary/50 border border-border overflow-hidden">
-                <div className="grid grid-cols-3 gap-2 p-3 text-xs font-semibold border-b border-border bg-background/30">
-                  <span>Type</span>
-                  <span>Name</span>
-                  <span>Value</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3 text-sm font-mono">
-                  <span className="text-primary">TXT</span>
-                  <span>@ (root)</span>
-                  <span>mailrcv-verify=&lt;your-code&gt;</span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 4: Configure Cloudflare Email Routing</h4>
-              <p className="text-sm text-muted-foreground mb-3">This is <strong>required</strong> for emails to reach MailRCV. Go to Cloudflare Dashboard:</p>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 2: Enable Email Routing in Cloudflare</h4>
+              <p className="text-sm text-muted-foreground mb-3">Go to Cloudflare Dashboard and enable email routing for your domain:</p>
               <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-                  <p className="text-sm font-medium mb-2">4.1 — Enable Email Routing</p>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>Go to <strong>Cloudflare Dashboard</strong> → Select your domain</li>
                     <li>Click <strong>Email</strong> → <strong>Email Routing</strong> in the sidebar</li>
                     <li>If not enabled, click <strong>"Get started"</strong> to enable Email Routing</li>
+                    <li>Cloudflare will <strong>automatically add</strong> the required MX and TXT DNS records</li>
                   </ol>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 3: Set Up Catch-All Route</h4>
+              <p className="text-sm text-muted-foreground mb-3">Configure the catch-all to forward emails to the MailRCV worker:</p>
+              <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-                  <p className="text-sm font-medium mb-2">4.2 — Set Up Catch-All Route</p>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>Go to <strong>Email Routing</strong> → <strong>Routes</strong> tab</li>
                     <li>Find <strong>"Catch-all address"</strong> section</li>
@@ -443,25 +321,20 @@ const DomainsPage = () => {
                 </div>
                 <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
                   <p className="text-xs text-muted-foreground">
-                    <strong className="text-destructive">⚠️ Without this step:</strong> DNS verification will pass, but emails will <strong>not</strong> be delivered to MailRCV inbox. The Cloudflare Worker is what processes and forwards incoming emails to the backend.
+                    <strong className="text-destructive">⚠️ Without this step:</strong> Emails will <strong>not</strong> be delivered to MailRCV inbox. The Cloudflare Worker is what processes and forwards incoming emails to the backend.
                   </p>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 5: Verify Domain</h4>
-              <p className="text-sm text-muted-foreground">After adding DNS records and configuring Email Routing, wait a few minutes for DNS propagation and click the <strong>"Verify"</strong> button. DNS changes can take up to 24-48 hours in some cases.</p>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-primary mb-2">Step 6: Start Receiving Emails</h4>
-              <p className="text-sm text-muted-foreground">Once verified, any email sent to <code className="text-primary font-mono">anything@yourdomain.com</code> will appear in your inbox. Optionally, set up forwarding to receive emails in your real inbox.</p>
+              <h4 className="text-sm font-semibold text-primary mb-2">Step 4: Start Receiving Emails</h4>
+              <p className="text-sm text-muted-foreground">Once Cloudflare Email Routing is configured, any email sent to <code className="text-primary font-mono">anything@yourdomain.com</code> will appear in your inbox. Optionally, set up forwarding to receive emails in your real inbox.</p>
             </div>
 
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
               <p className="text-xs text-muted-foreground">
-                <strong className="text-primary">💡 Tips:</strong> If your domain uses Cloudflare, set MX record Name to <code className="font-mono">@</code> and Priority to <code className="font-mono">10</code>. Remove any existing conflicting MX records. If you don't have a Cloudflare Worker yet, deploy the MailRCV email worker script first.
+                <strong className="text-primary">💡 Tip:</strong> Cloudflare automatically manages DNS records when you enable Email Routing. No manual DNS configuration needed! If you don't have a Cloudflare Worker yet, deploy the MailRCV email worker script first.
               </p>
             </div>
           </div>
