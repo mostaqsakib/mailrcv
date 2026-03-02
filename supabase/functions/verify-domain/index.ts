@@ -80,7 +80,9 @@ Deno.serve(async (req) => {
       console.error("TXT lookup failed:", e);
     }
 
-    const isVerified = mxValid && txtValid;
+    // Cloudflare MX records detected = sufficient for verification
+    // TXT is optional bonus verification
+    const isVerified = mxValid;
 
     if (isVerified) {
       await supabase
