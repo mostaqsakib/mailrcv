@@ -1,0 +1,1 @@
+UPDATE domains SET is_verified = true WHERE domain_name = 'mailrcv.store'
