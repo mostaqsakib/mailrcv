@@ -233,6 +233,36 @@ export type Database = {
           },
         ]
       }
+      payment_gateways: {
+        Row: {
+          config: Json
+          created_at: string
+          display_name: string
+          gateway_type: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          display_name: string
+          gateway_type: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          display_name?: string
+          gateway_type?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_orders: {
         Row: {
           amount: number

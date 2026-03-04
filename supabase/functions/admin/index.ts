@@ -58,10 +58,11 @@ serve(async (req) => {
 
     // --- STATS ---
     if (action === "stats") {
-      const [profiles, aliases, emails] = await Promise.all([
+      const [profiles, aliases, emails, orders] = await Promise.all([
         supabase.from("profiles").select("plan", { count: "exact" }),
         supabase.from("email_aliases").select("id", { count: "exact" }),
         supabase.from("received_emails").select("id", { count: "exact" }),
+        supabase.from("payment_orders").select("status, amount"),
       ]);
 
       // Plan breakdown
@@ -71,12 +72,21 @@ serve(async (req) => {
         if (p.plan in planCounts) planCounts[p.plan as keyof typeof planCounts]++;
       });
 
+      // Payment stats
+      const orderData = orders.data || [];
+      const totalRevenue = orderData
+        .filter((o: any) => o.status === "verified")
+        .reduce((sum: number, o: any) => sum + parseFloat(o.amount), 0);
+      const verifiedOrders = orderData.filter((o: any) => o.status === "verified").length;
+
       return new Response(
         JSON.stringify({
           totalUsers: profiles.count || 0,
           totalInboxes: aliases.count || 0,
           totalEmails: emails.count || 0,
           planCounts,
+          totalRevenue,
+          verifiedOrders,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -178,7 +188,6 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .range(page * limit, (page + 1) * limit - 1);
 
-      // Fetch user emails for the orders
       const userIds = [...new Set((data || []).map((o: any) => o.user_id))];
       let userMap: Record<string, string> = {};
       if (userIds.length > 0) {
@@ -195,6 +204,75 @@ serve(async (req) => {
         JSON.stringify({ orders: data || [], total: count || 0, userMap }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // --- GATEWAYS LIST ---
+    if (action === "gateways") {
+      const { data } = await supabase
+        .from("payment_gateways")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      return new Response(JSON.stringify({ gateways: data || [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- CREATE GATEWAY ---
+    if (action === "create_gateway") {
+      const { gateway_type, display_name, config } = params;
+      const { data, error } = await supabase.from("payment_gateways").insert({
+        gateway_type,
+        display_name,
+        config: config || {},
+      }).select().single();
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ gateway: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- UPDATE GATEWAY ---
+    if (action === "update_gateway") {
+      const { gatewayId, display_name, config, is_active } = params;
+      const updateData: any = {};
+      if (display_name !== undefined) updateData.display_name = display_name;
+      if (config !== undefined) updateData.config = config;
+      if (is_active !== undefined) updateData.is_active = is_active;
+
+      const { error } = await supabase
+        .from("payment_gateways")
+        .update(updateData)
+        .eq("id", gatewayId);
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- DELETE GATEWAY ---
+    if (action === "delete_gateway") {
+      const { gatewayId } = params;
+      const { error } = await supabase.from("payment_gateways").delete().eq("id", gatewayId);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- TOGGLE GATEWAY ---
+    if (action === "toggle_gateway") {
+      const { gatewayId, is_active } = params;
+      const { error } = await supabase
+        .from("payment_gateways")
+        .update({ is_active })
+        .eq("id", gatewayId);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
