@@ -28,6 +28,10 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Settings,
+  DollarSign,
+  Save,
+  Edit,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,6 +40,8 @@ interface Stats {
   totalInboxes: number;
   totalEmails: number;
   planCounts: { guest: number; free: number; paid: number };
+  totalRevenue?: number;
+  verifiedOrders?: number;
 }
 
 interface UserProfile {
@@ -73,6 +79,15 @@ interface PaymentOrder {
   verified_at: string | null;
 }
 
+interface PaymentGateway {
+  id: string;
+  gateway_type: string;
+  display_name: string;
+  is_active: boolean;
+  config: Record<string, any>;
+  created_at: string;
+}
+
 const adminInvoke = async (action: string, params: Record<string, any> = {}) => {
   const { data, error } = await supabase.functions.invoke("admin", {
     body: { action, ...params },
@@ -94,6 +109,10 @@ const AdminPage = () => {
   const [ordersTotal, setOrdersTotal] = useState(0);
   const [ordersPage, setOrdersPage] = useState(0);
   const [ordersUserMap, setOrdersUserMap] = useState<Record<string, string>>({});
+  const [gateways, setGateways] = useState<PaymentGateway[]>([]);
+  const [editingGateway, setEditingGateway] = useState<string | null>(null);
+  const [editConfig, setEditConfig] = useState<Record<string, any>>({});
+  const [editDisplayName, setEditDisplayName] = useState("");
   const [loadingTab, setLoadingTab] = useState(false);
 
   // New coupon form
@@ -162,9 +181,45 @@ const AdminPage = () => {
     setLoadingTab(false);
   }, []);
 
+  const loadGateways = useCallback(async () => {
+    setLoadingTab(true);
+    try {
+      const data = await adminInvoke("gateways");
+      setGateways(data.gateways);
+    } catch { toast.error("Failed to load gateways"); }
+    setLoadingTab(false);
+  }, []);
+
   useEffect(() => {
     if (isAdmin) loadStats();
   }, [isAdmin, loadStats]);
+
+  const handleToggleGateway = async (id: string, active: boolean) => {
+    try {
+      await adminInvoke("toggle_gateway", { gatewayId: id, is_active: active });
+      setGateways((prev) => prev.map((g) => (g.id === id ? { ...g, is_active: active } : g)));
+      toast.success(active ? "Gateway enabled" : "Gateway disabled");
+    } catch { toast.error("Failed"); }
+  };
+
+  const handleUpdateGateway = async (id: string) => {
+    try {
+      await adminInvoke("update_gateway", { gatewayId: id, display_name: editDisplayName, config: editConfig });
+      setGateways((prev) => prev.map((g) => (g.id === id ? { ...g, display_name: editDisplayName, config: editConfig } : g)));
+      setEditingGateway(null);
+      toast.success("Gateway updated");
+    } catch { toast.error("Failed to update"); }
+  };
+
+  const handleDeleteGateway = async (id: string) => {
+    if (!confirm("Delete this gateway?")) return;
+    try {
+      await adminInvoke("delete_gateway", { gatewayId: id });
+      setGateways((prev) => prev.filter((g) => g.id !== id));
+      toast.success("Gateway deleted");
+    } catch { toast.error("Failed"); }
+  };
+
 
   const handleUpdatePlan = async (userId: string, plan: string) => {
     try {
@@ -267,12 +322,14 @@ const AdminPage = () => {
           if (v === "users") loadUsers(0);
           if (v === "coupons") loadCoupons();
           if (v === "payments") loadOrders(0);
+          if (v === "gateways") loadGateways();
         }}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="stats" className="gap-2"><BarChart3 className="w-4 h-4" /> Stats</TabsTrigger>
-            <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
-            <TabsTrigger value="coupons" className="gap-2"><Ticket className="w-4 h-4" /> Coupons</TabsTrigger>
-            <TabsTrigger value="payments" className="gap-2"><CreditCard className="w-4 h-4" /> Payments</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="stats" className="gap-1 text-xs sm:text-sm"><BarChart3 className="w-4 h-4" /> <span className="hidden sm:inline">Stats</span></TabsTrigger>
+            <TabsTrigger value="users" className="gap-1 text-xs sm:text-sm"><Users className="w-4 h-4" /> <span className="hidden sm:inline">Users</span></TabsTrigger>
+            <TabsTrigger value="coupons" className="gap-1 text-xs sm:text-sm"><Ticket className="w-4 h-4" /> <span className="hidden sm:inline">Coupons</span></TabsTrigger>
+            <TabsTrigger value="payments" className="gap-1 text-xs sm:text-sm"><CreditCard className="w-4 h-4" /> <span className="hidden sm:inline">Payments</span></TabsTrigger>
+            <TabsTrigger value="gateways" className="gap-1 text-xs sm:text-sm"><Settings className="w-4 h-4" /> <span className="hidden sm:inline">Gateways</span></TabsTrigger>
           </TabsList>
 
           {/* STATS TAB */}
@@ -288,6 +345,10 @@ const AdminPage = () => {
                   <StatCard icon={<Users className="w-5 h-5" />} label="Guest Users" value={stats.planCounts.guest} color="text-muted-foreground" />
                   <StatCard icon={<Shield className="w-5 h-5" />} label="Free Users" value={stats.planCounts.free} color="text-primary" />
                   <StatCard icon={<Crown className="w-5 h-5" />} label="Pro Users" value={stats.planCounts.paid} color="text-yellow-500" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <StatCard icon={<DollarSign className="w-5 h-5" />} label="Total Revenue (USD)" value={stats.totalRevenue || 0} color="text-green-500" />
+                  <StatCard icon={<CheckCircle className="w-5 h-5" />} label="Verified Payments" value={stats.verifiedOrders || 0} color="text-green-500" />
                 </div>
               </div>
             ) : loadingTab ? (
@@ -518,6 +579,192 @@ const AdminPage = () => {
                   </Button>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* GATEWAYS TAB */}
+          <TabsContent value="gateways">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Payment Gateway Configuration</p>
+                <Button variant="outline" size="sm" onClick={() => loadGateways()} className="gap-2">
+                  <RefreshCw className="w-3 h-3" /> Refresh
+                </Button>
+              </div>
+
+              {loadingTab ? (
+                <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+              ) : gateways.length === 0 ? (
+                <p className="text-center text-muted-foreground py-10">No gateways configured</p>
+              ) : (
+                <div className="space-y-3">
+                  {gateways.map((g) => (
+                    <div key={g.id} className="p-5 rounded-xl border border-border/40 bg-card/50 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              g.gateway_type === "binance" ? "bg-yellow-500/20" : "bg-primary/20"
+                            }`}>
+                              {g.gateway_type === "binance" ? (
+                                <span className="text-yellow-500 font-bold text-xs">₿</span>
+                              ) : (
+                                <CreditCard className="w-4 h-4 text-primary" />
+                              )}
+                            </div>
+                            <span className="font-semibold text-foreground">{g.display_name}</span>
+                            <Badge variant="outline" className="text-xs">{g.gateway_type}</Badge>
+                            <Badge variant={g.is_active ? "default" : "secondary"}>
+                              {g.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8"
+                            onClick={() => {
+                              if (editingGateway === g.id) {
+                                setEditingGateway(null);
+                              } else {
+                                setEditingGateway(g.id);
+                                setEditDisplayName(g.display_name);
+                                setEditConfig({ ...g.config });
+                              }
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => handleToggleGateway(g.id, !g.is_active)}>
+                            {g.is_active ? <ToggleRight className="w-4 h-4 text-primary" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="w-8 h-8 text-destructive" onClick={() => handleDeleteGateway(g.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Config display */}
+                      {editingGateway !== g.id && (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {Object.entries(g.config).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="font-medium text-foreground/70">{key}:</span>
+                              <span className="font-mono">{String(val)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Edit form */}
+                      {editingGateway === g.id && (
+                        <div className="space-y-3 pt-2 border-t border-border/30">
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Display Name</label>
+                            <Input
+                              value={editDisplayName}
+                              onChange={(e) => setEditDisplayName(e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          {Object.entries(editConfig).map(([key, val]) => (
+                            <div key={key}>
+                              <label className="text-xs font-medium text-muted-foreground mb-1 block">{key}</label>
+                              <Input
+                                value={String(val)}
+                                onChange={(e) => setEditConfig((prev) => ({ ...prev, [key]: e.target.value }))}
+                                className="h-8 text-sm font-mono"
+                              />
+                            </div>
+                          ))}
+                          {/* Add new config field */}
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="New field name"
+                              className="h-8 text-sm"
+                              id={`new-key-${g.id}`}
+                            />
+                            <Input
+                              placeholder="Value"
+                              className="h-8 text-sm"
+                              id={`new-val-${g.id}`}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs shrink-0"
+                              onClick={() => {
+                                const keyEl = document.getElementById(`new-key-${g.id}`) as HTMLInputElement;
+                                const valEl = document.getElementById(`new-val-${g.id}`) as HTMLInputElement;
+                                if (keyEl?.value) {
+                                  setEditConfig((prev) => ({ ...prev, [keyEl.value]: valEl?.value || "" }));
+                                  keyEl.value = "";
+                                  if (valEl) valEl.value = "";
+                                }
+                              }}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" className="gap-1" onClick={() => handleUpdateGateway(g.id)}>
+                              <Save className="w-3 h-3" /> Save
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditingGateway(null)}>Cancel</Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add new gateway */}
+              <div className="p-5 rounded-xl border border-dashed border-border/60 bg-card/30">
+                <h3 className="font-semibold flex items-center gap-2 mb-3 text-sm"><Plus className="w-4 h-4" /> Add Gateway</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Select onValueChange={(val) => {
+                    const el = document.getElementById("new-gw-type") as HTMLInputElement;
+                    if (el) el.value = val;
+                  }}>
+                    <SelectTrigger id="new-gw-select" className="h-9 text-sm">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="binance">Binance</SelectItem>
+                      <SelectItem value="cryptomus">Cryptomus</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input placeholder="Display Name" id="new-gw-name" className="h-9 text-sm" />
+                  <Button
+                    size="sm"
+                    className="h-9"
+                    onClick={async () => {
+                      const selectEl = document.querySelector('[id="new-gw-select"] span') as HTMLElement;
+                      const type = selectEl?.textContent?.toLowerCase() || "";
+                      const nameEl = document.getElementById("new-gw-name") as HTMLInputElement;
+                      if (!type || type === "type" || !nameEl?.value) {
+                        toast.error("Enter gateway type and name");
+                        return;
+                      }
+                      try {
+                        await adminInvoke("create_gateway", {
+                          gateway_type: type,
+                          display_name: nameEl.value,
+                          config: type === "binance" ? { pay_id: "", currency: "USDT" } : type === "cryptomus" ? { currency: "USD" } : {},
+                        });
+                        toast.success("Gateway created");
+                        loadGateways();
+                        nameEl.value = "";
+                      } catch { toast.error("Failed"); }
+                    }}
+                  >
+                    Create
+                  </Button>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

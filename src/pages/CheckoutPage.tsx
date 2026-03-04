@@ -2,13 +2,19 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Copy, Check, Loader2, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Copy, Check, Loader2, Clock, AlertCircle, CreditCard } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const BINANCE_PAY_ID = "526944888";
+interface Gateway {
+  id: string;
+  gateway_type: string;
+  display_name: string;
+  is_active: boolean;
+  config: Record<string, any>;
+}
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -18,9 +24,13 @@ const CheckoutPage = () => {
   const [verifying, setVerifying] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
-  const [creatingOrder, setCreatingOrder] = useState(true);
+  const [creatingOrder, setCreatingOrder] = useState(false);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState("");
+  const [gateways, setGateways] = useState<Gateway[]>([]);
+  const [loadingGateways, setLoadingGateways] = useState(true);
+  const [selectedGateway, setSelectedGateway] = useState<string | null>(null);
+  const [cryptomusLoading, setCryptomusLoading] = useState(false);
 
   const planType = searchParams.get("plan") || "monthly";
   const amount = planType === "lifetime" ? "10.00" : "1.00";
@@ -33,37 +43,83 @@ const CheckoutPage = () => {
     }
   }, [user, navigate]);
 
-  // Create payment order on mount
+  // Load active gateways
   useEffect(() => {
+    const loadGateways = async () => {
+      const { data } = await supabase
+        .from("payment_gateways")
+        .select("*")
+        .eq("is_active", true);
+      
+      setGateways((data as unknown as Gateway[]) || []);
+      setLoadingGateways(false);
+      
+      // Auto-select if only one gateway
+      if (data && data.length === 1) {
+        setSelectedGateway((data[0] as unknown as Gateway).gateway_type);
+      }
+    };
+    loadGateways();
+  }, []);
+
+  // Create Binance payment order
+  const createBinanceOrder = async () => {
     if (!user) return;
+    setCreatingOrder(true);
 
-    const createOrder = async () => {
-      const { data, error } = await supabase
-        .from("payment_orders")
-        .insert({
-          user_id: user.id,
-          plan_type: "paid",
-          amount: parseFloat(amount),
-          currency,
-          payment_method: "binance",
-          status: "pending",
-        })
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from("payment_orders")
+      .insert({
+        user_id: user.id,
+        plan_type: "paid",
+        amount: parseFloat(amount),
+        currency,
+        payment_method: "binance",
+        status: "pending",
+      })
+      .select()
+      .single();
 
-      if (error) {
-        toast({ title: "Error", description: "Failed to create payment order", variant: "destructive" });
-        navigate("/pricing");
+    if (error) {
+      toast({ title: "Error", description: "Failed to create payment order", variant: "destructive" });
+      navigate("/pricing");
+      return;
+    }
+
+    setPaymentOrderId(data.id);
+    setExpiresAt(new Date(data.expires_at));
+    setCreatingOrder(false);
+  };
+
+  // Handle Cryptomus payment
+  const handleCryptomus = async () => {
+    if (!user) return;
+    setCryptomusLoading(true);
+
+    try {
+      const response = await supabase.functions.invoke("create-cryptomus-invoice", {
+        body: {
+          planType,
+          returnUrl: window.location.origin + "/dashboard",
+        },
+      });
+
+      if (response.error) {
+        toast({ title: "Error", description: "Failed to create payment", variant: "destructive" });
+        setCryptomusLoading(false);
         return;
       }
 
-      setPaymentOrderId(data.id);
-      setExpiresAt(new Date(data.expires_at));
-      setCreatingOrder(false);
-    };
-
-    createOrder();
-  }, [user, amount, currency, navigate]);
+      if (response.data?.paymentUrl) {
+        window.location.href = response.data.paymentUrl;
+      } else {
+        toast({ title: "Error", description: "No payment URL received", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+    }
+    setCryptomusLoading(false);
+  };
 
   // Countdown timer
   useEffect(() => {
@@ -143,6 +199,106 @@ const CheckoutPage = () => {
     }
   };
 
+  if (loadingGateways) {
+    return (
+      <div className="min-h-screen hero-gradient flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const binanceGateway = gateways.find((g) => g.gateway_type === "binance");
+  const cryptomusGateway = gateways.find((g) => g.gateway_type === "cryptomus");
+  const binancePayId = binanceGateway?.config?.pay_id || "526944888";
+  const isExpired = timeLeft === "Expired";
+
+  // Gateway selection screen
+  if (!selectedGateway) {
+    return (
+      <div className="min-h-screen hero-gradient relative overflow-hidden">
+        <div className="absolute inset-0 grid-dots opacity-50" />
+        <div className="relative z-10 p-4 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")} className="gap-2">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Button>
+          <ThemeToggle />
+        </div>
+
+        <div className="relative z-10 flex items-center justify-center px-4 py-8">
+          <div className="w-full max-w-lg space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Choose Payment Method</h2>
+              <p className="text-muted-foreground">
+                {planType === "lifetime" ? "Lifetime Pro" : "Monthly Pro"} — {amount} {planType === "lifetime" ? "USD" : "USDT"}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {binanceGateway && (
+                <button
+                  onClick={() => {
+                    setSelectedGateway("binance");
+                    createBinanceOrder();
+                  }}
+                  className="w-full p-5 rounded-2xl glass-strong border border-border/50 flex items-center gap-4 hover:border-yellow-500/50 transition-all duration-200 text-left"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
+                    <span className="text-yellow-500 font-bold text-lg">₿</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground">{binanceGateway.display_name}</p>
+                    <p className="text-sm text-muted-foreground">Send USDT via Binance Pay • Manual verification</p>
+                  </div>
+                </button>
+              )}
+
+              {cryptomusGateway && (
+                <button
+                  onClick={() => {
+                    setSelectedGateway("cryptomus");
+                    handleCryptomus();
+                  }}
+                  disabled={cryptomusLoading}
+                  className="w-full p-5 rounded-2xl glass-strong border border-border/50 flex items-center gap-4 hover:border-primary/50 transition-all duration-200 text-left disabled:opacity-50"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground">{cryptomusGateway.display_name}</p>
+                    <p className="text-sm text-muted-foreground">Pay with any cryptocurrency • Auto verification</p>
+                  </div>
+                  {cryptomusLoading && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+                </button>
+              )}
+            </div>
+
+            {gateways.length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                <p>No payment methods available at the moment.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Cryptomus loading state
+  if (selectedGateway === "cryptomus") {
+    return (
+      <div className="min-h-screen hero-gradient flex items-center justify-center flex-col gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Redirecting to payment...</p>
+        <Button variant="outline" size="sm" onClick={() => setSelectedGateway(null)}>
+          Choose another method
+        </Button>
+      </div>
+    );
+  }
+
+  // Binance flow (creating order spinner)
   if (creatingOrder) {
     return (
       <div className="min-h-screen hero-gradient flex items-center justify-center">
@@ -151,15 +307,13 @@ const CheckoutPage = () => {
     );
   }
 
-  const isExpired = timeLeft === "Expired";
-
   return (
     <div className="min-h-screen hero-gradient relative overflow-hidden">
       <div className="absolute inset-0 grid-dots opacity-50" />
 
       {/* Header */}
       <div className="relative z-10 p-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/pricing")} className="gap-2">
+        <Button variant="ghost" size="sm" onClick={() => setSelectedGateway(null)} className="gap-2">
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <ThemeToggle />
@@ -211,7 +365,7 @@ const CheckoutPage = () => {
                 <div className="flex items-start gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
                   <span className="text-foreground/80">
-                    Open Binance App → Pay → Send to Binance User or <span className="font-semibold text-primary">Click here</span>
+                    Open Binance App → Pay → Send to Binance User
                   </span>
                 </div>
 
@@ -219,12 +373,12 @@ const CheckoutPage = () => {
                   <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-foreground/80">Send to Binance ID:</span>
-                    <span className="font-bold text-foreground">{BINANCE_PAY_ID}</span>
+                    <span className="font-bold text-foreground">{binancePayId}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       className="h-7 px-2 text-xs gap-1"
-                      onClick={() => copyToClipboard(BINANCE_PAY_ID, "id")}
+                      onClick={() => copyToClipboard(binancePayId, "id")}
                     >
                       {copiedField === "id" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                       {copiedField === "id" ? "Copied" : "Copy"}

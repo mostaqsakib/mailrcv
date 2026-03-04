@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.verify-binance-payment]
 verify_jwt = false
+
+[functions.create-cryptomus-invoice]
+verify_jwt = false
+
+[functions.cryptomus-webhook]
+verify_jwt = false
