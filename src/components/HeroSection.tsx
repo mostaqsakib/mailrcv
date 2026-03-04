@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useDomains } from "@/hooks/use-domains";
 import { useAuth } from "@/contexts/AuthContext";
-import { canUsePasswordProtection, PLAN_LIMITS } from "@/lib/plan-limits";
+import { canUsePasswordProtection, canCreateInbox, getGuestInboxes, addGuestInbox, PLAN_LIMITS } from "@/lib/plan-limits";
 
 // Session storage key prefix
 const SESSION_KEY_PREFIX = "mailrcv_session_";
@@ -117,8 +117,28 @@ export const HeroSection = () => {
 
     const cleanUsername = username.trim().toLowerCase();
 
+    // Guest inbox limit check
+    if (plan === 'guest') {
+      const guestInboxes = getGuestInboxes();
+      const inboxKey = `${cleanUsername}@${selectedDomain}`;
+      if (!guestInboxes.includes(inboxKey) && !canCreateInbox(plan, guestInboxes.length)) {
+        toast("Guest limit reached! Max 5 inboxes.", {
+          description: "Sign up for free to get 10 inboxes and more features.",
+          action: {
+            label: "Sign Up",
+            onClick: () => navigate("/auth"),
+          },
+        });
+        return;
+      }
+    }
+
     // If no password, go to public inbox with domain
     if (!password) {
+      // Track guest inbox
+      if (plan === 'guest') {
+        addGuestInbox(`${cleanUsername}@${selectedDomain}`);
+      }
       const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
       navigate(`/inbox/${urlParam}`);
       return;
