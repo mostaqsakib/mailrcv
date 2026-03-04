@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { User, Lock, Eye, EyeOff, Save, CreditCard, Calendar, CheckCircle, XCircle, Clock } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
+import { User, Lock, Eye, EyeOff, Save, CreditCard, Calendar, CheckCircle, XCircle, Clock, Mail, Inbox, Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +20,12 @@ interface PaymentOrder {
   payment_method: string;
   created_at: string;
   verified_at: string | null;
+}
+
+interface UsageStats {
+  totalInboxes: number;
+  totalEmails: number;
+  memberSince: string;
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -49,6 +56,9 @@ const ProfilePage = () => {
   const [savingPass, setSavingPass] = useState(false);
   const [orders, setOrders] = useState<PaymentOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -64,6 +74,25 @@ const ProfilePage = () => {
     if (!user) { navigate("/auth"); return; }
     if (profile) setDisplayName(profile.display_name || "");
   }, [user, profile, navigate]);
+
+  // Fetch usage stats
+  useEffect(() => {
+    if (!user) return;
+    const fetchStats = async () => {
+      const [inboxRes, emailRes] = await Promise.all([
+        supabase.from("email_aliases").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("received_emails").select("received_emails!inner(*), email_aliases!inner(*)", { count: "exact", head: true })
+          .eq("email_aliases.user_id", user.id),
+      ]);
+      setUsageStats({
+        totalInboxes: inboxRes.count || 0,
+        totalEmails: emailRes.count || 0,
+        memberSince: user.created_at || new Date().toISOString(),
+      });
+      setLoadingStats(false);
+    };
+    fetchStats().catch(() => setLoadingStats(false));
+  }, [user, profile]);
 
   useEffect(() => {
     if (!user) return;
@@ -113,197 +142,259 @@ const ProfilePage = () => {
     }
   };
 
+  const handleCopyReferral = async () => {
+    const url = `${window.location.origin}/auth?ref=${user?.id?.slice(0, 8)}`;
+    await navigator.clipboard.writeText(url);
+    setReferralCopied(true);
+    toast.success("Referral link copied!");
+    setTimeout(() => setReferralCopied(false), 2000);
+  };
+
   if (!user) return null;
 
+  const memberDate = usageStats?.memberSince
+    ? new Date(usageStats.memberSince).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : "—";
+
   return (
-    <div className="min-h-screen bg-background pt-safe">
-      <Header />
+    <PageTransition>
+      <div className="min-h-screen bg-background pt-safe">
+        <Header />
 
-      <main className="container mx-auto px-4 pt-24 sm:pt-28 pb-16 relative">
-        {/* Background effects */}
-        <div className="absolute inset-0 grid-dots opacity-15 pointer-events-none" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-primary/5 blur-[180px] rounded-full pointer-events-none" />
+        <main className="container mx-auto px-4 pt-24 sm:pt-28 pb-16 relative">
+          <div className="absolute inset-0 grid-dots opacity-15 pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-primary/5 blur-[180px] rounded-full pointer-events-none" />
 
-        <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-          {/* Page header */}
-          <div className="text-center mb-8 animate-fade-in">
-            <div className="relative w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 group">
-              <User className="w-8 h-8 text-primary-foreground" />
-              <div className="absolute inset-0 rounded-2xl gradient-bg opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-500" />
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+            {/* Page header */}
+            <div className="text-center mb-8 animate-fade-in">
+              <div className="relative w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 group">
+                <User className="w-8 h-8 text-primary-foreground" />
+                <div className="absolute inset-0 rounded-2xl gradient-bg opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-500" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+              <p className="text-muted-foreground mt-1">{user.email}</p>
+              <span className={`inline-flex items-center gap-1.5 mt-2 text-xs font-bold px-3 py-1 rounded-full ${
+                plan === 'paid'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-400 border border-amber-500/20'
+                  : 'bg-primary/10 text-primary border border-primary/20'
+              }`}>
+                {PLAN_LIMITS[plan].label} Plan
+              </span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-            <p className="text-muted-foreground mt-1">{user.email}</p>
-            <span className={`inline-flex items-center gap-1.5 mt-2 text-xs font-bold px-3 py-1 rounded-full ${
-              plan === 'paid'
-                ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-400 border border-amber-500/20'
-                : 'bg-primary/10 text-primary border border-primary/20'
-            }`}>
-              {PLAN_LIMITS[plan].label} Plan
-            </span>
-          </div>
 
-          {/* Display Name Card */}
-          <div
-            ref={cardRef}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in"
-            style={{ animationDelay: "0.1s" }}
-          >
-            <div
-              className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{
-                background: `conic-gradient(from 0deg at ${mousePos.x}px ${mousePos.y}px, hsl(var(--primary) / 0.4), hsl(var(--accent) / 0.2), transparent 40%)`,
-              }}
-            />
-            {isHovered && (
-              <div className="absolute inset-0 rounded-2xl opacity-50 pointer-events-none"
-                style={{ background: `radial-gradient(250px circle at ${mousePos.x}px ${mousePos.y}px, hsl(var(--primary) / 0.08), transparent 60%)` }}
-              />
-            )}
-            <div className="relative rounded-2xl p-6 bg-card/80 backdrop-blur-xl border border-border/50 group-hover:border-transparent transition-all duration-500">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> Display Name
-              </h2>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300">
-                    <Input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Your display name"
-                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
-                    />
-                  </div>
-                </div>
-                <Button
-                  onClick={handleSaveName}
-                  disabled={savingName || displayName === (profile?.display_name || "")}
-                  className="relative overflow-hidden rounded-xl group/btn"
-                >
-                  <div className="absolute inset-0 gradient-bg" />
-                  <span className="relative z-10 text-primary-foreground flex items-center gap-1.5">
-                    <Save className="w-4 h-4" /> {savingName ? "Saving..." : "Save"}
-                  </span>
-                </Button>
+            {/* Usage Stats Cards */}
+            <div className="grid grid-cols-3 gap-3 animate-fade-in" style={{ animationDelay: "0.05s" }}>
+              <div className="rounded-2xl p-4 bg-card/60 backdrop-blur-xl border border-border/50 text-center">
+                <Inbox className="w-5 h-5 text-sky-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-foreground">
+                  {loadingStats ? <span className="inline-block w-8 h-6 bg-muted/20 rounded animate-pulse" /> : usageStats?.totalInboxes ?? 0}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">Inboxes</p>
+              </div>
+              <div className="rounded-2xl p-4 bg-card/60 backdrop-blur-xl border border-border/50 text-center">
+                <Mail className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-foreground">
+                  {loadingStats ? <span className="inline-block w-8 h-6 bg-muted/20 rounded animate-pulse" /> : usageStats?.totalEmails ?? 0}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">Emails</p>
+              </div>
+              <div className="rounded-2xl p-4 bg-card/60 backdrop-blur-xl border border-border/50 text-center">
+                <Calendar className="w-5 h-5 text-violet-400 mx-auto mb-2" />
+                <p className="text-xs font-bold text-foreground mt-1">{loadingStats ? "..." : memberDate}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Member Since</p>
               </div>
             </div>
-          </div>
 
-          {/* Change Password Card */}
-          <div className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <div className="relative rounded-2xl p-6 bg-card/80 backdrop-blur-xl border border-border/50 transition-all duration-500">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-emerald-400" /> Change Password
-              </h2>
-              <div className="space-y-3">
-                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
-                    <Lock className="w-4 h-4 text-emerald-400" />
+            {/* Referral Card */}
+            <div className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.08s" }}>
+              <div className="relative rounded-2xl p-5 bg-card/80 backdrop-blur-xl border border-border/50 transition-all duration-500">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shrink-0">
+                      <Share2 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">Share MailRCV</h3>
+                      <p className="text-xs text-muted-foreground">Invite friends with your referral link</p>
+                    </div>
                   </div>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New password"
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
-                    <Lock className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
-                  />
-                </div>
-                <Button
-                  onClick={handleChangePassword}
-                  disabled={savingPass || !newPassword || !confirmPassword}
-                  className="relative overflow-hidden rounded-xl w-full group/btn"
-                >
-                  <div className="absolute inset-0 gradient-bg" />
-                  <span className="relative z-10 text-primary-foreground">
-                    {savingPass ? "Updating..." : "Update Password"}
-                  </span>
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Purchase History Card */}
-          <div className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <div className="relative rounded-2xl p-6 bg-card/80 backdrop-blur-xl border border-border/50 transition-all duration-500">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-sky-400" /> Purchase History
-              </h2>
-
-              {loadingOrders ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-16 rounded-xl bg-muted/20 animate-pulse" />
-                  ))}
-                </div>
-              ) : orders.length === 0 ? (
-                <div className="text-center py-8">
-                  <CreditCard className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No purchases yet</p>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-3 rounded-full"
-                    onClick={() => navigate("/pricing")}
+                    onClick={handleCopyReferral}
+                    className="rounded-full gap-1.5 shrink-0"
                   >
-                    View Plans
+                    {referralCopied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                    {referralCopied ? "Copied" : "Copy Link"}
                   </Button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {orders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between gap-3 p-4 rounded-xl bg-background/40 border border-border/30 hover:border-border/60 transition-all duration-300"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold">{order.amount} {order.currency}</p>
-                          <StatusBadge status={order.status} />
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
-                          <span className="text-muted-foreground/40">·</span>
-                          <span className="capitalize">{order.payment_method}</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground capitalize shrink-0">{order.plan_type}</span>
-                    </div>
-                  ))}
-                </div>
+              </div>
+            </div>
+
+            {/* Display Name Card */}
+            <div
+              ref={cardRef}
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in"
+              style={{ animationDelay: "0.1s" }}
+            >
+              <div
+                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background: `conic-gradient(from 0deg at ${mousePos.x}px ${mousePos.y}px, hsl(var(--primary) / 0.4), hsl(var(--accent) / 0.2), transparent 40%)`,
+                }}
+              />
+              {isHovered && (
+                <div className="absolute inset-0 rounded-2xl opacity-50 pointer-events-none"
+                  style={{ background: `radial-gradient(250px circle at ${mousePos.x}px ${mousePos.y}px, hsl(var(--primary) / 0.08), transparent 60%)` }}
+                />
               )}
+              <div className="relative rounded-2xl p-6 bg-card/80 backdrop-blur-xl border border-border/50 group-hover:border-transparent transition-all duration-500">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" /> Display Name
+                </h2>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300">
+                      <Input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="Your display name"
+                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleSaveName}
+                    disabled={savingName || displayName === (profile?.display_name || "")}
+                    className="relative overflow-hidden rounded-xl group/btn"
+                  >
+                    <div className="absolute inset-0 gradient-bg" />
+                    <span className="relative z-10 text-primary-foreground flex items-center gap-1.5">
+                      <Save className="w-4 h-4" /> {savingName ? "Saving..." : "Save"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
             </div>
+
+            {/* Change Password Card */}
+            <div className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <div className="relative rounded-2xl p-6 bg-card/80 backdrop-blur-xl border border-border/50 transition-all duration-500">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-emerald-400" /> Change Password
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New password"
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={savingPass || !newPassword || !confirmPassword}
+                    className="relative overflow-hidden rounded-xl w-full group/btn"
+                  >
+                    <div className="absolute inset-0 gradient-bg" />
+                    <span className="relative z-10 text-primary-foreground">
+                      {savingPass ? "Updating..." : "Update Password"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Purchase History Card */}
+            <div className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+              <div className="relative rounded-2xl p-6 bg-card/80 backdrop-blur-xl border border-border/50 transition-all duration-500">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-sky-400" /> Purchase History
+                </h2>
+
+                {loadingOrders ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-16 rounded-xl bg-muted/20 animate-pulse" />
+                    ))}
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CreditCard className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No purchases yet</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 rounded-full"
+                      onClick={() => navigate("/pricing")}
+                    >
+                      View Plans
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="flex items-center justify-between gap-3 p-4 rounded-xl bg-background/40 border border-border/30 hover:border-border/60 transition-all duration-300"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold">{order.amount} {order.currency}</p>
+                            <StatusBadge status={order.status} />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            <span className="text-muted-foreground/40">·</span>
+                            <span className="capitalize">{order.payment_method}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground capitalize shrink-0">{order.plan_type}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Plan expiry info */}
+            {profile?.plan_expires_at && plan === 'paid' && (
+              <div className="text-center text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                Plan expires: {new Date(profile.plan_expires_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              </div>
+            )}
           </div>
+        </main>
 
-          {/* Plan expiry info */}
-          {profile?.plan_expires_at && plan === 'paid' && (
-            <div className="text-center text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
-              Plan expires: {new Date(profile.plan_expires_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-            </div>
-          )}
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </PageTransition>
   );
 };
 
