@@ -266,11 +266,6 @@ export const HeroSection = () => {
 
       <div className="container relative z-10 px-4 py-4 sm:py-20">
         <div className="max-w-3xl mx-auto text-center animate-slide-up">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10 shadow-sm dark:shadow-none">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs sm:text-sm font-medium text-foreground/80">Instant inbox • Zero hassle</span>
-          </div>
 
           {/* Main heading */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight">
