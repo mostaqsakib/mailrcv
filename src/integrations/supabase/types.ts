@@ -233,6 +233,48 @@ export type Database = {
           },
         ]
       }
+      payment_orders: {
+        Row: {
+          amount: number
+          binance_order_id: string | null
+          created_at: string
+          currency: string
+          expires_at: string
+          id: string
+          payment_method: string
+          plan_type: string
+          status: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          amount: number
+          binance_order_id?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string
+          id?: string
+          payment_method?: string
+          plan_type?: string
+          status?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          amount?: number
+          binance_order_id?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string
+          id?: string
+          payment_method?: string
+          plan_type?: string
+          status?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -162,19 +162,33 @@ const PricingPage = () => {
                     Sign Up Free
                   </Button>
                 ) : (
-                  <Button
-                    className="w-full rounded-xl h-11 bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600"
-                    onClick={() => {
-                      if (!user) {
-                        navigate("/auth");
-                      } else {
-                        // TODO: Payment integration
-                        navigate("/pricing");
-                      }
-                    }}
-                  >
-                    Upgrade to Pro
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full rounded-xl h-11 bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600"
+                      onClick={() => {
+                        if (!user) {
+                          navigate("/auth");
+                        } else {
+                          navigate("/checkout?plan=monthly");
+                        }
+                      }}
+                    >
+                      $1/month
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-xl h-11 border-yellow-500/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/10"
+                      onClick={() => {
+                        if (!user) {
+                          navigate("/auth");
+                        } else {
+                          navigate("/checkout?plan=lifetime");
+                        }
+                      }}
+                    >
+                      $10 Lifetime
+                    </Button>
+                  </div>
                 )}
               </div>
             );
