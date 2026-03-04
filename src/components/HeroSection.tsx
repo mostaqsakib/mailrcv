@@ -269,7 +269,7 @@ export const HeroSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10 shadow-sm dark:shadow-none">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs sm:text-sm font-medium text-foreground/80">Free & instant • No signup needed</span>
+            <span className="text-xs sm:text-sm font-medium text-foreground/80">Instant inbox • Zero hassle</span>
           </div>
 
           {/* Main heading */}
