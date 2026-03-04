@@ -197,8 +197,6 @@ export const Header = () => {
             {/* Center nav links - desktop only */}
             {!isMobile && (
               <div className="flex items-center gap-1">
-                <NavItem to="/pricing" active={isActive('/pricing')}>Pricing</NavItem>
-                <NavItem to="/download" active={isActive('/download')}>Download</NavItem>
                 {plan === 'paid' && (
                   <NavItem to="/bulk" active={isActive('/bulk')}>
                     <span className="flex items-center gap-1.5">
@@ -212,7 +210,13 @@ export const Header = () => {
 
             {/* Right side */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Desktop user menu */}
+              {/* Pricing & Download - desktop only */}
+              {!isMobile && (
+                <>
+                  <NavItem to="/pricing" active={isActive('/pricing')}>Pricing</NavItem>
+                  <NavItem to="/download" active={isActive('/download')}>Download</NavItem>
+                </>
+              )}
               {!isMobile && !loading && (
                 user ? (
                   <DropdownMenu>
