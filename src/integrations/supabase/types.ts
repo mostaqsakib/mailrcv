@@ -88,6 +88,7 @@ export type Database = {
           is_password_protected: boolean
           password_hash: string | null
           updated_at: string
+          user_id: string | null
           username: string
         }
         Insert: {
@@ -100,6 +101,7 @@ export type Database = {
           is_password_protected?: boolean
           password_hash?: string | null
           updated_at?: string
+          user_id?: string | null
           username: string
         }
         Update: {
@@ -112,6 +114,7 @@ export type Database = {
           is_password_protected?: boolean
           password_hash?: string | null
           updated_at?: string
+          user_id?: string | null
           username?: string
         }
         Relationships: [
@@ -164,6 +167,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          plan: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          plan?: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       push_tokens: {
         Row: {
@@ -252,7 +285,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_plan: "guest" | "free" | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -379,6 +412,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_plan: ["guest", "free", "paid"],
+    },
   },
 } as const
