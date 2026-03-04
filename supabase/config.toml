@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.cleanup-emails]
 verify_jwt = false
+
+[functions.verify-binance-payment]
+verify_jwt = false
