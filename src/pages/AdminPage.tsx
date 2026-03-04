@@ -24,6 +24,10 @@ import {
   Shield,
   Wand2,
   Copy,
+  CreditCard,
+  CheckCircle,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +59,20 @@ interface Coupon {
   created_at: string;
 }
 
+interface PaymentOrder {
+  id: string;
+  user_id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  plan_type: string;
+  payment_method: string;
+  binance_order_id: string | null;
+  created_at: string;
+  expires_at: string;
+  verified_at: string | null;
+}
+
 const adminInvoke = async (action: string, params: Record<string, any> = {}) => {
   const { data, error } = await supabase.functions.invoke("admin", {
     body: { action, ...params },
@@ -72,6 +90,10 @@ const AdminPage = () => {
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersPage, setUsersPage] = useState(0);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [orders, setOrders] = useState<PaymentOrder[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(0);
+  const [ordersUserMap, setOrdersUserMap] = useState<Record<string, string>>({});
   const [loadingTab, setLoadingTab] = useState(false);
 
   // New coupon form
@@ -125,6 +147,18 @@ const AdminPage = () => {
       const data = await adminInvoke("coupons");
       setCoupons(data.coupons);
     } catch { toast.error("Failed to load coupons"); }
+    setLoadingTab(false);
+  }, []);
+
+  const loadOrders = useCallback(async (page = 0) => {
+    setLoadingTab(true);
+    try {
+      const data = await adminInvoke("payment_orders", { page });
+      setOrders(data.orders);
+      setOrdersTotal(data.total);
+      setOrdersPage(page);
+      setOrdersUserMap(data.userMap || {});
+    } catch { toast.error("Failed to load orders"); }
     setLoadingTab(false);
   }, []);
 
@@ -232,11 +266,13 @@ const AdminPage = () => {
           if (v === "stats") loadStats();
           if (v === "users") loadUsers(0);
           if (v === "coupons") loadCoupons();
+          if (v === "payments") loadOrders(0);
         }}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="stats" className="gap-2"><BarChart3 className="w-4 h-4" /> Stats</TabsTrigger>
             <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Users</TabsTrigger>
             <TabsTrigger value="coupons" className="gap-2"><Ticket className="w-4 h-4" /> Coupons</TabsTrigger>
+            <TabsTrigger value="payments" className="gap-2"><CreditCard className="w-4 h-4" /> Payments</TabsTrigger>
           </TabsList>
 
           {/* STATS TAB */}
@@ -408,6 +444,78 @@ const AdminPage = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* PAYMENTS TAB */}
+          <TabsContent value="payments">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{ordersTotal} total orders</p>
+                <Button variant="outline" size="sm" onClick={() => loadOrders(ordersPage)} className="gap-2">
+                  <RefreshCw className="w-3 h-3" /> Refresh
+                </Button>
+              </div>
+
+              {loadingTab ? (
+                <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+              ) : orders.length === 0 ? (
+                <p className="text-center text-muted-foreground py-10">No payment orders yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {orders.map((o) => (
+                    <div key={o.id} className="p-4 rounded-xl border border-border/40 bg-card/50 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{ordersUserMap[o.user_id] || o.user_id.slice(0, 8)}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(o.created_at).toLocaleString()} • {o.payment_method.toUpperCase()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="font-mono">
+                            {o.amount} {o.currency}
+                          </Badge>
+                          <Badge variant="outline">{o.plan_type}</Badge>
+                          <Badge
+                            variant={o.status === "verified" ? "default" : o.status === "expired" ? "destructive" : "secondary"}
+                            className={`gap-1 ${o.status === "verified" ? "bg-green-500/20 text-green-600" : ""}`}
+                          >
+                            {o.status === "verified" && <CheckCircle className="w-3 h-3" />}
+                            {o.status === "pending" && <Clock className="w-3 h-3" />}
+                            {o.status === "expired" && <XCircle className="w-3 h-3" />}
+                            {o.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      {o.binance_order_id && (
+                        <p className="text-xs text-muted-foreground">
+                          Order ID: <span className="font-mono text-foreground">{o.binance_order_id}</span>
+                        </p>
+                      )}
+                      {o.verified_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Verified: {new Date(o.verified_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {ordersTotal > 50 && (
+                <div className="flex justify-center gap-2 pt-4">
+                  <Button variant="outline" size="sm" disabled={ordersPage === 0} onClick={() => loadOrders(ordersPage - 1)}>
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground self-center">
+                    Page {ordersPage + 1} of {Math.ceil(ordersTotal / 50)}
+                  </span>
+                  <Button variant="outline" size="sm" disabled={(ordersPage + 1) * 50 >= ordersTotal} onClick={() => loadOrders(ordersPage + 1)}>
+                    Next
+                  </Button>
                 </div>
               )}
             </div>
