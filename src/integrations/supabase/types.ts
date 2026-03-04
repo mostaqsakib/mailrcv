@@ -47,6 +47,71 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string
+          id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          coupon_type: Database["public"]["Enums"]["coupon_type"]
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          used_count: number
+          value: number
+        }
+        Insert: {
+          code: string
+          coupon_type: Database["public"]["Enums"]["coupon_type"]
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+          value?: number
+        }
+        Update: {
+          code?: string
+          coupon_type?: Database["public"]["Enums"]["coupon_type"]
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+          value?: number
+        }
+        Relationships: []
+      }
       domains: {
         Row: {
           created_at: string
@@ -277,15 +342,44 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_plan: "guest" | "free" | "paid"
+      app_role: "admin" | "user"
+      coupon_type: "trial_days" | "lifetime" | "discount_percent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -414,6 +508,8 @@ export const Constants = {
   public: {
     Enums: {
       app_plan: ["guest", "free", "paid"],
+      app_role: ["admin", "user"],
+      coupon_type: ["trial_days", "lifetime", "discount_percent"],
     },
   },
 } as const
