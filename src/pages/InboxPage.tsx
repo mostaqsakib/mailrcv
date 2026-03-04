@@ -62,17 +62,17 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 // Skeleton component for email items
 const EmailItemSkeleton = memo(() => (
-  <div className="p-5 rounded-xl glass">
+  <div className="p-4 sm:p-5 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/30">
     <div className="flex items-start justify-between gap-4">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2">
-          <Skeleton className="w-2 h-2 rounded-full" />
-          <Skeleton className="h-4 w-40" />
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+        <div className="flex-1 min-w-0">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <Skeleton className="h-5 w-3/4 mb-2" />
+          <Skeleton className="h-3.5 w-full" />
         </div>
-        <Skeleton className="h-6 w-3/4 mb-2" />
-        <Skeleton className="h-4 w-full" />
       </div>
-      <Skeleton className="h-4 w-16" />
+      <Skeleton className="h-4 w-14 shrink-0" />
     </div>
   </div>
 ));
@@ -126,57 +126,67 @@ const EmailItem = memo(({
 
   return (
     <div
-      className={`group p-5 rounded-xl transition-all duration-300 cursor-pointer ${
+      className={`group relative p-4 sm:p-5 rounded-2xl transition-all duration-300 cursor-pointer border ${
         isSelected
-          ? "glass ring-2 ring-primary bg-primary/5"
+          ? "bg-primary/5 border-primary/40 shadow-[0_0_20px_-5px] shadow-primary/20"
           : mail.is_read 
-            ? "glass hover:bg-white/5" 
-            : "glass glow hover:bg-white/5"
+            ? "bg-card/40 backdrop-blur-xl border-border/20 hover:border-border/40 hover:bg-card/60" 
+            : "bg-card/60 backdrop-blur-xl border-primary/15 hover:border-primary/30 hover:shadow-[0_0_25px_-8px] hover:shadow-primary/15"
       }`}
       onClick={handleClick}
     >
-      <div className="flex items-start justify-between gap-4">
+      {/* Unread indicator line */}
+      {!mail.is_read && (
+        <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-gradient-to-b from-primary to-accent" />
+      )}
+
+      <div className="flex items-start gap-3 sm:gap-4">
         {selectionMode && (
-          <div className="flex items-center pt-1 shrink-0">
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-              isSelected ? "bg-primary border-primary" : "border-muted-foreground/40"
+          <div className="flex items-center pt-1.5 shrink-0">
+            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+              isSelected ? "bg-primary border-primary scale-110" : "border-muted-foreground/30 hover:border-primary/50"
             }`}>
               {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
             </div>
           </div>
         )}
+
+        {/* Avatar */}
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold transition-all duration-300 ${
+          !mail.is_read 
+            ? "bg-gradient-to-br from-primary/20 to-accent/15 text-primary group-hover:scale-105" 
+            : "bg-muted/20 text-muted-foreground"
+        }`}>
+          {cleanSenderEmail(mail.from_email).charAt(0).toUpperCase()}
+        </div>
+
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            {!mail.is_read && (
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-            )}
-            <span className={`font-mono text-base truncate ${!mail.is_read ? "text-primary" : "text-muted-foreground"}`}>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className={`font-medium text-sm truncate ${!mail.is_read ? "text-foreground" : "text-muted-foreground"}`}>
               {cleanSenderEmail(mail.from_email)}
             </span>
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60 font-mono shrink-0">
+              <Clock className="w-3 h-3" />
+              {formatTime(mail.received_at)}
+            </div>
           </div>
-          <h4 className={`font-semibold text-xl mb-1.5 ${!mail.is_read ? "text-foreground" : "text-foreground/80"}`}>
+          <h4 className={`font-semibold text-base sm:text-lg mb-0.5 truncate ${!mail.is_read ? "text-foreground" : "text-foreground/70"}`}>
             {mail.subject || "(No subject)"}
           </h4>
-          <p className="text-base text-muted-foreground line-clamp-1">
-            {mail.body_text?.substring(0, 150) || "(No content)"}
+          <p className="text-sm text-muted-foreground/70 line-clamp-1">
+            {mail.body_text?.substring(0, 120) || "(No content)"}
           </p>
         </div>
         
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-            <Clock className="w-3 h-3" />
-            {formatTime(mail.received_at)}
-          </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={handleDelete}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
+        <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pt-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            onClick={handleDelete}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
       </div>
     </div>
@@ -779,7 +789,6 @@ const InboxPage = () => {
           onMouseLeave={() => setNavHovered(false)}
           className="group/nav relative"
         >
-          {/* Spotlight on header */}
           {navHovered && (
             <div
               className="absolute inset-0 opacity-40 pointer-events-none z-0"
@@ -788,332 +797,236 @@ const InboxPage = () => {
               }}
             />
           )}
-          <div className="relative bg-card/80 backdrop-blur-2xl border-b border-border/40 group-hover/nav:border-primary/15 transition-all duration-500">
-          <div className="container mx-auto px-4 py-5">
-            {/* Top row - Logo and actions */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goBack}
-                  className="gap-2 px-3 sm:px-4 rounded-full border-primary/30 hover:border-primary hover:bg-primary/10 transition-all"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Back</span>
-                </Button>
-                <Link to="/" className="flex items-center gap-2 sm:gap-3 group/logo">
-                  <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl gradient-bg flex items-center justify-center group-hover/logo:scale-110 transition-all duration-300">
-                    <Mail className="w-4 h-4 text-primary-foreground" />
-                    <div className="absolute inset-0 rounded-lg sm:rounded-xl gradient-bg opacity-0 group-hover/logo:opacity-40 blur-xl transition-opacity duration-500" />
-                  </div>
-                  <span className="text-base sm:text-lg font-semibold hidden sm:block tracking-tight">Inbox</span>
-                </Link>
-                {/* Unread / total count badge */}
-                {!emailsLoading && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tabular-nums">
-                    {emails.filter(e => !e.is_read).length > 0
-                      ? `${emails.filter(e => !e.is_read).length} new`
-                      : `${emails.length} emails`}
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {emails.length > 0 && (
+          <div className="relative bg-card/80 backdrop-blur-2xl border-b border-border/30 group-hover/nav:border-primary/10 transition-all duration-500">
+            <div className="container mx-auto px-4 py-4">
+              {/* Top row */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    onClick={() => { setShowSearch(prev => !prev); if (showSearch) setSearchQuery(""); }}
-                    className={`h-9 w-9 ${showSearch ? "bg-primary/10 text-primary" : ""}`}
-                    title="Search emails"
+                    size="sm"
+                    onClick={goBack}
+                    className="gap-1.5 px-2.5 rounded-xl hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all"
                   >
-                    <Search className="w-4 h-4" />
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline text-sm">Back</span>
                   </Button>
-                )}
-                {emails.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleSelectionMode}
-                    className={`h-9 w-9 ${selectionMode ? "bg-primary/10 text-primary" : ""}`}
-                    title="Select emails"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="h-9 w-9"
-                  title="Refresh inbox"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                </Button>
-                {isSupported && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleNotificationToggle}
-                    className={`h-9 w-9 ${permission === "granted" ? "text-primary" : ""}`}
-                    title={permission === "granted" ? "Notifications enabled" : "Enable notifications"}
-                  >
-                    {permission === "granted" ? (
-                      <Bell className="w-4 h-4" />
-                    ) : (
-                      <BellOff className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleSound}
-                  className={`h-9 w-9 ${soundEnabled ? "text-primary" : "text-muted-foreground"}`}
-                  title={soundEnabled ? "Sound enabled - Click to mute" : "Sound muted - Click to enable"}
-                >
-                  {soundEnabled ? (
-                    <Volume2 className="w-4 h-4" />
-                  ) : (
-                    <VolumeX className="w-4 h-4" />
+                  <div className="h-5 w-px bg-border/40 hidden sm:block" />
+                  <Link to="/" className="flex items-center gap-2 group/logo">
+                    <div className="relative w-8 h-8 rounded-lg gradient-bg flex items-center justify-center group-hover/logo:scale-110 transition-all duration-300">
+                      <Mail className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                    <span className="text-sm font-semibold hidden sm:block tracking-tight">Inbox</span>
+                  </Link>
+                  {!emailsLoading && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold tabular-nums">
+                      {emails.filter(e => !e.is_read).length > 0
+                        ? `${emails.filter(e => !e.is_read).length} new`
+                        : `${emails.length} emails`}
+                    </span>
                   )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleForward}
-                  className={`h-9 w-9 ${showForward ? "bg-primary/10 text-primary" : ""}`}
-                  title="Forward settings"
-                >
-                  <Forward className="w-4 h-4" />
-                </Button>
+                </div>
                 
-                {/* Delete Inbox Button with Confirmation */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      title="Delete inbox"
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="w-4 h-4" />
+                <div className="flex items-center gap-0.5 sm:gap-1">
+                  {/* Grouped action buttons */}
+                  <div className="flex items-center rounded-xl bg-secondary/30 p-0.5">
+                    {emails.length > 0 && (
+                      <Button variant="ghost" size="icon" onClick={() => { setShowSearch(prev => !prev); if (showSearch) setSearchQuery(""); }}
+                        className={`h-8 w-8 rounded-lg ${showSearch ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Search">
+                        <Search className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    {emails.length > 0 && (
+                      <Button variant="ghost" size="icon" onClick={toggleSelectionMode}
+                        className={`h-8 w-8 rounded-lg ${selectionMode ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Select">
+                        <CheckSquare className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing}
+                      className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground" title="Refresh">
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="glass-strong">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this inbox?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete <strong className="text-primary">{email}</strong> and all {emails.length} emails in it. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteInbox}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                        ) : (
-                          <Trash2 className="w-4 h-4 mr-2" />
-                        )}
-                        Delete Inbox
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                
-                {isPasswordProtected && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleLogout}
-                    className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    title="Logout"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                )}
-                <ThemeToggle />
-              </div>
-            </div>
-
-            {/* Email address card — premium glass */}
-            <div className="rounded-xl p-4 bg-card/60 backdrop-blur-xl border border-border/40 hover:border-primary/20 transition-all duration-300">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-xs text-muted-foreground">Your temporary inbox</p>
-                    {isPasswordProtected && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                        <Lock className="w-3 h-3" />
-                        Protected
-                      </span>
-                    )}
                   </div>
-                  <p className="font-mono font-medium text-primary text-lg truncate">{email}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={copyToClipboard}
-                  >
-                    {copied ? (
-                      <Check className="w-4 h-4 text-primary" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
+
+                  <div className="h-5 w-px bg-border/30 mx-0.5 hidden sm:block" />
+
+                  <div className="flex items-center rounded-xl bg-secondary/30 p-0.5">
+                    {isSupported && (
+                      <Button variant="ghost" size="icon" onClick={handleNotificationToggle}
+                        className={`h-8 w-8 rounded-lg ${permission === "granted" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Notifications">
+                        {permission === "granted" ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+                      </Button>
                     )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={copyInboxUrl}
-                    title="Share inbox URL"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </Button>
+                    <Button variant="ghost" size="icon" onClick={toggleSound}
+                      className={`h-8 w-8 rounded-lg ${soundEnabled ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Sound">
+                      {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={toggleForward}
+                      className={`h-8 w-8 rounded-lg ${showForward ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Forward">
+                      <Forward className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+
+                  <div className="h-5 w-px bg-border/30 mx-0.5 hidden sm:block" />
+
+                  <div className="flex items-center gap-0.5">
+                    {/* Delete inbox */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon"
+                          className="h-8 w-8 rounded-lg text-destructive/50 hover:text-destructive hover:bg-destructive/10" title="Delete inbox" disabled={isDeleting}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card/95 backdrop-blur-2xl border border-border/60 rounded-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this inbox?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete <strong className="text-primary">{email}</strong> and all {emails.length} emails in it. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteInbox} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl" disabled={isDeleting}>
+                            {isDeleting ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                            Delete Inbox
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
+                    {isPasswordProtected && (
+                      <Button variant="ghost" size="icon" onClick={handleLogout}
+                        className="h-8 w-8 rounded-lg text-destructive/50 hover:text-destructive hover:bg-destructive/10" title="Logout">
+                        <LogOut className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <ThemeToggle />
+                  </div>
                 </div>
               </div>
 
-              {/* Password section for protected inboxes */}
-              {isPasswordProtected && savedPassword && (
-                <div className="mt-3 pt-3 border-t border-border/50">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <KeyRound className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground mb-1">Password</p>
-                        <p className="font-mono font-medium text-sm truncate">
-                          {showPassword ? savedPassword : '••••••••••••'}
-                        </p>
+              {/* Email address card */}
+              <div className="rounded-2xl p-4 bg-gradient-to-r from-primary/[0.04] to-accent/[0.03] border border-primary/10 hover:border-primary/20 transition-all duration-300">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 font-medium">Your inbox</p>
+                      {isPasswordProtected && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/15">
+                          <Lock className="w-2.5 h-2.5" /> Protected
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-mono font-semibold text-primary text-lg sm:text-xl truncate">{email}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-xl hover:bg-primary/10" onClick={copyToClipboard} title="Copy email">
+                      {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-xl hover:bg-primary/10" onClick={copyInboxUrl} title="Share inbox URL">
+                      <Share2 className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Password section */}
+                {isPasswordProtected && savedPassword && (
+                  <div className="mt-3 pt-3 border-t border-primary/10">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                          <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium">Password</p>
+                          <p className="font-mono font-medium text-sm truncate">
+                            {showPassword ? savedPassword : '••••••••••••'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-lg" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-lg" onClick={copyPassword}>
+                          {copiedPassword ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => setShowPassword(!showPassword)}
-                        title={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
+                  </div>
+                )}
+              </div>
+
+              {/* Forward setup */}
+              {showForward && (
+                <div className="mt-3 p-4 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/30 animate-slide-up">
+                  <p className="text-sm font-medium mb-3 text-foreground/80">Forward emails to:</p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="your-real@email.com"
+                      value={forwardEmail}
+                      onChange={(e) => setForwardEmail(e.target.value)}
+                      className="flex-1 font-mono text-sm rounded-xl"
+                    />
+                    <Button size="sm" onClick={handleSaveForward} className="rounded-xl px-4">
+                      <Check className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Search bar */}
+              {showSearch && (
+                <div className="mt-3 animate-slide-up">
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                    <Input
+                      type="text"
+                      placeholder="Search by subject or sender..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 font-mono text-sm rounded-xl bg-background/50 border-border/30 focus:border-primary/40"
+                      autoFocus
+                    />
+                    {searchQuery && (
+                      <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-lg" onClick={() => setSearchQuery("")}>
+                        <X className="w-3 h-3" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={copyPassword}
-                        title="Copy password"
-                      >
-                        {copiedPassword ? (
-                          <Check className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
-
-            {/* Forward setup - collapsible */}
-            {showForward && (
-              <div className="mt-4 p-4 rounded-xl glass animate-slide-up">
-                <p className="text-sm font-medium mb-3">Forward emails to:</p>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="your-real@email.com"
-                    value={forwardEmail}
-                    onChange={(e) => setForwardEmail(e.target.value)}
-                    className="flex-1 font-mono text-sm"
-                  />
-                  <Button size="sm" onClick={handleSaveForward}>
-                    <Check className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Search bar */}
-            {showSearch && (
-              <div className="mt-4 animate-slide-up">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search by subject or sender..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 font-mono text-sm rounded-xl"
-                    autoFocus
-                  />
-                  {searchQuery && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                      onClick={() => setSearchQuery("")}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
           </div>
         </div>
       </header>
 
       {/* Bulk action bar */}
       {selectionMode && emails.length > 0 && (
-        <div className="sticky top-[140px] z-30 container mx-auto px-4 mt-4">
-          <div className="glass-strong rounded-xl p-3 flex items-center justify-between gap-3 border border-primary/30 animate-slide-up">
+        <div className="sticky top-[160px] z-30 container mx-auto px-4 mt-3">
+          <div className="rounded-2xl p-3 flex items-center justify-between gap-3 bg-card/80 backdrop-blur-2xl border border-primary/20 shadow-lg shadow-primary/5 animate-slide-up">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={handleSelectAll} className="gap-2">
+              <Button variant="ghost" size="sm" onClick={handleSelectAll} className="gap-2 rounded-lg">
                 <CheckSquare className="w-4 h-4" />
                 {selectedIds.size === emails.length ? "Deselect All" : "Select All"}
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs text-muted-foreground font-medium tabular-nums">
                 {selectedIds.size} selected
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBulkMarkRead}
-                disabled={selectedIds.size === 0}
-                className="gap-1.5"
-              >
+            <div className="flex items-center gap-1.5">
+              <Button variant="ghost" size="sm" onClick={handleBulkMarkRead} disabled={selectedIds.size === 0} className="gap-1.5 rounded-lg">
                 <MailOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Mark Read</span>
+                <span className="hidden sm:inline">Read</span>
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBulkDelete}
-                disabled={selectedIds.size === 0}
-                className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
+              <Button variant="ghost" size="sm" onClick={handleBulkDelete} disabled={selectedIds.size === 0}
+                className="gap-1.5 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10">
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Delete</span>
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSelectionMode}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={toggleSelectionMode}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -1122,45 +1035,47 @@ const InboxPage = () => {
       )}
 
       {/* Email list */}
-      <main className="container mx-auto px-4 py-8 relative z-10">
+      <main className="container mx-auto px-4 py-6 relative z-10">
         {emailsLoading ? (
-          // Skeleton placeholders while emails are loading
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {[1, 2, 3, 4].map((i) => (
               <EmailItemSkeleton key={i} />
             ))}
           </div>
         ) : emails.length === 0 ? (
-          <div className="text-center py-24 animate-fade-in">
-            <div className="relative w-24 h-24 mx-auto mb-8 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/40 flex items-center justify-center group">
-              <Inbox className="w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
+          <div className="text-center py-20 sm:py-28 animate-fade-in">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/5 border border-primary/10 flex items-center justify-center group">
+              <Inbox className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/40 group-hover:text-primary/60 transition-colors duration-500" />
               <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
             </div>
-            <h3 className="text-2xl font-semibold mb-3 tracking-tight">Inbox is empty</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Emails sent to <strong className="text-primary font-mono">{email}</strong> will appear here in real-time.
+            <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight">No emails yet</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Send an email to <span className="text-primary font-mono font-medium">{email}</span> and it will appear here instantly.
             </p>
           </div>
         ) : filteredEmails.length === 0 ? (
-          <div className="text-center py-16">
-            <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No results found</h3>
-            <p className="text-muted-foreground">No emails match "{searchQuery}"</p>
+          <div className="text-center py-16 animate-fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-muted/10 flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-muted-foreground/30" />
+            </div>
+            <h3 className="text-lg font-semibold mb-1">No results</h3>
+            <p className="text-sm text-muted-foreground">No emails match "{searchQuery}"</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredEmails.map((mail) => (
-              <EmailItem
-                key={mail.id}
-                mail={mail}
-                onRead={handleMarkAsRead}
-                onDelete={handleDeleteEmail}
-                onSelect={handleSelectEmail}
-                username={urlUsername}
-                selectionMode={selectionMode}
-                isSelected={selectedIds.has(mail.id)}
-                onToggleSelect={handleToggleSelect}
-              />
+          <div className="space-y-2">
+            {filteredEmails.map((mail, index) => (
+              <div key={mail.id} className="animate-fade-in" style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}>
+                <EmailItem
+                  mail={mail}
+                  onRead={handleMarkAsRead}
+                  onDelete={handleDeleteEmail}
+                  onSelect={handleSelectEmail}
+                  username={urlUsername}
+                  selectionMode={selectionMode}
+                  isSelected={selectedIds.has(mail.id)}
+                  onToggleSelect={handleToggleSelect}
+                />
+              </div>
             ))}
           </div>
         )}
