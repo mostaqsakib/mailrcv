@@ -115,19 +115,21 @@ export const Header = () => {
         </>
       )}
 
-      {/* Pricing & Download at bottom */}
+      {/* Download & Pricing (only if no Upgrade to Pro shown) */}
       <SheetClose asChild>
         <Link to="/download" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
           <Download className="w-4 h-4" />
           Download
         </Link>
       </SheetClose>
-      <SheetClose asChild>
-        <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-          <CreditCard className="w-4 h-4" />
-          Pricing
-        </Link>
-      </SheetClose>
+      {(!user || plan === 'paid') && (
+        <SheetClose asChild>
+          <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+            <CreditCard className="w-4 h-4" />
+            Pricing
+          </Link>
+        </SheetClose>
+      )}
 
       {user && (
         <>
