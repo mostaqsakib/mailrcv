@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useDomains } from "@/hooks/use-domains";
+import { useAuth } from "@/contexts/AuthContext";
+import { canUsePasswordProtection, PLAN_LIMITS } from "@/lib/plan-limits";
 
 // Session storage key prefix
 const SESSION_KEY_PREFIX = "mailrcv_session_";
@@ -103,6 +105,8 @@ export const HeroSection = () => {
   const { domains } = useDomains();
   const [selectedDomain, setSelectedDomain] = useState(DEFAULT_DOMAINS[0]);
   const navigate = useNavigate();
+  const { plan, user } = useAuth();
+  const canUsePassword = canUsePasswordProtection(plan);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,6 +354,15 @@ export const HeroSection = () => {
               <button
                 type="button"
                 onClick={() => {
+                  if (!canUsePassword) {
+                    toast("Password protection requires a Free account or higher", {
+                      action: {
+                        label: "Sign Up",
+                        onClick: () => navigate("/auth"),
+                      },
+                    });
+                    return;
+                  }
                   setShowPasswordField(!showPasswordField);
                   if (showPasswordField) setPassword("");
                 }}
@@ -357,7 +370,8 @@ export const HeroSection = () => {
               >
                 <Lock className="w-4 h-4" />
                 <span>{showPasswordField ? "Remove password protection" : "Add password protection"}</span>
-                {showPasswordField ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {!canUsePassword && <Crown className="w-3.5 h-3.5 text-yellow-500" />}
+                {canUsePassword && (showPasswordField ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
               </button>
 
               {/* Password input - collapsible */}
@@ -420,10 +434,17 @@ export const HeroSection = () => {
             </div>
           </form>
 
-          {/* Hint text */}
-          <p className="mt-4 text-xs sm:text-sm text-muted-foreground/60">
-            💡 Click the <Shuffle className="inline w-3.5 h-3.5 mx-0.5" /> button for a random name
-          </p>
+          {/* Plan info hint */}
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-xs sm:text-sm text-muted-foreground/60">
+              💡 Click the <Shuffle className="inline w-3.5 h-3.5 mx-0.5" /> button for a random name
+            </p>
+            {!user && (
+              <p className="text-xs text-muted-foreground/50">
+                Using as <span className="font-semibold text-muted-foreground">Guest</span> · <Link to="/auth" className="text-primary hover:underline">Sign up</Link> for more features · <Link to="/pricing" className="text-primary hover:underline">See plans</Link>
+              </p>
+            )}
+          </div>
 
         </div>
       </div>

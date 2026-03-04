@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { useAppUpdate } from "@/hooks/use-app-update";
 import { UpdateDialog } from "@/components/UpdateDialog";
 import { Capacitor } from "@capacitor/core";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -20,6 +21,8 @@ const BulkGeneratePage = lazy(() => import("./pages/BulkGeneratePage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -78,29 +81,33 @@ const AppUpdateChecker = () => {
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppUpdateChecker />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/inbox/:username" element={<InboxPage />} />
-              <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />
-              <Route path="/secure/:username" element={<SecureInboxPage />} />
-              <Route path="/domains" element={<DomainsPage />} />
-              <Route path="/domain" element={<DomainsPage />} />
-              <Route path="/download" element={<DownloadPage />} />
-              <Route path="/bulk" element={<BulkGeneratePage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppUpdateChecker />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/inbox/:username" element={<InboxPage />} />
+                <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />
+                <Route path="/secure/:username" element={<SecureInboxPage />} />
+                <Route path="/domains" element={<DomainsPage />} />
+                <Route path="/domain" element={<DomainsPage />} />
+                <Route path="/download" element={<DownloadPage />} />
+                <Route path="/bulk" element={<BulkGeneratePage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>
 );
