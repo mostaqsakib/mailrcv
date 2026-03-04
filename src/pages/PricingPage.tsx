@@ -5,12 +5,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { PLAN_LIMITS, type PlanType } from "@/lib/plan-limits";
 
-const features = [
-  { label: "Inboxes", key: "maxInboxes" as const, format: (v: number) => v === Infinity ? "Unlimited" : `${v}` },
-  { label: "Emails per inbox", key: "maxEmailsPerInbox" as const, format: (v: number) => v === Infinity ? "Unlimited" : `${v}` },
-  { label: "Email retention", key: "retentionLabel" as const, format: (v: string) => v },
-  { label: "Password protection", key: "passwordProtection" as const, format: (v: boolean) => v },
-  { label: "Custom domains", key: "customDomain" as const, format: (v: boolean) => v },
+const features: { label: string; guest: string | boolean; free: string | boolean; paid: string | boolean }[] = [
+  { label: "Inboxes", guest: "5", free: "10", paid: "Unlimited" },
+  { label: "Emails per inbox", guest: "10", free: "50", paid: "Unlimited" },
+  { label: "Email retention", guest: "24 hours", free: "7 days", paid: "Forever" },
+  { label: "Password protection", guest: false, free: true, paid: true },
+  { label: "Custom domains", guest: false, free: false, paid: true },
+  { label: "Bulk generate (up to 500)", guest: false, free: false, paid: true },
+  { label: "Push notifications", guest: true, free: true, paid: true },
+  { label: "Real-time inbox updates", guest: true, free: true, paid: true },
+  { label: "Email forwarding", guest: false, free: true, paid: true },
+  { label: "Priority support", guest: false, free: false, paid: true },
 ];
 
 const planIcons: Record<PlanType, React.ReactNode> = {
@@ -114,14 +119,13 @@ const PricingPage = () => {
                 {/* Features */}
                 <ul className="space-y-3 mb-8 flex-1">
                   {features.map((feature) => {
-                    const value = limits[feature.key as keyof typeof limits];
-                    const formatted = feature.format(value as never);
-                    const isBoolean = typeof formatted === "boolean";
+                    const value = feature[planKey as 'guest' | 'free' | 'paid'];
+                    const isBoolean = typeof value === "boolean";
 
                     return (
-                      <li key={feature.key} className="flex items-center gap-3 text-sm">
+                      <li key={feature.label} className="flex items-center gap-3 text-sm">
                         {isBoolean ? (
-                          formatted ? (
+                          value ? (
                             <Check className="w-4 h-4 text-primary shrink-0" />
                           ) : (
                             <X className="w-4 h-4 text-muted-foreground/40 shrink-0" />
@@ -129,8 +133,8 @@ const PricingPage = () => {
                         ) : (
                           <Check className="w-4 h-4 text-primary shrink-0" />
                         )}
-                        <span className={isBoolean && !formatted ? "text-muted-foreground/60" : "text-foreground/80"}>
-                          {isBoolean ? feature.label : `${formatted} ${feature.label.toLowerCase()}`}
+                        <span className={isBoolean && !value ? "text-muted-foreground/60" : "text-foreground/80"}>
+                          {isBoolean ? feature.label : `${value} ${feature.label.toLowerCase()}`}
                         </span>
                       </li>
                     );
