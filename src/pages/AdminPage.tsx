@@ -122,6 +122,10 @@ const AdminPage = () => {
   const [newMaxUses, setNewMaxUses] = useState("100");
   const [newExpiry, setNewExpiry] = useState("");
 
+  // New gateway form
+  const [newGwType, setNewGwType] = useState("");
+  const [newGwName, setNewGwName] = useState("");
+
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
@@ -724,11 +728,8 @@ const AdminPage = () => {
               <div className="p-5 rounded-xl border border-dashed border-border/60 bg-card/30">
                 <h3 className="font-semibold flex items-center gap-2 mb-3 text-sm"><Plus className="w-4 h-4" /> Add Gateway</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Select onValueChange={(val) => {
-                    const el = document.getElementById("new-gw-type") as HTMLInputElement;
-                    if (el) el.value = val;
-                  }}>
-                    <SelectTrigger id="new-gw-select" className="h-9 text-sm">
+                  <Select value={newGwType} onValueChange={setNewGwType}>
+                    <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -737,27 +738,25 @@ const AdminPage = () => {
                       <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input placeholder="Display Name" id="new-gw-name" className="h-9 text-sm" />
+                  <Input placeholder="Display Name" value={newGwName} onChange={(e) => setNewGwName(e.target.value)} className="h-9 text-sm" />
                   <Button
                     size="sm"
                     className="h-9"
                     onClick={async () => {
-                      const selectEl = document.querySelector('[id="new-gw-select"] span') as HTMLElement;
-                      const type = selectEl?.textContent?.toLowerCase() || "";
-                      const nameEl = document.getElementById("new-gw-name") as HTMLInputElement;
-                      if (!type || type === "type" || !nameEl?.value) {
+                      if (!newGwType || !newGwName.trim()) {
                         toast.error("Enter gateway type and name");
                         return;
                       }
                       try {
                         await adminInvoke("create_gateway", {
-                          gateway_type: type,
-                          display_name: nameEl.value,
-                          config: type === "binance" ? { pay_id: "", currency: "USDT" } : type === "cryptomus" ? { currency: "USD" } : {},
+                          gateway_type: newGwType,
+                          display_name: newGwName.trim(),
+                          config: newGwType === "binance" ? { pay_id: "", currency: "USDT" } : newGwType === "cryptomus" ? { merchant_id: "", api_key: "", currency: "USD" } : {},
                         });
                         toast.success("Gateway created");
+                        setNewGwType("");
+                        setNewGwName("");
                         loadGateways();
-                        nameEl.value = "";
                       } catch { toast.error("Failed"); }
                     }}
                   >
