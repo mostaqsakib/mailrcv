@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { cleanSenderEmail } from "@/lib/clean-sender";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -198,6 +198,14 @@ function parseUsernameParam(param: string | undefined): { user: string; domain: 
 }
 
 const InboxPage = () => {
+  const navRef = useRef<HTMLDivElement>(null);
+  const [navMousePos, setNavMousePos] = useState({ x: 0, y: 0 });
+  const [navHovered, setNavHovered] = useState(false);
+  const handleNavMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!navRef.current) return;
+    const rect = navRef.current.getBoundingClientRect();
+    setNavMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }, []);
   const { username: rawUsername } = useParams<{ username: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -663,64 +671,70 @@ const InboxPage = () => {
   // Login screen for password protected inbox
   if (needsAuth) {
     return (
-      <div className="min-h-screen bg-background relative flex items-center justify-center pt-safe pb-safe">
-        {/* Background effects */}
-        <div className="fixed inset-0 grid-dots opacity-30 pointer-events-none" />
-        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[200px] pointer-events-none" />
+      <div className="min-h-screen hero-gradient relative flex items-center justify-center pt-safe pb-safe overflow-hidden">
+        <div className="absolute inset-0 grid-dots opacity-20 pointer-events-none" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[20%] left-[15%] w-[500px] h-[500px] rounded-full bg-primary/8 dark:bg-primary/15 blur-[150px] animate-float" />
+          <div className="absolute bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full bg-accent/6 dark:bg-accent/12 blur-[130px] animate-float" style={{ animationDelay: "-3s" }} />
+        </div>
+        <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent pointer-events-none" />
         
-        <div className="w-full max-w-md px-4">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl gradient-bg flex items-center justify-center shadow-blue-strong">
+        <div className="w-full max-w-md px-4 relative z-10">
+          <div className="text-center mb-8 animate-fade-in">
+            <div className="relative w-20 h-20 mx-auto mb-6 rounded-2xl gradient-bg flex items-center justify-center group">
               <Lock className="w-10 h-10 text-primary-foreground" />
+              <div className="absolute inset-0 rounded-2xl gradient-bg opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-500" />
             </div>
-            <h1 className="text-2xl font-bold mb-2">Protected Inbox</h1>
+            <h1 className="text-2xl font-bold mb-2 tracking-tight">Protected Inbox</h1>
             <p className="text-muted-foreground font-mono text-lg">{username}@{domainName}</p>
           </div>
           
-          <form onSubmit={handleLoginSubmit} className="glass rounded-2xl p-6 space-y-4">
-            <div className="relative">
-              <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-4 gap-3 border border-border/50 dark:border-primary/20 focus-within:border-primary transition-all duration-300">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                  <KeyRound className="w-5 h-5 text-primary" />
+          <div className="group relative rounded-2xl p-[1px] transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.15s" }}>
+            <div className="absolute inset-0 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500" style={{
+              background: "conic-gradient(from 180deg, hsl(var(--primary) / 0.4), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.4))",
+              animation: "borderSpin 8s linear infinite",
+            }} />
+
+            <form onSubmit={handleLoginSubmit} className="relative rounded-2xl p-6 space-y-4 bg-card/90 backdrop-blur-2xl border border-transparent">
+              <div className="relative">
+                <div className="relative flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-4 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/15 to-orange-500/15 flex items-center justify-center shrink-0">
+                    <KeyRound className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <Input
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg text-foreground placeholder:text-muted-foreground/40 min-w-0 h-auto py-0"
+                    autoFocus
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => setShowLoginPassword(!showLoginPassword)}>
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <Input
-                  type={showLoginPassword ? "text" : "password"}
-                  placeholder="Enter password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-lg text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
-                  autoFocus
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => setShowLoginPassword(!showLoginPassword)}
-                >
-                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </Button>
               </div>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full h-12 rounded-xl text-base font-semibold"
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  Unlock Inbox
-                </>
-              )}
-            </Button>
-          </form>
+              
+              <Button type="submit" className="relative w-full h-12 rounded-xl text-base font-semibold overflow-hidden group/submit" disabled={isLoggingIn}>
+                <div className="absolute inset-0 gradient-bg" />
+                <div className="absolute inset-0 opacity-0 group-hover/submit:opacity-100 transition-opacity duration-500" style={{
+                  background: "linear-gradient(90deg, transparent 0%, hsl(0 0% 100% / 0.12) 50%, transparent 100%)",
+                  animation: "shimmerSlide 2s ease-in-out infinite",
+                }} />
+                {isLoggingIn ? (
+                  <div className="relative z-10 w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span className="relative z-10 flex items-center gap-2 text-primary-foreground">
+                    <Lock className="w-4 h-4" />
+                    Unlock Inbox
+                  </span>
+                )}
+              </Button>
+            </form>
+          </div>
           
-          <div className="mt-6 text-center">
-            <Button variant="ghost" onClick={() => navigate("/")} className="text-muted-foreground">
+          <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            <Button variant="ghost" onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
@@ -758,7 +772,23 @@ const InboxPage = () => {
       
       {/* Header */}
       <header className="sticky top-0 z-40">
-        <div className="glass-strong border-b border-border/50">
+        <div
+          ref={navRef}
+          onMouseMove={handleNavMouseMove}
+          onMouseEnter={() => setNavHovered(true)}
+          onMouseLeave={() => setNavHovered(false)}
+          className="group/nav relative"
+        >
+          {/* Spotlight on header */}
+          {navHovered && (
+            <div
+              className="absolute inset-0 opacity-40 pointer-events-none z-0"
+              style={{
+                background: `radial-gradient(400px circle at ${navMousePos.x}px ${navMousePos.y}px, hsl(var(--primary) / 0.06), transparent 60%)`,
+              }}
+            />
+          )}
+          <div className="relative bg-card/80 backdrop-blur-2xl border-b border-border/40 group-hover/nav:border-primary/15 transition-all duration-500">
           <div className="container mx-auto px-4 py-5">
             {/* Top row - Logo and actions */}
             <div className="flex items-center justify-between mb-4">
@@ -772,11 +802,12 @@ const InboxPage = () => {
                   <ArrowLeft className="w-4 h-4" />
                   <span className="hidden sm:inline">Back</span>
                 </Button>
-                <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl gradient-bg flex items-center justify-center shadow-blue group-hover:shadow-blue-strong transition-all">
+                <Link to="/" className="flex items-center gap-2 sm:gap-3 group/logo">
+                  <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl gradient-bg flex items-center justify-center group-hover/logo:scale-110 transition-all duration-300">
                     <Mail className="w-4 h-4 text-primary-foreground" />
+                    <div className="absolute inset-0 rounded-lg sm:rounded-xl gradient-bg opacity-0 group-hover/logo:opacity-40 blur-xl transition-opacity duration-500" />
                   </div>
-                  <span className="text-base sm:text-lg font-semibold hidden sm:block">Inbox</span>
+                  <span className="text-base sm:text-lg font-semibold hidden sm:block tracking-tight">Inbox</span>
                 </Link>
                 {/* Unread / total count badge */}
                 {!emailsLoading && (
@@ -912,8 +943,8 @@ const InboxPage = () => {
               </div>
             </div>
 
-            {/* Email address card */}
-            <div className="glass rounded-xl p-4">
+            {/* Email address card — premium glass */}
+            <div className="rounded-xl p-4 bg-card/60 backdrop-blur-xl border border-border/40 hover:border-primary/20 transition-all duration-300">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -1044,6 +1075,7 @@ const InboxPage = () => {
               </div>
             )}
           </div>
+          </div>
         </div>
       </header>
 
@@ -1099,11 +1131,12 @@ const InboxPage = () => {
             ))}
           </div>
         ) : emails.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="w-24 h-24 mx-auto mb-8 rounded-2xl glass flex items-center justify-center">
-              <Inbox className="w-12 h-12 text-muted-foreground" />
+          <div className="text-center py-24 animate-fade-in">
+            <div className="relative w-24 h-24 mx-auto mb-8 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/40 flex items-center justify-center group">
+              <Inbox className="w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
+              <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
             </div>
-            <h3 className="text-2xl font-semibold mb-3">Inbox is empty</h3>
+            <h3 className="text-2xl font-semibold mb-3 tracking-tight">Inbox is empty</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
               Emails sent to <strong className="text-primary font-mono">{email}</strong> will appear here in real-time.
             </p>
