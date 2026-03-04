@@ -30,6 +30,9 @@ const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const DemoNeonPage = lazy(() => import("./pages/DemoNeonPage"));
 const DemoMinimalPage = lazy(() => import("./pages/DemoMinimalPage"));
 const DemoAuroraPage = lazy(() => import("./pages/DemoAuroraPage"));
+const DemoWarmPage = lazy(() => import("./pages/DemoWarmPage"));
+const DemoFrostPage = lazy(() => import("./pages/DemoFrostPage"));
+const DemoNoirPage = lazy(() => import("./pages/DemoNoirPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -115,6 +118,9 @@ const App = () => (
                 <Route path="/demo/neon" element={<DemoNeonPage />} />
                 <Route path="/demo/minimal" element={<DemoMinimalPage />} />
                 <Route path="/demo/aurora" element={<DemoAuroraPage />} />
+                <Route path="/demo/warm" element={<DemoWarmPage />} />
+                <Route path="/demo/frost" element={<DemoFrostPage />} />
+                <Route path="/demo/noir" element={<DemoNoirPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
