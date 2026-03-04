@@ -122,7 +122,7 @@ export const Header = () => {
           Download
         </Link>
       </SheetClose>
-      {(!user || plan === 'paid') && (
+      {!user && (
         <SheetClose asChild>
           <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
             <CreditCard className="w-4 h-4" />
