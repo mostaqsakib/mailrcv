@@ -110,8 +110,8 @@ const PricingPage = () => {
                   )}
                   {planKey === 'paid' && (
                     <div>
-                      <div className="text-3xl font-bold text-foreground">$4.99 <span className="text-base font-normal text-muted-foreground">/ month</span></div>
-                      <div className="text-sm text-muted-foreground mt-1">or $29.99 lifetime</div>
+                      <div className="text-3xl font-bold text-foreground">$1 <span className="text-base font-normal text-muted-foreground">/ month</span></div>
+                      <div className="text-sm text-muted-foreground mt-1">or $10 lifetime</div>
                     </div>
                   )}
                 </div>
