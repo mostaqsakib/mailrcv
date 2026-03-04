@@ -1,30 +1,42 @@
 import { 
   Shield, 
   Zap, 
-  RefreshCw, 
-  Bell
+  Lock, 
+  Globe,
+  Bell,
+  Layers
 } from "lucide-react";
 
 const features = [
   {
+    icon: Zap,
+    title: "Instant Inbox",
+    description: "Create a disposable email in seconds. No signup needed — just pick a name and start receiving.",
+  },
+  {
+    icon: Lock,
+    title: "Password Protected",
+    description: "Secure your inbox with a password so only you can access it. Available on Free & Pro plans.",
+  },
+  {
     icon: Shield,
     title: "Privacy First",
-    description: "No registration, no passwords. Your identity stays protected while you receive emails.",
+    description: "No personal data collected. Your temporary inbox auto-expires based on your plan.",
   },
   {
-    icon: Zap,
-    title: "Instant Setup",
-    description: "Create a new email address in seconds. Start receiving emails immediately.",
+    icon: Globe,
+    title: "Custom Domains",
+    description: "Use your own domain for professional disposable emails. Exclusive to Pro plan users.",
   },
   {
-    icon: RefreshCw,
-    title: "Forward Anywhere",
-    description: "Automatically forward incoming emails to your real inbox instantly.",
+    icon: Layers,
+    title: "Bulk Generate",
+    description: "Generate up to 500 disposable emails at once with export to CSV. Pro plan exclusive.",
   },
   {
     icon: Bell,
     title: "Real-time Updates",
-    description: "Get instant notifications when new emails arrive in your inbox.",
+    description: "Get instant push notifications when new emails arrive. Never miss an important message.",
   },
 ];
 
@@ -46,7 +58,7 @@ export const FeaturesSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
           {features.map((feature, index) => (
             <div
               key={feature.title}
