@@ -269,18 +269,17 @@ export const HeroSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass mb-6 sm:mb-10 shadow-sm dark:shadow-none">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs sm:text-sm font-medium text-foreground/80">No signup required • Instant forwarding</span>
+            <span className="text-xs sm:text-sm font-medium text-foreground/80">Free & instant • No signup needed</span>
           </div>
 
           {/* Main heading */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight">
-            Instant Email
-            <span className="block gradient-text drop-shadow-sm pb-2">Forwarding</span>
+            Disposable Email
+            <span className="block gradient-text drop-shadow-sm pb-2">In Seconds</span>
           </h1>
 
           <p className="text-base sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-xl mx-auto leading-relaxed">
-            Create disposable email addresses in seconds. 
-            No password. No registration. Pure simplicity.
+            Create temporary inboxes instantly. Receive emails, protect your privacy, and keep spam out of your real inbox.
           </p>
 
           {/* Email creation form */}
