@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Ticket, CheckCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Ticket, CheckCircle, ArrowRight, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const RedeemPage = () => {
@@ -53,6 +53,9 @@ const RedeemPage = () => {
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 pt-20 sm:pt-24 pb-8">
         <div className="max-w-md w-full">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 text-muted-foreground hover:text-foreground mb-4">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Button>
           {success ? (
             <div className="text-center space-y-6 animate-slide-up">
               <div className="w-20 h-20 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
