@@ -8,6 +8,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PLAN_LIMITS } from "@/lib/plan-limits";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Mail,
   Inbox,
   Trash2,
@@ -129,6 +139,7 @@ const DashboardPage = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "protected" | "public">("all");
+  const [deleteTarget, setDeleteTarget] = useState<UserAlias | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -154,12 +165,17 @@ const DashboardPage = () => {
   useEffect(() => { if (user) fetchAliases(); }, [user]);
 
   const handleDelete = async (alias: UserAlias) => {
-    if (!confirm(`Delete inbox ${alias.username}@${alias.domain_name}? This will remove all emails.`)) return;
-    setDeleting(alias.id);
+    setDeleteTarget(alias);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteTarget(null);
+    setDeleting(deleteTarget.id);
     try {
-      await supabase.from("received_emails").delete().eq("alias_id", alias.id);
-      await supabase.from("email_aliases").delete().eq("id", alias.id);
-      setAliases(prev => prev.filter(a => a.id !== alias.id));
+      await supabase.from("received_emails").delete().eq("alias_id", deleteTarget.id);
+      await supabase.from("email_aliases").delete().eq("id", deleteTarget.id);
+      setAliases(prev => prev.filter(a => a.id !== deleteTarget.id));
       toast.success("Inbox deleted");
     } catch { toast.error("Failed to delete inbox"); }
     finally { setDeleting(null); }
@@ -325,6 +341,42 @@ const DashboardPage = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Premium Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="border-0 bg-background/80 backdrop-blur-2xl shadow-2xl rounded-2xl overflow-hidden">
+          {/* Ambient glow */}
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-destructive/10 rounded-full blur-[80px] pointer-events-none" />
+          
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </div>
+              <AlertDialogTitle className="text-lg">Delete Inbox</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-muted-foreground leading-relaxed">
+              Are you sure you want to delete{" "}
+              <span className="font-mono text-foreground font-medium">
+                {deleteTarget?.username}@{deleteTarget?.domain_name}
+              </span>
+              ? This will permanently remove the inbox and all received emails. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel className="rounded-xl border-border/50 bg-secondary/30 hover:bg-secondary/50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm"
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Delete Forever
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
