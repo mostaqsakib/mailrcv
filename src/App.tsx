@@ -25,6 +25,7 @@ const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
+const RedeemPage = lazy(() => import("./pages/RedeemPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -96,6 +97,7 @@ const App = () => (
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/redeem" element={<RedeemPage />} />
                 <Route path="/inbox/:username" element={<InboxPage />} />
                 <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />
                 <Route path="/secure/:username" element={<SecureInboxPage />} />

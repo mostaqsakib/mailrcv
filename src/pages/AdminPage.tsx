@@ -22,6 +22,8 @@ import {
   Mail,
   Inbox,
   Shield,
+  Wand2,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -319,9 +321,27 @@ const AdminPage = () => {
             <div className="space-y-6">
               {/* Create coupon form */}
               <div className="p-5 rounded-xl border border-border/40 bg-card/50 space-y-4">
-                <h3 className="font-semibold flex items-center gap-2"><Plus className="w-4 h-4" /> Create Coupon</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold flex items-center gap-2"><Plus className="w-4 h-4" /> Create Coupon</h3>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                  <Input placeholder="CODE" value={newCode} onChange={(e) => setNewCode(e.target.value.toUpperCase())} className="font-mono" />
+                  <div className="relative">
+                    <Input placeholder="CODE" value={newCode} onChange={(e) => setNewCode(e.target.value.toUpperCase())} className="font-mono pr-16" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-2 text-xs gap-1 text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                        let code = "";
+                        for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+                        setNewCode(code);
+                      }}
+                    >
+                      <Wand2 className="w-3 h-3" /> Auto
+                    </Button>
+                  </div>
                   <Select value={newType} onValueChange={setNewType}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -330,7 +350,7 @@ const AdminPage = () => {
                       <SelectItem value="discount_percent">Discount %</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input type="number" placeholder="Value" value={newValue} onChange={(e) => setNewValue(e.target.value)} />
+                  <Input type="number" placeholder={newType === "trial_days" ? "Days" : newType === "discount_percent" ? "Percent" : "1"} value={newValue} onChange={(e) => setNewValue(e.target.value)} />
                   <Input type="number" placeholder="Max uses" value={newMaxUses} onChange={(e) => setNewMaxUses(e.target.value)} />
                   <Button onClick={handleCreateCoupon} className="gradient-bg text-primary-foreground">Create</Button>
                 </div>
@@ -338,6 +358,11 @@ const AdminPage = () => {
                   <Input type="datetime-local" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} className="max-w-xs" />
                   <span className="text-xs text-muted-foreground">Expiry (optional)</span>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {newType === "trial_days" && "Value = number of days Pro plan will be active"}
+                  {newType === "lifetime" && "Value is ignored — grants permanent Pro access"}
+                  {newType === "discount_percent" && "Value = discount percentage (e.g. 50 = 50% off)"}
+                </p>
               </div>
 
               {/* Coupons list */}
@@ -352,13 +377,24 @@ const AdminPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono font-bold text-sm">{c.code}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-6 h-6"
+                            onClick={() => {
+                              navigator.clipboard.writeText(c.code);
+                              toast.success("Code copied!");
+                            }}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
                           <Badge variant={c.is_active ? "default" : "secondary"}>
                             {c.is_active ? "Active" : "Inactive"}
                           </Badge>
                           <Badge variant="outline">{couponTypeLabel(c.coupon_type)}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Value: {c.value} • Used: {c.used_count}/{c.max_uses}
+                          Value: {c.coupon_type === "trial_days" ? `${c.value} days` : c.coupon_type === "discount_percent" ? `${c.value}%` : "Lifetime"} • Used: {c.used_count}/{c.max_uses}
                           {c.expires_at && ` • Expires: ${new Date(c.expires_at).toLocaleDateString()}`}
                         </p>
                       </div>
