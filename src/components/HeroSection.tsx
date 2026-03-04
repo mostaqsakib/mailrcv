@@ -268,7 +268,7 @@ export const HeroSection = () => {
         <div className="max-w-3xl mx-auto text-center animate-slide-up">
 
           {/* Main heading */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight mt-8 sm:mt-12">
             Disposable Email
             <span className="block gradient-text drop-shadow-sm pb-2">In Seconds</span>
           </h1>
