@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, X, ArrowLeft, Zap, Shield, Crown, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Check, X, ArrowLeft, Zap, Shield, Crown, Mail, Ticket } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { PLAN_LIMITS, type PlanType } from "@/lib/plan-limits";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const features: { label: string; guest: string | boolean; free: string | boolean; paid: string | boolean }[] = [
   { label: "Inboxes", guest: "5", free: "10", paid: "Unlimited" },
@@ -38,7 +42,28 @@ const planBorders: Record<PlanType, string> = {
 
 const PricingPage = () => {
   const navigate = useNavigate();
-  const { plan: currentPlan, user } = useAuth();
+  const { plan: currentPlan, user, refreshProfile } = useAuth();
+  const [couponCode, setCouponCode] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+
+  const handleRedeemCoupon = async () => {
+    if (!couponCode.trim()) { toast.error("Enter a coupon code"); return; }
+    if (!user) { toast.error("Please sign in first"); navigate("/auth"); return; }
+    setRedeeming(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("redeem-coupon", {
+        body: { action: "redeem", code: couponCode.trim() },
+      });
+      if (error) throw error;
+      if (data.error) { toast.error(data.error); setRedeeming(false); return; }
+      toast.success(data.message);
+      setCouponCode("");
+      await refreshProfile();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to redeem coupon");
+    }
+    setRedeeming(false);
+  };
 
   const plans: PlanType[] = ['guest', 'free', 'paid'];
 
@@ -179,6 +204,26 @@ const PricingPage = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Coupon Redemption */}
+        <div className="max-w-md mx-auto mt-12 p-6 rounded-2xl glass-strong border border-border/40 text-center space-y-4">
+          <div className="flex items-center justify-center gap-2">
+            <Ticket className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Have a coupon code?</h3>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              className="font-mono text-center"
+              onKeyDown={(e) => e.key === "Enter" && handleRedeemCoupon()}
+            />
+            <Button onClick={handleRedeemCoupon} disabled={redeeming} className="gradient-bg text-primary-foreground shrink-0">
+              {redeeming ? "..." : "Redeem"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

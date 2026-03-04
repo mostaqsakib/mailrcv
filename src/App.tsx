@@ -24,6 +24,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -94,6 +95,7 @@ const App = () => (
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/admin" element={<AdminPage />} />
                 <Route path="/inbox/:username" element={<InboxPage />} />
                 <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />
                 <Route path="/secure/:username" element={<SecureInboxPage />} />
