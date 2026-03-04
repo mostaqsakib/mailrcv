@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2, Crown } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2, Crown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useDomains } from "@/hooks/use-domains";
@@ -18,58 +18,41 @@ const DEFAULT_DOMAINS = ["mailrcv.site", "getemail.cfd"];
 
 // Diverse collection of first names from various regions
 const firstNames = [
-  // American/English
   "james", "john", "robert", "michael", "david", "william", "richard", "joseph", "thomas", "christopher",
   "mary", "patricia", "jennifer", "linda", "elizabeth", "barbara", "susan", "jessica", "sarah", "karen",
   "daniel", "matthew", "anthony", "mark", "donald", "steven", "paul", "andrew", "joshua", "kenneth",
   "emma", "olivia", "sophia", "isabella", "mia", "charlotte", "amelia", "harper", "evelyn", "abigail",
-  // Hispanic/Latino
   "carlos", "miguel", "jose", "juan", "luis", "diego", "alejandro", "gabriel", "rafael", "pablo",
   "maria", "carmen", "rosa", "lucia", "elena", "sofia", "valentina", "camila", "mariana", "isabella",
-  // European
   "lucas", "liam", "noah", "oliver", "felix", "max", "leon", "theo", "oscar", "hugo",
   "anna", "julia", "laura", "clara", "marie", "nina", "eva", "lisa", "sara", "hanna",
-  // Asian
   "wei", "chen", "ming", "jin", "hao", "yan", "lei", "feng", "yuki", "kenji",
   "mei", "lin", "xiao", "ying", "sakura", "hana", "yuna", "mina", "sora", "aiko",
-  // Middle Eastern
   "omar", "ali", "ahmed", "hassan", "karim", "tariq", "malik", "yusuf", "amir", "rami",
   "fatima", "layla", "amira", "nadia", "sara", "leila", "yasmin", "zahra", "dina", "rania",
-  // South Asian
   "arjun", "raj", "vikram", "arun", "rohan", "kiran", "sanjay", "amit", "rahul", "varun",
   "priya", "ananya", "divya", "neha", "riya", "pooja", "shreya", "kavya", "aisha", "zara",
-  // African
   "kwame", "kofi", "adebayo", "chidi", "emeka", "olu", "sekou", "amadou", "mamadou", "ibrahima",
   "amara", "ayana", "zuri", "nia", "imani", "adaora", "chiamaka", "folake", "ngozi", "adeola"
 ];
 
-// Last names from various regions
 const lastNames = [
-  // American/English
   "smith", "johnson", "williams", "brown", "jones", "garcia", "miller", "davis", "rodriguez", "martinez",
   "wilson", "anderson", "taylor", "thomas", "hernandez", "moore", "martin", "jackson", "thompson", "white",
-  // European
   "mueller", "schmidt", "schneider", "fischer", "weber", "meyer", "wagner", "becker", "hoffmann", "schulz",
   "rossi", "russo", "ferrari", "esposito", "bianchi", "romano", "colombo", "ricci", "marino", "greco",
   "dubois", "moreau", "laurent", "simon", "michel", "leroy", "roux", "david", "bertrand", "morel",
-  // Hispanic
   "gonzalez", "lopez", "perez", "sanchez", "ramirez", "torres", "flores", "rivera", "gomez", "diaz",
-  // Asian
   "wang", "li", "zhang", "liu", "chen", "yang", "huang", "zhao", "wu", "zhou",
   "kim", "lee", "park", "choi", "jung", "kang", "cho", "yoon", "jang", "lim",
   "tanaka", "yamamoto", "suzuki", "watanabe", "ito", "yamada", "nakamura", "kobayashi", "kato", "yoshida",
-  // South Asian
   "patel", "sharma", "singh", "kumar", "gupta", "das", "reddy", "khan", "ali", "malik",
-  // African
   "okonkwo", "adeyemi", "mensah", "diallo", "traore", "coulibaly", "ndiaye", "sy", "ba", "sow"
 ];
 
-// Generate random name that looks like real person email
 const generateRandomName = () => {
   const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
   const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-  
-  // Various email format patterns
   const patterns = [
     () => `${firstName}.${lastName}`,
     () => `${firstName}${lastName}`,
@@ -81,9 +64,7 @@ const generateRandomName = () => {
     () => `${firstName}.${lastName[0]}`,
     () => `${lastName}.${firstName}`,
   ];
-  
-  const pattern = patterns[Math.floor(Math.random() * patterns.length)];
-  return pattern();
+  return patterns[Math.floor(Math.random() * patterns.length)]();
 };
 
 const generateStrongPassword = () => {
@@ -95,6 +76,58 @@ const generateStrongPassword = () => {
   return password;
 };
 
+// Floating particle component
+const FloatingParticle = ({ delay, size, x, y, duration }: { delay: number; size: number; x: number; y: number; duration: number }) => (
+  <div
+    className="absolute rounded-full bg-primary/20 dark:bg-primary/30"
+    style={{
+      width: size,
+      height: size,
+      left: `${x}%`,
+      top: `${y}%`,
+      animation: `floatParticle ${duration}s ease-in-out ${delay}s infinite`,
+    }}
+  />
+);
+
+// Animated typing text
+const TypingText = ({ texts }: { texts: string[] }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentFullText = texts[currentIndex];
+    const speed = isDeleting ? 40 : 70;
+
+    if (!isDeleting && displayText === currentFullText) {
+      const timer = setTimeout(() => setIsDeleting(true), 2000);
+      return () => clearTimeout(timer);
+    }
+    if (isDeleting && displayText === "") {
+      setIsDeleting(false);
+      setCurrentIndex((prev) => (prev + 1) % texts.length);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setDisplayText(
+        isDeleting
+          ? currentFullText.substring(0, displayText.length - 1)
+          : currentFullText.substring(0, displayText.length + 1)
+      );
+    }, speed);
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, currentIndex, texts]);
+
+  return (
+    <span className="gradient-text">
+      {displayText}
+      <span className="animate-pulse text-primary">|</span>
+    </span>
+  );
+};
+
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -102,11 +135,21 @@ export const HeroSection = () => {
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const { domains } = useDomains();
   const [selectedDomain, setSelectedDomain] = useState(DEFAULT_DOMAINS[0]);
   const navigate = useNavigate();
   const { plan, user } = useAuth();
   const canUsePassword = canUsePasswordProtection(plan);
+
+  // Track mouse for spotlight effect
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,41 +160,30 @@ export const HeroSection = () => {
 
     const cleanUsername = username.trim().toLowerCase();
 
-    // Guest inbox limit check
     if (plan === 'guest') {
       const guestInboxes = getGuestInboxes();
       const inboxKey = `${cleanUsername}@${selectedDomain}`;
       if (!guestInboxes.includes(inboxKey) && !canCreateInbox(plan, guestInboxes.length)) {
         toast("Guest limit reached! Max 5 inboxes.", {
           description: "Sign up for free to get 10 inboxes and more features.",
-          action: {
-            label: "Sign Up",
-            onClick: () => navigate("/auth"),
-          },
+          action: { label: "Sign Up", onClick: () => navigate("/auth") },
         });
         return;
       }
     }
 
-    // If no password, go to public inbox with domain
     if (!password) {
-      // Track guest inbox
-      if (plan === 'guest') {
-        addGuestInbox(`${cleanUsername}@${selectedDomain}`);
-      }
+      if (plan === 'guest') addGuestInbox(`${cleanUsername}@${selectedDomain}`);
       const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
       navigate(`/inbox/${urlParam}`);
       return;
     }
 
-    // With password - check if inbox exists and handle accordingly
     setIsLoading(true);
     try {
-      // First check if inbox exists
       const { data: checkData, error: checkError } = await supabase.functions.invoke('inbox-auth', {
         body: { action: 'check', username: cleanUsername, domain: selectedDomain }
       });
-
       if (checkError) throw checkError;
 
       if (checkData.exists) {
@@ -160,61 +192,27 @@ export const HeroSection = () => {
           setIsLoading(false);
           return;
         }
-
-        // Try to login
         const { data: loginData, error: loginError } = await supabase.functions.invoke('inbox-auth', {
           body: { action: 'login', username: cleanUsername, domain: selectedDomain, password }
         });
-
         if (loginError) throw loginError;
-
-        if (loginData.error) {
-          toast.error(loginData.error);
-          setIsLoading(false);
-          return;
-        }
-
-        // Save session with domain info
+        if (loginData.error) { toast.error(loginData.error); setIsLoading(false); return; }
         localStorage.setItem(`${SESSION_KEY_PREFIX}${cleanUsername}`, JSON.stringify({
-          alias_id: loginData.alias_id,
-          token: loginData.session_token,
-          password: password,
-          domain: selectedDomain,
-          created_at: Date.now()
+          alias_id: loginData.alias_id, token: loginData.session_token, password, domain: selectedDomain, created_at: Date.now()
         }));
-
         toast.success("Login successful!");
         const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
         navigate(`/inbox/${urlParam}`);
       } else {
-        // Create new secure inbox
-        if (password.length < 6) {
-          toast.error("Password must be at least 6 characters");
-          setIsLoading(false);
-          return;
-        }
-
+        if (password.length < 6) { toast.error("Password must be at least 6 characters"); setIsLoading(false); return; }
         const { data: registerData, error: registerError } = await supabase.functions.invoke('inbox-auth', {
           body: { action: 'register', username: cleanUsername, domain: selectedDomain, password }
         });
-
         if (registerError) throw registerError;
-
-        if (registerData.error) {
-          toast.error(registerData.error);
-          setIsLoading(false);
-          return;
-        }
-
-        // Save session with domain info
+        if (registerData.error) { toast.error(registerData.error); setIsLoading(false); return; }
         localStorage.setItem(`${SESSION_KEY_PREFIX}${cleanUsername}`, JSON.stringify({
-          alias_id: registerData.alias_id,
-          token: registerData.session_token,
-          password: password,
-          domain: selectedDomain,
-          created_at: Date.now()
+          alias_id: registerData.alias_id, token: registerData.session_token, password, domain: selectedDomain, created_at: Date.now()
         }));
-
         toast.success("Secure inbox created!");
         const urlParam = selectedDomain !== DEFAULT_DOMAINS[0] ? `${cleanUsername}@${selectedDomain}` : cleanUsername;
         navigate(`/inbox/${urlParam}`);
@@ -227,9 +225,7 @@ export const HeroSection = () => {
     }
   };
 
-  const handleRandomGenerate = () => {
-    setUsername(generateRandomName());
-  };
+  const handleRandomGenerate = () => setUsername(generateRandomName());
 
   const handleGeneratePassword = async () => {
     const newPassword = generateStrongPassword();
@@ -240,10 +236,7 @@ export const HeroSection = () => {
   };
 
   const handleCopyEmail = async () => {
-    if (!username.trim()) {
-      toast.error("Please enter a name first");
-      return;
-    }
+    if (!username.trim()) { toast.error("Please enter a name first"); return; }
     const fullEmail = `${username.trim().toLowerCase()}@${selectedDomain}`;
     await navigator.clipboard.writeText(fullEmail);
     setCopied(true);
@@ -252,210 +245,231 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-24 sm:pt-20 pb-0 sm:py-20">
-      {/* Background effects */}
-      <div className="absolute inset-0 grid-dots opacity-50 dark:opacity-50" />
+    <section
+      className="relative sm:min-h-screen flex items-start sm:items-center justify-center overflow-hidden pt-24 sm:pt-20 pb-0 sm:py-20"
+      onMouseMove={handleMouseMove}
+    >
+      {/* Animated mesh gradient background */}
+      <div className="absolute inset-0 hero-gradient" />
       
-      {/* Glowing orbs - different for light/dark */}
+      {/* Mouse-tracking spotlight */}
+      <div
+        className="absolute inset-0 opacity-30 dark:opacity-40 pointer-events-none transition-opacity duration-1000"
+        style={{
+          background: `radial-gradient(800px circle at ${mousePos.x}% ${mousePos.y}%, hsl(var(--primary) / 0.12), transparent 50%)`,
+        }}
+      />
+
+      {/* Animated grid with perspective */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/10 dark:bg-primary/20 blur-[150px] animate-pulse-slow" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/8 dark:bg-accent/15 blur-[120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
-        {/* Light mode extra gradient */}
-        <div className="absolute top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-primary/5 to-transparent dark:from-transparent pointer-events-none" />
+        <div
+          className="absolute inset-0 grid-dots opacity-40 dark:opacity-30"
+          style={{
+            transform: "perspective(1000px) rotateX(60deg)",
+            transformOrigin: "center top",
+            maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 60%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 60%, transparent 100%)",
+          }}
+        />
       </div>
 
-      <div className="container relative z-10 px-4 py-4 sm:py-20">
-        <div className="max-w-3xl mx-auto text-center animate-slide-up">
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <FloatingParticle delay={0} size={6} x={10} y={20} duration={8} />
+        <FloatingParticle delay={1.5} size={4} x={85} y={15} duration={10} />
+        <FloatingParticle delay={3} size={8} x={70} y={70} duration={7} />
+        <FloatingParticle delay={0.5} size={5} x={25} y={80} duration={9} />
+        <FloatingParticle delay={2} size={3} x={50} y={10} duration={11} />
+        <FloatingParticle delay={4} size={7} x={90} y={50} duration={8} />
+        <FloatingParticle delay={1} size={4} x={15} y={55} duration={12} />
+        <FloatingParticle delay={2.5} size={6} x={60} y={35} duration={9} />
+      </div>
+      
+      {/* Animated aurora blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] rounded-full bg-primary/8 dark:bg-primary/15 blur-[150px] animate-float" />
+        <div className="absolute bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full bg-accent/6 dark:bg-accent/12 blur-[130px] animate-float" style={{ animationDelay: "-3s" }} />
+        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full bg-primary/4 dark:bg-primary/8 blur-[180px] animate-pulse-slow" />
+      </div>
 
-          {/* Main heading */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight mt-8 sm:mt-12">
+      {/* Horizontal light beam */}
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent pointer-events-none" />
+
+      <div className="container relative z-10 px-4 py-4 sm:py-20">
+        <div className="max-w-3xl mx-auto text-center">
+
+          {/* Animated badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 dark:bg-primary/10 border border-primary/20 mb-6 sm:mb-8 animate-fade-in backdrop-blur-sm hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 cursor-default group">
+            <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
+            <span className="text-xs font-medium text-primary tracking-wide">INSTANT PRIVACY · NO SIGNUP REQUIRED</span>
+          </div>
+
+          {/* Main heading with typing effect */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight leading-tight mt-2 sm:mt-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             Disposable Email
-            <span className="block gradient-text drop-shadow-sm pb-2">In Seconds</span>
+            <span className="block pb-2">
+              <TypingText texts={["In Seconds", "With Privacy", "No Signup", "Stay Anonymous"]} />
+            </span>
           </h1>
 
-          <p className="text-base sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: "0.2s" }}>
             Create temporary inboxes instantly. Receive emails, protect your privacy, and keep spam out of your real inbox.
           </p>
 
-          {/* Email creation form */}
-          <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
-            <div className="flex flex-col gap-4 p-5 sm:p-6 rounded-3xl bg-card/90 dark:bg-gradient-to-b dark:from-background/80 dark:to-background/40 backdrop-blur-xl border border-border/40 dark:border-primary/20 shadow-2xl dark:shadow-[0_0_50px_-10px] dark:shadow-primary/40">
-              {/* Input row with random button */}
-              <div className="flex items-center gap-3">
-                {/* Main input container */}
-                <div className="flex-1 relative group">
-                  <div className="relative flex items-center bg-background dark:bg-background/70 rounded-lg px-4 py-3 gap-3 border border-border/50 dark:border-primary/20 group-hover:border-primary/40 transition-all duration-300 group-focus-within:border-primary group-focus-within:shadow-[0_0_20px_-5px] group-focus-within:shadow-primary/50">
-                    <div className="w-9 h-9 rounded-md bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                      <Mail className="w-4 h-4 text-primary" />
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="enter-name"
-                      value={username}
-                      onChange={(e) => {
-                        let value = e.target.value;
-                        // Auto-detect if user pasted full email
-                        if (value.includes('@')) {
-                          const emailMatch = value.match(/^([a-zA-Z0-9._-]+)@mailrcv\.site$/i);
-                          if (emailMatch) {
-                            value = emailMatch[1];
-                          } else {
-                            // Remove everything from @ onwards
-                            value = value.split('@')[0];
+          {/* Email creation form — premium glass card */}
+          <form onSubmit={handleSubmit} className="max-w-xl mx-auto animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            <div className="relative group/card">
+              {/* Animated gradient border */}
+              <div className="absolute -inset-[1px] rounded-[1.6rem] opacity-50 group-hover/card:opacity-100 transition-opacity duration-500" style={{
+                background: "conic-gradient(from 180deg, hsl(var(--primary) / 0.4), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.4))",
+                animation: "borderSpin 8s linear infinite",
+              }} />
+              
+              <div className="relative flex flex-col gap-4 p-5 sm:p-6 rounded-3xl bg-card/95 dark:bg-card/80 backdrop-blur-2xl border border-transparent shadow-2xl dark:shadow-primary/10">
+                {/* Input row with random button */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 relative group">
+                    <div className="relative flex items-center bg-background/80 dark:bg-background/50 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 group-hover:border-primary/30 transition-all duration-300 group-focus-within:border-primary/60 group-focus-within:shadow-[0_0_25px_-5px] group-focus-within:shadow-primary/30">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center shrink-0 group-focus-within:from-primary/25 group-focus-within:to-accent/20 transition-all duration-300">
+                        <Mail className="w-4 h-4 text-primary" />
+                      </div>
+                      <Input
+                        type="text"
+                        placeholder="enter-name"
+                        value={username}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          if (value.includes('@')) {
+                            const emailMatch = value.match(/^([a-zA-Z0-9._-]+)@mailrcv\.site$/i);
+                            if (emailMatch) { value = emailMatch[1]; } else { value = value.split('@')[0]; }
                           }
-                        }
-                        setUsername(value.replace(/[^a-zA-Z0-9._-]/g, ""));
-                      }}
-                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-1"
-                    />
+                          setUsername(value.replace(/[^a-zA-Z0-9._-]/g, ""));
+                        }}
+                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 font-mono text-lg font-medium text-foreground placeholder:text-muted-foreground/40 min-w-0 h-auto py-1"
+                      />
+                    </div>
                   </div>
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={handleRandomGenerate}
+                    className="h-14 w-14 shrink-0 rounded-xl border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 hover:from-primary/15 hover:to-accent/15 hover:border-primary/40 transition-all duration-300 group/btn hover:scale-105 active:scale-95 hover:shadow-[0_0_20px_-5px] hover:shadow-primary/30"
+                    title="Generate random name"
+                  >
+                    <Shuffle className="w-5 h-5 text-primary group-hover/btn:rotate-180 transition-transform duration-500" />
+                  </Button>
                 </div>
-                
-                {/* Random generate button */}
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="icon"
-                  onClick={handleRandomGenerate}
-                  className="h-14 w-14 shrink-0 rounded-xl border-primary/30 bg-gradient-to-br from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 hover:border-primary/50 transition-all duration-300 group hover:scale-105 active:scale-95"
-                  title="Generate random name"
-                >
-                  <Shuffle className="w-5 h-5 text-primary group-hover:rotate-180 transition-transform duration-500" />
-                </Button>
-              </div>
 
-              {/* Email preview with domain selector and copy */}
-              <div className="flex items-center justify-between gap-2 py-3 px-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 group hover:border-primary/40 transition-colors">
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <span className="font-mono text-base sm:text-lg font-semibold text-foreground truncate">
-                    {username || <span className="text-muted-foreground/50">your-name</span>}
-                  </span>
-                  <span className="font-mono text-base sm:text-lg font-semibold text-primary shrink-0">@</span>
-                  <Select value={selectedDomain} onValueChange={setSelectedDomain}>
-                    <SelectTrigger className="h-auto px-2 py-1 border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 rounded-lg font-mono text-base sm:text-lg font-semibold text-primary focus:ring-1 focus:ring-primary/50 focus:ring-offset-0 w-auto gap-1.5 transition-all duration-200 group/domain [&>svg]:w-4 [&>svg]:h-4 [&>svg]:text-primary [&>svg]:transition-transform [&>svg]:duration-200 hover:[&>svg]:translate-y-0.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover/95 backdrop-blur-xl border border-primary/20 shadow-xl shadow-primary/10 rounded-xl overflow-hidden">
-                      {domains.map((d) => (
-                        <SelectItem 
-                          key={d} 
-                          value={d} 
-                          className="font-mono text-sm cursor-pointer py-2.5 pl-8 pr-4 focus:bg-primary/10 focus:text-primary transition-colors"
-                        >
-                          {d}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Email preview */}
+                <div className="flex items-center justify-between gap-2 py-3 px-4 rounded-xl bg-primary/[0.03] dark:bg-primary/[0.06] border border-primary/10 dark:border-primary/15 group/preview hover:border-primary/25 transition-all duration-300">
+                  <div className="flex items-center gap-1 min-w-0 flex-1">
+                    <span className="font-mono text-base sm:text-lg font-semibold text-foreground truncate">
+                      {username || <span className="text-muted-foreground/40">your-name</span>}
+                    </span>
+                    <span className="font-mono text-base sm:text-lg font-semibold text-primary shrink-0">@</span>
+                    <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                      <SelectTrigger className="h-auto px-2 py-1 border border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 rounded-lg font-mono text-base sm:text-lg font-semibold text-primary focus:ring-1 focus:ring-primary/40 focus:ring-offset-0 w-auto gap-1.5 transition-all duration-200 [&>svg]:w-4 [&>svg]:h-4 [&>svg]:text-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover/95 backdrop-blur-xl border border-primary/15 shadow-xl shadow-primary/5 rounded-xl overflow-hidden">
+                        {domains.map((d) => (
+                          <SelectItem key={d} value={d} className="font-mono text-sm cursor-pointer py-2.5 pl-8 pr-4 focus:bg-primary/10 focus:text-primary transition-colors">
+                            {d}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={handleCopyEmail} className="h-8 w-8 shrink-0 opacity-40 group-hover/preview:opacity-100 transition-all duration-300" title="Copy email address">
+                    {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <Button
+
+                {/* Password toggle */}
+                <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCopyEmail}
-                  className="h-8 w-8 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
-                  title="Copy email address"
+                  onClick={() => {
+                    if (!canUsePassword) {
+                      toast("Password protection requires a Free account or higher", {
+                        action: { label: "Sign Up", onClick: () => navigate("/auth") },
+                      });
+                      return;
+                    }
+                    setShowPasswordField(!showPasswordField);
+                    if (showPasswordField) setPassword("");
+                  }}
+                  className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors group/lock"
                 >
-                  {copied ? (
-                    <Check className="w-4 h-4 text-primary" />
+                  <Lock className="w-4 h-4 group-hover/lock:text-primary transition-colors" />
+                  <span>{showPasswordField ? "Remove password protection" : "Add password protection"}</span>
+                  {!canUsePassword && <Crown className="w-3.5 h-3.5 text-yellow-500" />}
+                  {canUsePassword && (showPasswordField ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                </button>
+
+                {/* Password input */}
+                {showPasswordField && (
+                  <div className="relative animate-slide-up">
+                    <div className="relative flex items-center bg-background/80 dark:bg-background/50 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/40 transition-all duration-300">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Lock className="w-4 h-4 text-primary" />
+                      </div>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password (min 6 chars)"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-base text-foreground placeholder:text-muted-foreground/40 min-w-0 h-auto py-0"
+                      />
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleGeneratePassword} title="Generate strong password">
+                        <Wand2 className="w-4 h-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground/50 mt-2 text-center">
+                      With password: creates secure inbox or logs in to existing one
+                    </p>
+                  </div>
+                )}
+
+                {/* Submit button */}
+                <Button 
+                  type="submit" 
+                  variant="hero" 
+                  size="lg" 
+                  className="w-full rounded-xl h-14 text-base font-semibold shadow-lg hover:shadow-xl dark:shadow-primary/15 dark:hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group/submit"
+                  disabled={isLoading}
+                >
+                  {/* Button shimmer effect */}
+                  <div className="absolute inset-0 opacity-0 group-hover/submit:opacity-100 transition-opacity duration-500" style={{
+                    background: "linear-gradient(90deg, transparent 0%, hsl(var(--primary-foreground) / 0.1) 50%, transparent 100%)",
+                    animation: "shimmerSlide 2s ease-in-out infinite",
+                  }} />
+                  
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <span className="relative flex items-center gap-2">
+                      {password ? "Open Secure Inbox" : "Open Inbox"}
+                      <ArrowRight className="w-5 h-5 group-hover/submit:translate-x-1 transition-transform duration-300" />
+                    </span>
                   )}
                 </Button>
               </div>
-
-              {/* Password toggle button */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canUsePassword) {
-                    toast("Password protection requires a Free account or higher", {
-                      action: {
-                        label: "Sign Up",
-                        onClick: () => navigate("/auth"),
-                      },
-                    });
-                    return;
-                  }
-                  setShowPasswordField(!showPasswordField);
-                  if (showPasswordField) setPassword("");
-                }}
-                className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Lock className="w-4 h-4" />
-                <span>{showPasswordField ? "Remove password protection" : "Add password protection"}</span>
-                {!canUsePassword && <Crown className="w-3.5 h-3.5 text-yellow-500" />}
-                {canUsePassword && (showPasswordField ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
-              </button>
-
-              {/* Password input - collapsible */}
-              {showPasswordField && (
-                <div className="relative animate-slide-up">
-                  <div className="relative flex items-center bg-background dark:bg-background/70 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/20 focus-within:border-primary transition-all duration-300">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                      <Lock className="w-4 h-4 text-primary" />
-                    </div>
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter password (min 6 chars)"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 font-mono text-base text-foreground placeholder:text-muted-foreground/50 min-w-0 h-auto py-0"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={handleGeneratePassword}
-                      title="Generate strong password"
-                    >
-                      <Wand2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground/60 mt-2 text-center">
-                    With password: creates secure inbox or logs in to existing one
-                  </p>
-                </div>
-              )}
-
-              {/* Submit button */}
-              <Button 
-                type="submit" 
-                variant="hero" 
-                size="lg" 
-                className="w-full rounded-xl h-14 text-base font-semibold shadow-lg hover:shadow-xl dark:shadow-primary/20 dark:hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    {password ? "Open Secure Inbox" : "Open Inbox"}
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </Button>
             </div>
           </form>
 
-          {/* Plan info hint */}
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <p className="text-xs sm:text-sm text-muted-foreground/60">
+          {/* Bottom hints */}
+          <div className="mt-5 flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: "0.5s" }}>
+            <p className="text-xs sm:text-sm text-muted-foreground/50">
               💡 Click the <Shuffle className="inline w-3.5 h-3.5 mx-0.5" /> button for a random name
             </p>
             {!user && (
-              <p className="text-xs text-muted-foreground/50">
-                Using as <span className="font-semibold text-muted-foreground">Guest</span> · <Link to="/auth" className="text-primary hover:underline">Sign up</Link> for more features · <Link to="/pricing" className="text-primary hover:underline">See plans</Link>
+              <p className="text-xs text-muted-foreground/40">
+                Using as <span className="font-semibold text-muted-foreground/60">Guest</span> · <Link to="/auth" className="text-primary/80 hover:text-primary hover:underline transition-colors">Sign up</Link> for more features · <Link to="/pricing" className="text-primary/80 hover:text-primary hover:underline transition-colors">See plans</Link>
               </p>
             )}
           </div>
