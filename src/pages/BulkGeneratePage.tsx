@@ -1,12 +1,14 @@
 import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shuffle, Download, Copy, Check, Trash2, RefreshCw } from "lucide-react";
+import { Shuffle, Download, Copy, Check, Trash2, RefreshCw, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useDomains } from "@/hooks/use-domains";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_DOMAINS = ["mailrcv.site", "getemail.cfd"];
 const SITE_URL = "https://mailrcv.site";
@@ -77,6 +79,7 @@ const BulkGeneratePage = () => {
   const [generated, setGenerated] = useState<GeneratedEmail[]>([]);
   const [copiedAll, setCopiedAll] = useState(false);
   const { domains } = useDomains();
+  const { plan } = useAuth();
 
   const handleGenerate = useCallback(() => {
     const count = Math.min(Math.max(parseInt(quantity) || 1, 1), 500);
@@ -94,6 +97,35 @@ const BulkGeneratePage = () => {
     setGenerated(results);
     toast.success(`${count} email addresses generated!`);
   }, [quantity, selectedDomain]);
+
+  // Gate: only paid plan can use bulk generate
+  if (plan !== 'paid') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="max-w-md text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Pro Feature</h1>
+            <p className="text-muted-foreground">
+              Bulk email generation is available exclusively for Pro plan users. Upgrade to generate up to 500 disposable emails at once.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild variant="default" className="gap-2">
+                <Link to="/pricing"><Crown className="w-4 h-4" /> View Plans</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/">Go Home</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const handleCopyAll = async () => {
     const text = generated.map((e) => `${e.email}\t${e.link}`).join("\n");
