@@ -10,10 +10,11 @@ import {
   FileText,
   Code,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Mail
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ReceivedEmail } from "@/lib/email-service";
 
 interface EmailDetailDialogProps {
@@ -27,8 +28,16 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
   const [viewMode, setViewMode] = useState<"text" | "html">("html");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Auto-select HTML view if available
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (headerRef.current) {
+      const rect = headerRef.current.getBoundingClientRect();
+      setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
+  }, []);
+
   useEffect(() => {
     if (email?.body_html) {
       setViewMode("html");
@@ -37,13 +46,11 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
     }
   }, [email]);
 
-  // Update iframe content when email changes or view mode changes
   const writeIframeContent = () => {
     if (viewMode === "html" && email?.body_html && iframeRef.current) {
       const iframe = iframeRef.current;
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (doc) {
-        // Create a complete HTML document with proper styling
         const htmlContent = `
           <!DOCTYPE html>
           <html>
@@ -51,41 +58,19 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              * {
-                box-sizing: border-box;
-              }
+              * { box-sizing: border-box; }
               body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                font-size: 14px;
-                line-height: 1.6;
-                color: #e4e4e7;
-                background: transparent;
-                margin: 0;
-                padding: 0;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
+                font-size: 14px; line-height: 1.6; color: #e4e4e7;
+                background: transparent; margin: 0; padding: 16px;
+                word-wrap: break-word; overflow-wrap: break-word;
               }
-              a {
-                color: #22d3ee;
-                cursor: pointer;
-                position: relative;
-              }
-              a:hover {
-                text-decoration: underline;
-              }
-              /* Tap to copy tooltip for mobile */
+              a { color: #22d3ee; cursor: pointer; }
+              a:hover { text-decoration: underline; }
               .tap-copy-hint {
-                position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #22c55e;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 600;
-                z-index: 9999;
+                position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+                background: #22c55e; color: white; padding: 8px 16px; border-radius: 8px;
+                font-size: 14px; font-weight: 600; z-index: 9999;
                 animation: fadeInOut 2s ease-in-out forwards;
               }
               @keyframes fadeInOut {
@@ -94,229 +79,112 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
                 85% { opacity: 1; transform: translateX(-50%) translateY(0); }
                 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
               }
-              /* Highlight copyable elements */
               .copy-highlight {
-                outline: 2px solid #22d3ee !important;
-                outline-offset: 2px;
+                outline: 2px solid #22d3ee !important; outline-offset: 2px;
                 background: rgba(34, 211, 238, 0.1) !important;
               }
-              img {
-                max-width: 100%;
-                height: auto;
-              }
-              table {
-                max-width: 100%;
-                border-collapse: collapse;
-              }
-              td, th {
-                padding: 8px;
-              }
-              blockquote {
-                border-left: 3px solid #3f3f46;
-                margin: 16px 0;
-                padding-left: 16px;
-                color: #a1a1aa;
-              }
-              /* Copyable code blocks */
+              img { max-width: 100%; height: auto; }
+              table { max-width: 100%; border-collapse: collapse; }
+              td, th { padding: 8px; }
+              blockquote { border-left: 3px solid #3f3f46; margin: 16px 0; padding-left: 16px; color: #a1a1aa; }
               pre, code {
-                background: #18181b;
-                border-radius: 6px;
-                font-family: 'Monaco', 'Menlo', 'JetBrains Mono', monospace;
-                font-size: 13px;
-                position: relative;
+                background: #18181b; border-radius: 6px;
+                font-family: 'Monaco', 'Menlo', 'JetBrains Mono', monospace; font-size: 13px; position: relative;
               }
-              pre {
-                padding: 16px;
-                padding-right: 50px;
-                overflow-x: auto;
-                border: 1px solid #27272a;
-              }
-              code {
-                padding: 2px 6px;
-              }
-              pre code {
-                padding: 0;
-                background: transparent;
-              }
-              /* Copyable elements styling */
-              .copyable {
-                position: relative;
-                cursor: pointer;
-                transition: all 0.2s ease;
-              }
-              .copyable:hover {
-                background: #27272a;
-              }
+              pre { padding: 16px; padding-right: 50px; overflow-x: auto; border: 1px solid #27272a; }
+              code { padding: 2px 6px; }
+              pre code { padding: 0; background: transparent; }
+              .copyable { position: relative; cursor: pointer; transition: all 0.2s ease; }
+              .copyable:hover { background: #27272a; }
               .copy-btn {
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                background: #22d3ee;
-                color: #000;
-                border: none;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: 600;
-                cursor: pointer;
-                opacity: 0;
-                transition: opacity 0.2s ease;
+                position: absolute; top: 8px; right: 8px; background: #22d3ee; color: #000;
+                border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+                cursor: pointer; opacity: 0; transition: opacity 0.2s ease;
               }
-              pre:hover .copy-btn,
-              .copyable:hover .copy-btn {
-                opacity: 1;
-              }
-              .copy-btn:hover {
-                background: #06b6d4;
-              }
-              .copy-btn.copied {
-                background: #22c55e;
-              }
-              /* Link copy indicator */
-              a.copyable::after {
-                content: '📋';
-                font-size: 10px;
-                margin-left: 4px;
-                opacity: 0.5;
-              }
-              hr {
-                border: none;
-                border-top: 1px solid #3f3f46;
-                margin: 16px 0;
-              }
-              /* Gmail forward styling */
-              .gmail_quote, .gmail_attr {
-                color: #a1a1aa;
-              }
-              /* Outlook forward styling */
-              .MsoNormal {
-                margin: 0;
-              }
+              pre:hover .copy-btn, .copyable:hover .copy-btn { opacity: 1; }
+              .copy-btn:hover { background: #06b6d4; }
+              .copy-btn.copied { background: #22c55e; }
+              a.copyable::after { content: '📋'; font-size: 10px; margin-left: 4px; opacity: 0.5; }
+              hr { border: none; border-top: 1px solid #3f3f46; margin: 16px 0; }
+              .gmail_quote, .gmail_attr { color: #a1a1aa; }
+              .MsoNormal { margin: 0; }
             </style>
           </head>
           <body>
             ${email.body_html}
             <script>
-              // Add copy functionality to code blocks
               document.querySelectorAll('pre').forEach(pre => {
                 const btn = document.createElement('button');
-                btn.className = 'copy-btn';
-                btn.textContent = 'Copy';
+                btn.className = 'copy-btn'; btn.textContent = 'Copy';
                 btn.onclick = async (e) => {
                   e.stopPropagation();
                   const code = pre.querySelector('code') || pre;
-                  const text = code.textContent || code.innerText;
                   try {
-                    await navigator.clipboard.writeText(text);
-                    btn.textContent = 'Copied!';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                      btn.textContent = 'Copy';
-                      btn.classList.remove('copied');
-                    }, 2000);
-                  } catch (err) {
-                    console.error('Failed to copy:', err);
-                  }
+                    await navigator.clipboard.writeText(code.textContent || code.innerText);
+                    btn.textContent = 'Copied!'; btn.classList.add('copied');
+                    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+                  } catch (err) { console.error('Failed to copy:', err); }
                 };
-                pre.style.position = 'relative';
-                pre.appendChild(btn);
+                pre.style.position = 'relative'; pre.appendChild(btn);
               });
-
-              // Helper to show copy toast
               function showCopyToast(message) {
                 const existing = document.querySelector('.tap-copy-hint');
                 if (existing) existing.remove();
-                
-                const toast = document.createElement('div');
-                toast.className = 'tap-copy-hint';
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                
-                setTimeout(() => toast.remove(), 2000);
+                const t = document.createElement('div'); t.className = 'tap-copy-hint'; t.textContent = message;
+                document.body.appendChild(t); setTimeout(() => t.remove(), 2000);
               }
-
-              // Add tap-to-copy for links (mobile friendly - no Ctrl needed)
               document.querySelectorAll('a[href]').forEach(link => {
                 link.classList.add('copyable');
-                
-                // Long press or double tap to copy on mobile
-                let pressTimer;
-                let lastTap = 0;
-                
+                let pressTimer, lastTap = 0;
                 link.addEventListener('touchstart', (e) => {
                   pressTimer = setTimeout(() => {
                     e.preventDefault();
                     navigator.clipboard.writeText(link.href).then(() => {
-                      link.classList.add('copy-highlight');
-                      showCopyToast('✓ Link copied!');
+                      link.classList.add('copy-highlight'); showCopyToast('✓ Link copied!');
                       setTimeout(() => link.classList.remove('copy-highlight'), 1500);
                     });
-                  }, 500); // Long press 500ms
+                  }, 500);
                 });
-                
                 link.addEventListener('touchend', () => clearTimeout(pressTimer));
                 link.addEventListener('touchmove', () => clearTimeout(pressTimer));
-                
-                // Double tap for desktop/mobile
                 link.addEventListener('click', (e) => {
                   const now = Date.now();
                   if (now - lastTap < 300) {
                     e.preventDefault();
                     navigator.clipboard.writeText(link.href).then(() => {
-                      link.classList.add('copy-highlight');
-                      showCopyToast('✓ Link copied!');
+                      link.classList.add('copy-highlight'); showCopyToast('✓ Link copied!');
                       setTimeout(() => link.classList.remove('copy-highlight'), 1500);
                     });
                   }
                   lastTap = now;
                 });
               });
-
-              // Add tap-to-copy for inline code (single tap)
               document.querySelectorAll('code:not(pre code)').forEach(code => {
-                code.classList.add('copyable');
-                code.style.cursor = 'pointer';
-                code.title = 'Tap to copy';
-                
+                code.classList.add('copyable'); code.style.cursor = 'pointer'; code.title = 'Tap to copy';
                 code.onclick = async (e) => {
                   e.stopPropagation();
-                  const text = code.textContent || code.innerText;
                   try {
-                    await navigator.clipboard.writeText(text);
-                    code.classList.add('copy-highlight');
-                    showCopyToast('✓ Code copied!');
+                    await navigator.clipboard.writeText(code.textContent || code.innerText);
+                    code.classList.add('copy-highlight'); showCopyToast('✓ Code copied!');
                     setTimeout(() => code.classList.remove('copy-highlight'), 1500);
-                  } catch (err) {
-                    console.error('Failed to copy:', err);
-                  }
+                  } catch (err) { console.error('Failed to copy:', err); }
                 };
               });
-
-              // Make any text that looks like a code/OTP copyable
-              const codePatterns = [
-                /\\b[A-Z0-9]{6,8}\\b/g,  // OTP codes like ABC123
-                /\\b\\d{4,8}\\b/g,        // Numeric codes
-              ];
-              
+              const codePatterns = [/\\b[A-Z0-9]{6,8}\\b/g, /\\b\\d{4,8}\\b/g];
               document.body.querySelectorAll('*:not(script):not(style)').forEach(el => {
                 if (el.children.length === 0 && el.textContent) {
                   const text = el.textContent.trim();
                   codePatterns.forEach(pattern => {
                     if (pattern.test(text) && text.length <= 20) {
-                      el.classList.add('copyable');
-                      el.style.cursor = 'pointer';
-                      el.style.borderBottom = '1px dashed #22d3ee';
-                      el.title = 'Tap to copy';
+                      el.classList.add('copyable'); el.style.cursor = 'pointer';
+                      el.style.borderBottom = '1px dashed #22d3ee'; el.title = 'Tap to copy';
                       el.onclick = async (e) => {
                         e.stopPropagation();
                         try {
                           await navigator.clipboard.writeText(text);
-                          el.classList.add('copy-highlight');
-                          showCopyToast('✓ Copied: ' + text);
+                          el.classList.add('copy-highlight'); showCopyToast('✓ Copied: ' + text);
                           setTimeout(() => el.classList.remove('copy-highlight'), 1500);
-                        } catch (err) {
-                          console.error('Failed to copy:', err);
-                        }
+                        } catch (err) { console.error('Failed to copy:', err); }
                       };
                     }
                   });
@@ -335,10 +203,7 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
 
   useEffect(() => {
     if (open && viewMode === "html" && email?.body_html) {
-      // Small delay to ensure iframe is mounted and ready
-      const timeoutId = setTimeout(() => {
-        writeIframeContent();
-      }, 50);
+      const timeoutId = setTimeout(() => writeIframeContent(), 50);
       return () => clearTimeout(timeoutId);
     }
   }, [email?.body_html, viewMode, open]);
@@ -348,12 +213,8 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      weekday: "short", year: "numeric", month: "short",
+      day: "numeric", hour: "2-digit", minute: "2-digit",
     });
   };
 
@@ -375,95 +236,121 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
   const hasHtml = !!email.body_html;
   const hasText = !!email.body_text;
 
+  const senderInitial = (email.from_email || "?")[0].toUpperCase();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={`flex flex-col p-0 gap-0 glass-strong border-border/50 transition-all duration-300 ${
+        className={`flex flex-col p-0 gap-0 border-0 bg-background/80 backdrop-blur-2xl shadow-2xl transition-all duration-500 overflow-hidden ${
           isFullscreen 
-            ? "max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh]" 
-            : "max-w-4xl max-h-[85vh]"
+            ? "max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] rounded-2xl" 
+            : "max-w-4xl max-h-[85vh] rounded-2xl"
         }`}
       >
-        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-          <div className="flex items-start justify-between gap-4">
+        {/* Ambient glow */}
+        <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-accent/10 rounded-full blur-[100px] pointer-events-none" />
+
+        {/* Premium header with spotlight */}
+        <div 
+          ref={headerRef}
+          onMouseMove={handleMouseMove}
+          className="relative px-6 py-5 border-b border-border/30 shrink-0 overflow-hidden"
+        >
+          {/* Mouse spotlight */}
+          <div
+            className="absolute inset-0 opacity-20 pointer-events-none transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(300px circle at ${mousePos.x}px ${mousePos.y}px, hsl(var(--primary) / 0.15), transparent 70%)`,
+            }}
+          />
+
+          <div className="flex items-start gap-4 relative z-10">
+            {/* Sender avatar */}
+            <div className="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-border/30 flex items-center justify-center">
+              <span className="text-sm font-bold text-primary">{senderInitial}</span>
+            </div>
+
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-xl font-semibold mb-2 pr-8">
+              <DialogTitle className="text-lg font-semibold mb-2 leading-tight">
                 {email.subject || "(No subject)"}
               </DialogTitle>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <User className="w-4 h-4" />
-                  <span className="font-mono">{cleanSenderEmail(email.from_email)}</span>
+                  <User className="w-3.5 h-3.5 text-primary/60" />
+                  <span className="font-mono text-xs">{cleanSenderEmail(email.from_email)}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4" />
-                  <span>{formatDate(email.received_at)}</span>
+                  <Clock className="w-3.5 h-3.5 text-primary/60" />
+                  <span className="text-xs">{formatDate(email.received_at)}</span>
                 </div>
               </div>
             </div>
           </div>
-        </DialogHeader>
+        </div>
 
-        {/* View mode toggle and actions */}
-        <div className="px-6 py-3 border-b border-border/50 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2">
+        {/* Premium toolbar */}
+        <div className="px-5 py-2.5 border-b border-border/20 flex items-center justify-between gap-3 shrink-0 bg-secondary/10">
+          {/* View mode toggle pills */}
+          <div className="flex items-center rounded-xl bg-secondary/40 p-0.5 backdrop-blur-sm">
             {hasHtml && (
-              <Button
-                variant={viewMode === "html" ? "default" : "ghost"}
-                size="sm"
+              <button
                 onClick={() => setViewMode("html")}
-                className="gap-1.5"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  viewMode === "html"
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                <Code className="w-4 h-4" />
+                <Code className="w-3.5 h-3.5" />
                 HTML
-              </Button>
+              </button>
             )}
             {hasText && (
-              <Button
-                variant={viewMode === "text" ? "default" : "ghost"}
-                size="sm"
+              <button
                 onClick={() => setViewMode("text")}
-                className="gap-1.5"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  viewMode === "text"
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-3.5 h-3.5" />
                 Text
-              </Button>
+              </button>
             )}
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+          {/* Action buttons */}
+          <div className="flex items-center rounded-xl bg-secondary/30 p-0.5">
+            <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="gap-1.5"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200"
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
-              {isFullscreen ? (
-                <Minimize2 className="w-4 h-4" />
-              ) : (
-                <Maximize2 className="w-4 h-4" />
-              )}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={copyEmailContent} className="gap-1.5">
-              <Copy className="w-4 h-4" />
-              Copy
-            </Button>
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={copyEmailContent}
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200"
+              title="Copy content"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
             {onDelete && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <button
                 onClick={handleDelete}
-                className="gap-1.5 text-destructive hover:text-destructive"
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+                title="Delete email"
               >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </Button>
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
         </div>
 
         {/* Email content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden relative">
           {viewMode === "html" && hasHtml ? (
             <iframe
               ref={iframeRef}
@@ -476,7 +363,14 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
           ) : (
             <ScrollArea className="h-full">
               <div className="p-6 whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground/90">
-                {email.body_text || "(No content)"}
+                {email.body_text || (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border/30 flex items-center justify-center mb-4">
+                      <Mail className="w-6 h-6 text-primary/40" />
+                    </div>
+                    <p className="text-sm">No content available</p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           )}
