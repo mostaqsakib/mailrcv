@@ -29,16 +29,9 @@ export const Header = () => {
             <Button variant="outline" size="sm" asChild className="border-primary/50 text-primary hover:bg-primary/10 hover:border-primary font-semibold shadow-sm hidden sm:inline-flex">
               <Link to="/pricing">Pricing</Link>
             </Button>
-            {plan === 'paid' ? (
+            {plan === 'paid' && (
               <Button variant="outline" size="sm" asChild className="border-primary/50 text-primary hover:bg-primary/10 hover:border-primary font-semibold shadow-sm">
                 <Link to="/bulk">Bulk Generate</Link>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" asChild className="border-muted-foreground/30 text-muted-foreground font-semibold shadow-sm gap-1.5">
-                <Link to="/pricing">
-                  <Crown className="w-3.5 h-3.5 text-yellow-500" />
-                  Bulk Generate
-                </Link>
               </Button>
             )}
 
