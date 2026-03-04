@@ -17,7 +17,9 @@ import {
   Clock,
   Shield,
   RefreshCw,
+  Search,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 interface UserAlias {
@@ -39,6 +41,8 @@ const DashboardPage = () => {
   const [aliases, setAliases] = useState<UserAlias[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "protected" | "public">("all");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -170,12 +174,52 @@ const DashboardPage = () => {
             )}
           </div>
 
-          {/* Inbox List */}
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          {/* Search & Filter */}
+          {aliases.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search inboxes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex gap-2">
+                {(["all", "protected", "public"] as const).map((f) => (
+                  <Button
+                    key={f}
+                    variant={filter === f ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilter(f)}
+                    className="capitalize"
+                  >
+                    {f === "all" ? "All" : f === "protected" ? "🔒 Protected" : "🌐 Public"}
+                  </Button>
+                ))}
+              </div>
             </div>
-          ) : aliases.length === 0 ? (
+          )}
+
+          {/* Inbox List */}
+          {(() => {
+            const filtered = aliases.filter((a) => {
+              const matchesSearch = search === "" || 
+                `${a.username}@${a.domain_name}`.toLowerCase().includes(search.toLowerCase());
+              const matchesFilter = filter === "all" || 
+                (filter === "protected" && a.is_password_protected) ||
+                (filter === "public" && !a.is_password_protected);
+              return matchesSearch && matchesFilter;
+            });
+
+            if (loading) return (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            );
+
+            if (aliases.length === 0) return (
             <div className="text-center py-20 space-y-4">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                 <Inbox className="w-8 h-8 text-primary" />
@@ -186,73 +230,78 @@ const DashboardPage = () => {
                 <Link to="/">Create Inbox</Link>
               </Button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {aliases.map((alias) => (
-                <div
-                  key={alias.id}
-                  className="group p-4 rounded-xl glass border border-border/40 hover:border-primary/30 transition-all duration-200"
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Icon */}
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      {alias.is_password_protected ? (
-                        <Lock className="w-5 h-5 text-primary" />
-                      ) : (
-                        <Mail className="w-5 h-5 text-primary" />
-                      )}
-                    </div>
+            );
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-foreground truncate">
-                          {alias.username}@{alias.domain_name}
-                        </span>
-                        {alias.is_password_protected && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            <Shield className="w-3 h-3 mr-1" /> Protected
-                          </Badge>
-                        )}
-                        {alias.domain_name !== "mailrcv.site" && alias.domain_name !== "getemail.cfd" && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            <Globe className="w-3 h-3 mr-1" /> Custom
-                          </Badge>
+            if (filtered.length === 0 && aliases.length > 0) return (
+              <div className="text-center py-16 space-y-3">
+                <Search className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+                <p className="text-muted-foreground">No inboxes match your search</p>
+              </div>
+            );
+
+            return (
+              <div className="space-y-3">
+                {filtered.map((alias) => (
+                  <div
+                    key={alias.id}
+                    className="group p-4 rounded-xl glass border border-border/40 hover:border-primary/30 transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        {alias.is_password_protected ? (
+                          <Lock className="w-5 h-5 text-primary" />
+                        ) : (
+                          <Mail className="w-5 h-5 text-primary" />
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                        <span>{alias.email_count} email{alias.email_count !== 1 ? "s" : ""}</span>
-                        {alias.forward_to_email && (
-                          <span className="truncate">→ {alias.forward_to_email}</span>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-foreground truncate">
+                            {alias.username}@{alias.domain_name}
+                          </span>
+                          {alias.is_password_protected && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              <Shield className="w-3 h-3 mr-1" /> Protected
+                            </Badge>
+                          )}
+                          {alias.domain_name !== "mailrcv.site" && alias.domain_name !== "getemail.cfd" && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              <Globe className="w-3 h-3 mr-1" /> Custom
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                          <span>{alias.email_count} email{alias.email_count !== 1 ? "s" : ""}</span>
+                          {alias.forward_to_email && (
+                            <span className="truncate">→ {alias.forward_to_email}</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8"
-                        onClick={() => navigate(getInboxUrl(alias))}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8 text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(alias)}
-                        disabled={deleting === alias.id}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8"
+                          onClick={() => navigate(getInboxUrl(alias))}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(alias)}
+                          disabled={deleting === alias.id}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </main>
       <Footer />
