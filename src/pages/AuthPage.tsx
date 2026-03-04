@@ -6,9 +6,12 @@ import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, Sparkles } from "lucide-react
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
+
+type AuthMode = "login" | "signup" | "forgot";
 
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -29,38 +32,49 @@ const AuthPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
+
+    if (mode === "forgot") {
+      if (!email) { toast.error("Please enter your email"); return; }
+      setLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) { toast.error(error.message); return; }
+        toast.success("Password reset link sent! Check your email.");
+        setMode("login");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
-    if (!isLogin && password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+    if (!email || !password) { toast.error("Please fill in all fields"); return; }
+    if (mode === "signup" && password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
 
     setLoading(true);
     try {
-      if (isLogin) {
+      if (mode === "login") {
         const { error } = await signIn(email, password);
-        if (error) {
-          toast.error(error);
-          return;
-        }
+        if (error) { toast.error(error); return; }
         toast.success("Welcome back!");
         navigate("/");
       } else {
         const { error } = await signUp(email, password, displayName);
-        if (error) {
-          toast.error(error);
-          return;
-        }
+        if (error) { toast.error(error); return; }
         toast.success("Account created! Please check your email to verify.");
       }
     } finally {
       setLoading(false);
     }
   };
+
+  const headingText = mode === "login" ? "Welcome Back" : mode === "signup" ? "Create Account" : "Reset Password";
+  const subtitleText = mode === "login"
+    ? "Sign in to access your Free plan features"
+    : mode === "signup"
+      ? "Sign up for free — get 10 inboxes, 7-day retention & more"
+      : "Enter your email and we'll send you a reset link";
 
   return (
     <div className="min-h-screen hero-gradient flex items-center justify-center relative overflow-hidden">
@@ -90,14 +104,8 @@ const AuthPage = () => {
             <Mail className="w-8 h-8 text-primary-foreground" />
             <div className="absolute inset-0 rounded-2xl gradient-bg opacity-0 group-hover:opacity-40 blur-xl transition-opacity duration-500" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight">
-            {isLogin ? "Welcome Back" : "Create Account"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isLogin 
-              ? "Sign in to access your Free plan features" 
-              : "Sign up for free — get 10 inboxes, 7-day retention & more"}
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight">{headingText}</h1>
+          <p className="text-muted-foreground">{subtitleText}</p>
         </div>
 
         {/* Form card with interactive border */}
@@ -129,7 +137,7 @@ const AuthPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="relative space-y-4 p-6 rounded-2xl bg-card/90 backdrop-blur-2xl border border-transparent">
-            {!isLogin && (
+            {mode === "signup" && (
               <div className="relative animate-slide-up">
                 <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input">
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-400/15 to-purple-500/15 flex items-center justify-center shrink-0">
@@ -162,24 +170,39 @@ const AuthPage = () => {
               </div>
             </div>
 
-            <div className="relative">
-              <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
-                  <Lock className="w-4 h-4 text-emerald-400" />
+            {mode !== "forgot" && (
+              <div className="relative">
+                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
+                    <Lock className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </div>
+            )}
+
+            {/* Forgot password link - only in login mode */}
+            {mode === "login" && (
+              <div className="text-right -mt-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("forgot")}
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors duration-300"
+                >
+                  Forgot password?
                 </button>
               </div>
-            </div>
+            )}
 
             <Button
               type="submit"
@@ -195,20 +218,30 @@ const AuthPage = () => {
                 <div className="relative z-10 w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
                 <span className="relative z-10 text-primary-foreground">
-                  {isLogin ? "Sign In" : "Create Account"}
+                  {mode === "login" ? "Sign In" : mode === "signup" ? "Create Account" : "Send Reset Link"}
                 </span>
               )}
             </Button>
 
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => { setIsLogin(!isLogin); setPassword(""); }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300"
-              >
-                {isLogin ? "Don't have an account? " : "Already have an account? "}
-                <span className="font-semibold text-primary">{isLogin ? "Sign Up" : "Sign In"}</span>
-              </button>
+            <div className="text-center pt-2 space-y-1">
+              {mode === "forgot" ? (
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300"
+                >
+                  <span className="font-semibold text-primary">← Back to Sign In</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setMode(mode === "login" ? "signup" : "login"); setPassword(""); }}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300"
+                >
+                  {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+                  <span className="font-semibold text-primary">{mode === "login" ? "Sign Up" : "Sign In"}</span>
+                </button>
+              )}
             </div>
           </form>
         </div>
