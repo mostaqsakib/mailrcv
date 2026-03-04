@@ -77,7 +77,7 @@ const AuthPage = () => {
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-20">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-2 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <ThemeToggle />
