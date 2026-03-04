@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.download-apk]
 verify_jwt = false
+
+[functions.cleanup-emails]
+verify_jwt = false
