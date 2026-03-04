@@ -57,32 +57,9 @@ export const Header = () => {
 
   const MobileNavContent = () => (
     <div className="flex flex-col gap-1 pt-2">
-      {/* Navigation Links */}
-      <SheetClose asChild>
-        <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-          <CreditCard className="w-4 h-4" />
-          Pricing
-        </Link>
-      </SheetClose>
-      <SheetClose asChild>
-        <Link to="/download" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-          <Download className="w-4 h-4" />
-          Download
-        </Link>
-      </SheetClose>
-
-      {plan === 'paid' && (
-        <SheetClose asChild>
-          <Link to="/bulk" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-            <Sparkles className="w-4 h-4 text-primary" />
-            Bulk Generate
-          </Link>
-        </SheetClose>
-      )}
-
       {user && (
         <>
-          <div className="h-px bg-border/40 my-2 mx-4" />
+          {/* My Inboxes & Profile first */}
           <SheetClose asChild>
             <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
               <LayoutDashboard className="w-4 h-4" />
@@ -96,11 +73,11 @@ export const Header = () => {
             </Link>
           </SheetClose>
 
-          {plan !== 'paid' && (
+          {plan === 'paid' && (
             <SheetClose asChild>
-              <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-amber-400 hover:bg-amber-500/10 transition-colors">
-                <Crown className="w-4 h-4" />
-                Upgrade to Pro
+              <Link to="/bulk" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Bulk Generate
               </Link>
             </SheetClose>
           )}
@@ -125,6 +102,36 @@ export const Header = () => {
             </span>
           </div>
 
+          {plan !== 'paid' && (
+            <SheetClose asChild>
+              <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-amber-400 hover:bg-amber-500/10 transition-colors">
+                <Crown className="w-4 h-4" />
+                Upgrade to Pro
+              </Link>
+            </SheetClose>
+          )}
+
+          <div className="h-px bg-border/40 my-2 mx-4" />
+        </>
+      )}
+
+      {/* Pricing & Download at bottom */}
+      <SheetClose asChild>
+        <Link to="/download" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+          <Download className="w-4 h-4" />
+          Download
+        </Link>
+      </SheetClose>
+      <SheetClose asChild>
+        <Link to="/pricing" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+          <CreditCard className="w-4 h-4" />
+          Pricing
+        </Link>
+      </SheetClose>
+
+      {user && (
+        <>
+          <div className="h-px bg-border/40 my-2 mx-4" />
           <SheetClose asChild>
             <button
               onClick={() => signOut()}
