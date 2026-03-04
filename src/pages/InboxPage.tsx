@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { cleanSenderEmail } from "@/lib/clean-sender";
+import { useAuth } from "@/contexts/AuthContext";
+import { addGuestInbox, getGuestInboxes, canCreateInbox } from "@/lib/plan-limits";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,6 +210,7 @@ function parseUsernameParam(param: string | undefined): { user: string; domain: 
 }
 
 const InboxPage = () => {
+  const { user } = useAuth();
   const navRef = useRef<HTMLDivElement>(null);
   const [navMousePos, setNavMousePos] = useState({ x: 0, y: 0 });
   const [navHovered, setNavHovered] = useState(false);
@@ -288,16 +291,32 @@ const InboxPage = () => {
     setLoading(true);
     setEmailsLoading(true);
     try {
+      // Check guest limit before creating
+      if (!user) {
+        const guestInboxes = getGuestInboxes();
+        if (!canCreateInbox('guest', guestInboxes.length)) {
+          toast.error("Guest limit reached (5 inboxes). Sign up for more!");
+          setLoading(false);
+          setEmailsLoading(false);
+          return;
+        }
+      }
+
       const domain = await getOrCreateDomainByName(domainName);
       if (!domain) {
         toast.error("Failed to initialize inbox");
         return;
       }
 
-      const aliasData = await getOrCreateAlias(username!, domain.id);
+      const aliasData = await getOrCreateAlias(username!, domain.id, user?.id);
       if (!aliasData) {
         toast.error("Failed to create inbox");
         return;
+      }
+
+      // Track guest inbox in localStorage
+      if (!user) {
+        addGuestInbox(aliasData.id);
       }
       
       setAlias(aliasData);
@@ -313,7 +332,7 @@ const InboxPage = () => {
       setLoading(false);
       setEmailsLoading(false);
     }
-  }, [username, domainName]);
+  }, [username, domainName, user]);
 
   useEffect(() => {
     const checkAuthAndInit = async () => {
