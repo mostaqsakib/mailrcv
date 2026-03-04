@@ -293,16 +293,13 @@ const InboxPage = () => {
     try {
       // Check limits before creating a NEW inbox
       if (!user) {
-        // Guest: check localStorage count
         const guestInboxes = getGuestInboxes();
         if (!canCreateInbox('guest', guestInboxes.length)) {
           toast.error("Guest limit reached (5 inboxes). Sign up for more!");
-          setLoading(false);
-          setEmailsLoading(false);
+          navigate("/auth");
           return;
         }
       } else {
-        // Authenticated user: check DB count against plan limit
         const { count, error: countError } = await supabase
           .from("email_aliases")
           .select("*", { count: "exact", head: true })
@@ -312,8 +309,7 @@ const InboxPage = () => {
           const { PLAN_LIMITS } = await import("@/lib/plan-limits");
           const limit = PLAN_LIMITS[plan];
           toast.error(`${limit.label} plan limit reached (${limit.maxInboxes} inboxes). Upgrade for more!`);
-          setLoading(false);
-          setEmailsLoading(false);
+          navigate("/pricing");
           return;
         }
       }
