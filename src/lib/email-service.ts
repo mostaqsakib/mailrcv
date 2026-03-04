@@ -137,7 +137,7 @@ export async function addDomain(domainName: string): Promise<Domain | null> {
   return data as Domain;
 }
 
-export async function getOrCreateAlias(username: string, domainId: string): Promise<EmailAlias | null> {
+export async function getOrCreateAlias(username: string, domainId: string, userId?: string): Promise<EmailAlias | null> {
   // Check if alias exists
   const { data: existing } = await supabase
     .from("email_aliases")
@@ -146,15 +146,30 @@ export async function getOrCreateAlias(username: string, domainId: string): Prom
     .eq("domain_id", domainId)
     .maybeSingle();
 
-  if (existing) return existing as EmailAlias;
+  if (existing) {
+    // If alias exists but has no user_id and we have one, update it
+    if (userId && !existing.user_id) {
+      await supabase
+        .from("email_aliases")
+        .update({ user_id: userId })
+        .eq("id", existing.id);
+      return { ...existing, user_id: userId } as EmailAlias;
+    }
+    return existing as EmailAlias;
+  }
 
-  // Create new alias
+  // Create new alias with optional user_id
+  const insertData: { username: string; domain_id: string; user_id?: string } = { 
+    username: username.toLowerCase(), 
+    domain_id: domainId 
+  };
+  if (userId) {
+    insertData.user_id = userId;
+  }
+
   const { data: created, error } = await supabase
     .from("email_aliases")
-    .insert({ 
-      username: username.toLowerCase(), 
-      domain_id: domainId 
-    })
+    .insert(insertData)
     .select()
     .single();
 
