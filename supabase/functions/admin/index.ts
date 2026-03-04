@@ -168,6 +168,35 @@ serve(async (req) => {
       });
     }
 
+    // --- PAYMENT ORDERS ---
+    if (action === "payment_orders") {
+      const page = params.page || 0;
+      const limit = 50;
+      const { data, count } = await supabase
+        .from("payment_orders")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(page * limit, (page + 1) * limit - 1);
+
+      // Fetch user emails for the orders
+      const userIds = [...new Set((data || []).map((o: any) => o.user_id))];
+      let userMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, email, display_name")
+          .in("id", userIds);
+        (profiles || []).forEach((p: any) => {
+          userMap[p.id] = p.email || p.display_name || p.id;
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ orders: data || [], total: count || 0, userMap }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
