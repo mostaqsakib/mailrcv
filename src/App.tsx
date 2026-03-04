@@ -27,6 +27,9 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const RedeemPage = lazy(() => import("./pages/RedeemPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const DemoNeonPage = lazy(() => import("./pages/DemoNeonPage"));
+const DemoMinimalPage = lazy(() => import("./pages/DemoMinimalPage"));
+const DemoAuroraPage = lazy(() => import("./pages/DemoAuroraPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -109,6 +112,9 @@ const App = () => (
                 <Route path="/bulk" element={<BulkGeneratePage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/demo/neon" element={<DemoNeonPage />} />
+                <Route path="/demo/minimal" element={<DemoMinimalPage />} />
+                <Route path="/demo/aurora" element={<DemoAuroraPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
