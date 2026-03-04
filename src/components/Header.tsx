@@ -1,4 +1,4 @@
-import { Mail, User, LogOut, Crown, ChevronDown } from "lucide-react";
+import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -62,6 +62,11 @@ export const Header = () => {
                       <p className="text-xs text-muted-foreground">{PLAN_LIMITS[plan].label} Plan</p>
                     </div>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="gap-2 cursor-pointer">
+                        <LayoutDashboard className="w-4 h-4" /> My Inboxes
+                      </Link>
+                    </DropdownMenuItem>
                     {plan !== 'paid' && (
                       <DropdownMenuItem asChild>
                         <Link to="/pricing" className="gap-2 cursor-pointer">
