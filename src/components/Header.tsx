@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Sparkles, Menu, X, CreditCard, Download } from "lucide-react";
+import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Sparkles, Menu, X, CreditCard, Download, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -87,6 +87,12 @@ export const Header = () => {
             <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
               <LayoutDashboard className="w-4 h-4" />
               My Inboxes
+            </Link>
+          </SheetClose>
+          <SheetClose asChild>
+            <Link to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+              <Settings className="w-4 h-4" />
+              Profile
             </Link>
           </SheetClose>
 
@@ -237,6 +243,11 @@ export const Header = () => {
                       <DropdownMenuItem asChild className="rounded-lg">
                         <Link to="/dashboard" className="gap-2 cursor-pointer">
                           <LayoutDashboard className="w-4 h-4" /> My Inboxes
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-lg">
+                        <Link to="/profile" className="gap-2 cursor-pointer">
+                          <Settings className="w-4 h-4" /> Profile
                         </Link>
                       </DropdownMenuItem>
                       {plan !== 'paid' && (
