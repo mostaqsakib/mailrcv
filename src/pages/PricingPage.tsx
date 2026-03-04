@@ -115,32 +115,41 @@ const PlanCard = ({ planKey, isCurrentPlan, user, navigate }: PlanCardProps) => 
 
         {/* Features */}
         <ul className="space-y-3 mb-8 flex-1">
-          {features.map((feature) => {
-            const value = feature[planKey as 'guest' | 'free' | 'paid'];
-            const isBoolean = typeof value === "boolean";
-            return (
-              <li key={feature.label} className="flex items-center gap-3 text-sm">
-                {isBoolean ? (
-                  value ? (
+          {/* Sort: included features first (check marks), then excluded (crosses) */}
+          {[...features]
+            .sort((a, b) => {
+              const aVal = a[planKey as 'guest' | 'free' | 'paid'];
+              const bVal = b[planKey as 'guest' | 'free' | 'paid'];
+              const aIncluded = typeof aVal === "boolean" ? (aVal ? 1 : 0) : 1;
+              const bIncluded = typeof bVal === "boolean" ? (bVal ? 1 : 0) : 1;
+              return bIncluded - aIncluded;
+            })
+            .map((feature) => {
+              const value = feature[planKey as 'guest' | 'free' | 'paid'];
+              const isBoolean = typeof value === "boolean";
+              return (
+                <li key={feature.label} className="flex items-center gap-3 text-sm">
+                  {isBoolean ? (
+                    value ? (
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Check className="w-3 h-3 text-primary" />
+                      </div>
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-muted/30 flex items-center justify-center shrink-0">
+                        <X className="w-3 h-3 text-muted-foreground/40" />
+                      </div>
+                    )
+                  ) : (
                     <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <Check className="w-3 h-3 text-primary" />
                     </div>
-                  ) : (
-                    <div className="w-5 h-5 rounded-full bg-muted/30 flex items-center justify-center shrink-0">
-                      <X className="w-3 h-3 text-muted-foreground/40" />
-                    </div>
-                  )
-                ) : (
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 text-primary" />
-                  </div>
-                )}
-                <span className={isBoolean && !value ? "text-muted-foreground/50" : "text-foreground/80"}>
-                  {isBoolean ? feature.label : `${value} ${feature.label.toLowerCase()}`}
-                </span>
-              </li>
-            );
-          })}
+                  )}
+                  <span className={isBoolean && !value ? "text-muted-foreground/50" : "text-foreground/80"}>
+                    {isBoolean ? feature.label : `${value} ${feature.label.toLowerCase()}`}
+                  </span>
+                </li>
+              );
+            })}
         </ul>
 
         {/* CTA */}
