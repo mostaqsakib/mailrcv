@@ -252,7 +252,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-14 sm:pt-20 pb-0 sm:py-20">
+    <section className="relative sm:min-h-screen flex items-start sm:items-center justify-center hero-gradient overflow-hidden pt-24 sm:pt-20 pb-0 sm:py-20">
       {/* Background effects */}
       <div className="absolute inset-0 grid-dots opacity-50 dark:opacity-50" />
       
