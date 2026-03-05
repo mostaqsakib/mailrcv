@@ -7,8 +7,10 @@ const corsHeaders = {
 };
 
 async function md5(message: string): Promise<string> {
+  // Deno doesn't support MD5 via crypto.subtle, use std library
+  const { crypto: stdCrypto } = await import("https://deno.land/std@0.224.0/crypto/mod.ts");
   const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest("MD5", msgBuffer);
+  const hashBuffer = await stdCrypto.subtle.digest("MD5", msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
