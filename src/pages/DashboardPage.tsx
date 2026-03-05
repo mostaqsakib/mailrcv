@@ -47,7 +47,23 @@ interface UserAlias {
   domain_id: string | null;
   domain_name?: string;
   forward_to_email: string | null;
+  last_email_at?: string | null;
 }
+
+// Format relative time
+const formatRelativeTime = (dateStr: string) => {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
 
 // Interactive inbox card
 const InboxCard = ({ alias, onDelete, onOpen, deleting, unreadCount }: {
@@ -131,12 +147,18 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting, unreadCount }: {
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
               <span>{alias.email_count} email{alias.email_count !== 1 ? "s" : ""}</span>
               {unreadCount > 0 && (
                 <Badge className="text-[10px] px-1.5 py-0 bg-primary/15 text-primary border-primary/30 animate-pulse">
                   {unreadCount} unread
                 </Badge>
+              )}
+              {alias.last_email_at && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {formatRelativeTime(alias.last_email_at)}
+                </span>
               )}
               {alias.forward_to_email && (
                 <span className="truncate">→ {alias.forward_to_email}</span>
@@ -195,20 +217,28 @@ const DashboardPage = () => {
     setAliases((aliasData || []).map(a => ({ ...a, domain_name: a.domain_id ? domainMap[a.domain_id] || "mailrcv.site" : "mailrcv.site" })));
     setLoading(false);
 
-    // Fetch unread counts for all aliases
+    // Fetch unread counts and last email times for all aliases
     const aliasIds = (aliasData || []).map(a => a.id);
     if (aliasIds.length > 0) {
-      const { data: unreadData } = await supabase
+      const { data: emailStats } = await supabase
         .from("received_emails")
-        .select("alias_id")
+        .select("alias_id, is_read, received_at")
         .in("alias_id", aliasIds)
-        .eq("is_read", false);
-      if (unreadData) {
+        .order("received_at", { ascending: false });
+      if (emailStats) {
         const counts: Record<string, number> = {};
-        unreadData.forEach(e => {
-          counts[e.alias_id!] = (counts[e.alias_id!] || 0) + 1;
+        const lastTimes: Record<string, string> = {};
+        emailStats.forEach(e => {
+          if (!e.is_read) {
+            counts[e.alias_id!] = (counts[e.alias_id!] || 0) + 1;
+          }
+          if (!lastTimes[e.alias_id!]) {
+            lastTimes[e.alias_id!] = e.received_at;
+          }
         });
         setUnreadCounts(counts);
+        // Update aliases with last email time
+        setAliases(prev => prev.map(a => ({ ...a, last_email_at: lastTimes[a.id] || null })));
       }
     }
   };
