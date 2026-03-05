@@ -253,8 +253,6 @@ export const HeroSection = () => {
         <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full bg-primary/4 dark:bg-primary/8 blur-[180px] animate-pulse-slow" />
       </div>
 
-      {/* Horizontal light beam */}
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent pointer-events-none" />
 
       <div className="container relative z-10 px-4 py-4 sm:py-20">
         <div className="max-w-3xl mx-auto text-center">
