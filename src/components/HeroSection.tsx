@@ -281,7 +281,7 @@ export const HeroSection = () => {
           <form onSubmit={handleSubmit} className="max-w-xl mx-auto animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <div className="relative group/card">
               {/* Animated gradient border */}
-              <div className="absolute -inset-[1px] rounded-[1.6rem] opacity-50 group-hover/card:opacity-100 transition-opacity duration-500" style={{
+              <div className="absolute -inset-[1px] rounded-[1.6rem] opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" style={{
                 background: "conic-gradient(from 180deg, hsl(var(--primary) / 0.4), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.4))",
                 animation: "borderSpin 8s linear infinite",
               }} />
