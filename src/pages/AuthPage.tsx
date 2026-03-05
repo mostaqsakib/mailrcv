@@ -139,7 +139,7 @@ const AuthPage = () => {
           <form onSubmit={handleSubmit} className="relative space-y-4 p-6 rounded-2xl bg-card/90 backdrop-blur-2xl border border-transparent">
             {mode === "signup" && (
               <div className="relative animate-slide-up">
-                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input">
+                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-4 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input">
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-400/15 to-purple-500/15 flex items-center justify-center shrink-0">
                     <User className="w-4 h-4 text-violet-400" />
                   </div>
@@ -148,14 +148,14 @@ const AuthPage = () => {
                     placeholder="Display name (optional)"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-0 px-1 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
                   />
                 </div>
               </div>
             )}
 
             <div className="relative">
-              <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
+              <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-4 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-400/15 to-blue-500/15 flex items-center justify-center shrink-0">
                   <Mail className="w-4 h-4 text-sky-400" />
                 </div>
@@ -164,7 +164,7 @@ const AuthPage = () => {
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-0 px-1 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
                   required
                 />
               </div>
@@ -172,7 +172,7 @@ const AuthPage = () => {
 
             {mode !== "forgot" && (
               <div className="relative">
-                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-3 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
+                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-4 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 group/input focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
                     <Lock className="w-4 h-4 text-emerald-400" />
                   </div>
@@ -181,7 +181,7 @@ const AuthPage = () => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-0 px-1 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
                     required
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
