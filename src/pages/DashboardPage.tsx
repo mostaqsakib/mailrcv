@@ -48,11 +48,12 @@ interface UserAlias {
 }
 
 // Interactive inbox card
-const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
+const InboxCard = ({ alias, onDelete, onOpen, deleting, unreadCount }: {
   alias: UserAlias;
   onDelete: (a: UserAlias) => void;
   onOpen: (a: UserAlias) => void;
   deleting: string | null;
+  unreadCount: number;
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -81,7 +82,7 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onOpen(alias)}
-      className="group relative rounded-xl p-[1px] transition-all duration-500 cursor-pointer"
+      className={`group relative rounded-xl p-[1px] transition-all duration-500 cursor-pointer ${unreadCount > 0 ? "ring-1 ring-primary/40 shadow-glow" : ""}`}
     >
       <div
         className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -106,6 +107,11 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
             ) : (
               <Mail className="w-5 h-5 text-sky-400" />
             )}
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center shadow-sm">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -125,6 +131,11 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
               <span>{alias.email_count} email{alias.email_count !== 1 ? "s" : ""}</span>
+              {unreadCount > 0 && (
+                <Badge className="text-[10px] px-1.5 py-0 bg-primary/15 text-primary border-primary/30 animate-pulse">
+                  {unreadCount} unread
+                </Badge>
+              )}
               {alias.forward_to_email && (
                 <span className="truncate">→ {alias.forward_to_email}</span>
               )}
@@ -159,6 +170,7 @@ const DashboardPage = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "protected" | "public">("all");
   const [deleteTarget, setDeleteTarget] = useState<UserAlias | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -179,6 +191,23 @@ const DashboardPage = () => {
     }
     setAliases((aliasData || []).map(a => ({ ...a, domain_name: a.domain_id ? domainMap[a.domain_id] || "mailrcv.site" : "mailrcv.site" })));
     setLoading(false);
+
+    // Fetch unread counts for all aliases
+    const aliasIds = (aliasData || []).map(a => a.id);
+    if (aliasIds.length > 0) {
+      const { data: unreadData } = await supabase
+        .from("received_emails")
+        .select("alias_id")
+        .in("alias_id", aliasIds)
+        .eq("is_read", false);
+      if (unreadData) {
+        const counts: Record<string, number> = {};
+        unreadData.forEach(e => {
+          counts[e.alias_id!] = (counts[e.alias_id!] || 0) + 1;
+        });
+        setUnreadCounts(counts);
+      }
+    }
   };
 
   useEffect(() => { if (user) fetchAliases(); }, [user]);
@@ -351,6 +380,7 @@ const DashboardPage = () => {
                       onDelete={handleDelete}
                       onOpen={(a) => navigate(getInboxUrl(a))}
                       deleting={deleting}
+                      unreadCount={unreadCounts[alias.id] || 0}
                     />
                   </div>
                 ))}
