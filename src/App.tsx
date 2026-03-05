@@ -29,6 +29,7 @@ const RedeemPage = lazy(() => import("./pages/RedeemPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
 const DemoNeonPage = lazy(() => import("./pages/DemoNeonPage"));
 const DemoMinimalPage = lazy(() => import("./pages/DemoMinimalPage"));
 const DemoAuroraPage = lazy(() => import("./pages/DemoAuroraPage"));
@@ -109,6 +110,7 @@ const App = () => (
                 <Route path="/redeem" element={<RedeemPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/payment-success" element={<PaymentSuccessPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/inbox/:username" element={<InboxPage />} />
                 <Route path="/inbox/:username/email/:emailId" element={<EmailDetailPage />} />

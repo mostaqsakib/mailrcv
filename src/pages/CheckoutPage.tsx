@@ -165,7 +165,7 @@ const CheckoutPage = () => {
     setCryptomusLoading(true);
     try {
       const response = await supabase.functions.invoke("create-cryptomus-invoice", {
-        body: { planType, returnUrl: window.location.origin + "/dashboard" },
+        body: { planType, returnUrl: window.location.origin + `/payment-success?plan=${planType}` },
       });
       if (response.error) {
         toast({ title: "Error", description: "Failed to create payment", variant: "destructive" });
@@ -219,11 +219,7 @@ const CheckoutPage = () => {
         toast({ title: "Verification Failed", description: errorData.error || "Could not verify payment.", variant: "destructive" });
       } else if (response.data?.success) {
         await refreshProfile();
-        toast({
-          title: "🎉 Payment Verified!",
-          description: response.data.lifetime ? "Your Pro plan is now active forever!" : "Your Pro plan is now active for 30 days!",
-        });
-        navigate("/dashboard");
+        navigate(`/payment-success?plan=${planType}`);
       } else {
         toast({ title: "Verification Failed", description: response.data?.error || "Could not verify payment.", variant: "destructive" });
       }
