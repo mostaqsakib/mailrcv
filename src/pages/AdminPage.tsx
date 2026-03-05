@@ -378,7 +378,12 @@ const AdminPage = () => {
                     <div key={u.id} className="p-4 rounded-xl border border-border/40 bg-card/50 flex flex-col sm:flex-row sm:items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{u.email || "No email"}</p>
-                        <p className="text-xs text-muted-foreground">{u.display_name} • Joined {new Date(u.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {u.display_name} • Joined {new Date(u.created_at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+                          {u.plan === "paid" && u.plan_expires_at && (
+                            <> • Pro since {new Date(new Date(u.plan_expires_at).getTime() - 30 * 24 * 60 * 60 * 1000).toLocaleString("en-GB", { timeZone: "Asia/Dhaka", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })} • Expires {new Date(u.plan_expires_at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}</>
+                          )}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={u.plan === "paid" ? "default" : "secondary"} className={u.plan === "paid" ? "bg-yellow-500/20 text-yellow-600" : ""}>
