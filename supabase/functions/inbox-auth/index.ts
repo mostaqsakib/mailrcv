@@ -156,7 +156,7 @@ serve(async (req: Request) => {
     // Check if alias exists
     const { data: existingAlias, error: aliasError } = await supabase
       .from('email_aliases')
-      .select('id, is_password_protected, password_hash')
+      .select('id, is_password_protected, password_hash, user_id')
       .eq('username', username.toLowerCase())
       .eq('domain_id', domainId)
       .maybeSingle();
@@ -185,7 +185,8 @@ serve(async (req: Request) => {
         JSON.stringify({ 
           exists: true,
           is_password_protected: existingAlias.is_password_protected,
-          alias_id: existingAlias.id
+          alias_id: existingAlias.id,
+          has_owner: !!existingAlias.user_id,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

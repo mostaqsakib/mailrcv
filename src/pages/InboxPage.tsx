@@ -279,12 +279,24 @@ const InboxPage = () => {
     ]);
 
     if (aliasRes.data) {
-      setAlias(aliasRes.data as EmailAlias);
-      setForwardEmail(aliasRes.data.forward_to_email || "");
+      const aliasData = aliasRes.data;
+      // Check ownership: if alias belongs to another user, deny access
+      if (aliasData.user_id && user?.id && aliasData.user_id !== user.id) {
+        toast.error("This inbox is private and belongs to another user.");
+        navigate("/");
+        return;
+      }
+      if (aliasData.user_id && !user) {
+        toast.error("This inbox is private. Please sign in to access it.");
+        navigate("/auth");
+        return;
+      }
+      setAlias(aliasData as EmailAlias);
+      setForwardEmail(aliasData.forward_to_email || "");
     }
     setEmails(emailsData);
     setEmailsLoading(false);
-  }, []);
+  }, [user, navigate]);
 
   // Fallback: full initialization when alias_id is not available (new inbox)
   const initializeInbox = useCallback(async () => {
@@ -338,8 +350,13 @@ const InboxPage = () => {
       const data = await getEmailsForAlias(aliasData.id);
       setEmails(data);
       setEmailsLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error initializing inbox:", error);
+      if (error?.message === "INBOX_OWNED_BY_OTHER_USER") {
+        toast.error("This inbox is private and belongs to another user.");
+        navigate("/");
+        return;
+      }
       toast.error("Failed to load inbox");
       setLoading(false);
       setEmailsLoading(false);
