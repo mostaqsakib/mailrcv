@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import cryptomusLogoSvg from "@/assets/cryptomus-logo.svg";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +29,7 @@ const BinanceLogo = () => (
 
 // Official Cryptomus logo
 const CryptomusLogo = () => (
-  <svg viewBox="0 0 32 32" className="w-6 h-6" fill="none">
-    <rect width="32" height="32" rx="8" fill="#1A1A2E"/>
-    <path d="M16 5L25.5 10.5V21.5L16 27L6.5 21.5V10.5L16 5Z" stroke="#00E676" strokeWidth="1.8" fill="none"/>
-    <path d="M16 5L25.5 10.5L16 16L6.5 10.5L16 5Z" fill="#00E676" fillOpacity="0.15"/>
-    <path d="M16 16V27M16 16L6.5 10.5M16 16L25.5 10.5" stroke="#00E676" strokeWidth="1.2" strokeOpacity="0.5"/>
-  </svg>
+  <img src={cryptomusLogoSvg} alt="Cryptomus" className="w-6 h-6" />
 );
 
 const GatewayCard = ({
