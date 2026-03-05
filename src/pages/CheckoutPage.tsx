@@ -26,12 +26,13 @@ const BinanceLogo = () => (
   </svg>
 );
 
-// Cryptomus logo SVG
+// Official Cryptomus logo
 const CryptomusLogo = () => (
   <svg viewBox="0 0 32 32" className="w-6 h-6" fill="none">
-    <rect width="32" height="32" rx="8" fill="#0085FF"/>
-    <path d="M16 6C10.48 6 6 10.48 6 16s4.48 10 10 10 10-4.48 10-10S21.52 6 16 6zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S11.86 8.5 16 8.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z" fill="white"/>
-    <path d="M18.5 13.5h-3v-2h3a3.5 3.5 0 010 7h-1v2h-2v-2h-2v-2h4a1.5 1.5 0 000-3z" fill="white"/>
+    <rect width="32" height="32" rx="8" fill="#1A1A2E"/>
+    <path d="M16 5L25.5 10.5V21.5L16 27L6.5 21.5V10.5L16 5Z" stroke="#00E676" strokeWidth="1.8" fill="none"/>
+    <path d="M16 5L25.5 10.5L16 16L6.5 10.5L16 5Z" fill="#00E676" fillOpacity="0.15"/>
+    <path d="M16 16V27M16 16L6.5 10.5M16 16L25.5 10.5" stroke="#00E676" strokeWidth="1.2" strokeOpacity="0.5"/>
   </svg>
 );
 
