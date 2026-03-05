@@ -216,7 +216,7 @@ const PricingPage = () => {
 
       {/* Header */}
       <div className="relative z-10 p-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-2 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <ThemeToggle />

@@ -786,7 +786,7 @@ const EmailDetailPage = () => {
   };
 
   const goBack = () => {
-    navigate(`/inbox/${username}`);
+    navigate(-1);
   };
 
   if (loading) {

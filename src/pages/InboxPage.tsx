@@ -675,7 +675,7 @@ const InboxPage = () => {
   }, [permission, requestPermission]);
 
   const goBack = useCallback(() => {
-    navigate("/");
+    navigate(-1);
   }, [navigate]);
 
   const handleLogout = useCallback(() => {
