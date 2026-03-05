@@ -281,12 +281,12 @@ export const HeroSection = () => {
           <form onSubmit={handleSubmit} className="max-w-xl mx-auto animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <div className="relative group/card">
               {/* Animated gradient border */}
-              <div className="absolute -inset-[1px] rounded-[1.6rem] opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" style={{
+              <div className="absolute -inset-[1px] rounded-[1.6rem] opacity-50 group-hover/card:opacity-100 transition-opacity duration-500" style={{
                 background: "conic-gradient(from 180deg, hsl(var(--primary) / 0.4), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.4))",
                 animation: "borderSpin 8s linear infinite",
               }} />
               
-              <div className="relative flex flex-col gap-4 p-5 sm:p-6 rounded-3xl bg-card/95 dark:bg-card/80 backdrop-blur-2xl border border-transparent shadow-2xl dark:shadow-primary/10">
+              <div className="relative flex flex-col gap-4 p-5 sm:p-6 rounded-3xl bg-card/95 dark:bg-card/80 backdrop-blur-2xl border-0 shadow-none dark:shadow-none">
                 {/* Input row with random button */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 relative group">
