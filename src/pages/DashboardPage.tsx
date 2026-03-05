@@ -28,6 +28,8 @@ import {
   Shield,
   RefreshCw,
   Search,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -55,6 +57,7 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!cardRef.current) return;
@@ -62,13 +65,23 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   }, []);
 
+  const emailAddress = `${alias.username}@${alias.domain_name}`;
+
+  const handleCopy = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(emailAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [emailAddress]);
+
   return (
     <div
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative rounded-xl p-[1px] transition-all duration-500"
+      onClick={() => onOpen(alias)}
+      className="group relative rounded-xl p-[1px] transition-all duration-500 cursor-pointer"
     >
       <div
         className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -97,7 +110,7 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-foreground truncate">
-                {alias.username}@{alias.domain_name}
+                {emailAddress}
               </span>
               {alias.is_password_protected && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-400 border-amber-500/20">
@@ -118,10 +131,16 @@ const InboxCard = ({ alias, onDelete, onOpen, deleting }: {
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-            <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-primary/10 hover:text-primary" onClick={() => onOpen(alias)}>
-              <ExternalLink className="w-4 h-4" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8 hover:bg-secondary/80"
+              onClick={handleCopy}
+              title="Copy email address"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
             </Button>
-            <Button variant="ghost" size="icon" className="w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onDelete(alias)} disabled={deleting === alias.id}>
+            <Button variant="ghost" size="icon" className="w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); onDelete(alias); }} disabled={deleting === alias.id}>
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
