@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, forwardRef } from "react";
-import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Sparkles, Menu, X, CreditCard, Download, Settings } from "lucide-react";
+import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Menu, X, CreditCard, Download, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -77,14 +77,6 @@ export const Header = () => {
             </Link>
           </SheetClose>
 
-          {plan === 'paid' && (
-            <SheetClose asChild>
-              <Link to="/bulk" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Bulk Generate
-              </Link>
-            </SheetClose>
-          )}
 
           <div className="h-px bg-border/40 my-2 mx-4" />
 
@@ -208,18 +200,7 @@ export const Header = () => {
             </Link>
 
             {/* Center nav links - desktop only */}
-            {!isMobile && (
-              <div className="flex items-center gap-1">
-                {plan === 'paid' && (
-                  <NavItem to="/bulk" active={isActive('/bulk')}>
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" />
-                      Bulk
-                    </span>
-                  </NavItem>
-                )}
-              </div>
-            )}
+            {/* Center nav links removed - Bulk is now in New Inbox dialog */}
 
             {/* Right side */}
             <div className="flex items-center gap-1.5 sm:gap-2">
