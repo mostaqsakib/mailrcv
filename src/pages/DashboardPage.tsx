@@ -30,9 +30,11 @@ import {
   Search,
   Copy,
   Check,
+  Plus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { CreateInboxDialog } from "@/components/CreateInboxDialog";
 
 interface UserAlias {
   id: string;
@@ -171,6 +173,7 @@ const DashboardPage = () => {
   const [filter, setFilter] = useState<"all" | "protected" | "public">("all");
   const [deleteTarget, setDeleteTarget] = useState<UserAlias | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -266,13 +269,11 @@ const DashboardPage = () => {
               <Button variant="outline" size="sm" onClick={fetchAliases} className="gap-2">
                 <RefreshCw className="w-4 h-4" /> Refresh
               </Button>
-              <Button size="sm" asChild className="relative gap-2 overflow-hidden group/btn">
-                <Link to="/">
+              <Button size="sm" onClick={() => setShowCreateDialog(true)} className="relative gap-2 overflow-hidden group/btn">
                   <div className="absolute inset-0 gradient-bg" />
                   <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.15), transparent)", animation: "shimmerSlide 2s infinite" }} />
-                  <Mail className="w-4 h-4 relative z-10" />
+                  <Plus className="w-4 h-4 relative z-10" />
                   <span className="relative z-10 text-primary-foreground">New Inbox</span>
-                </Link>
               </Button>
             </div>
           </div>
@@ -355,11 +356,9 @@ const DashboardPage = () => {
                 </div>
                 <h2 className="text-xl font-semibold text-foreground tracking-tight">No inboxes yet</h2>
                 <p className="text-muted-foreground">Create your first disposable inbox to get started.</p>
-                <Button asChild className="relative overflow-hidden group/btn">
-                  <Link to="/">
+                <Button onClick={() => setShowCreateDialog(true)} className="relative overflow-hidden group/btn">
                     <div className="absolute inset-0 gradient-bg" />
                     <span className="relative z-10 text-primary-foreground">Create Inbox</span>
-                  </Link>
                 </Button>
               </div>
             );
@@ -390,6 +389,13 @@ const DashboardPage = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Create Inbox Dialog */}
+      <CreateInboxDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreated={fetchAliases}
+      />
 
       {/* Premium Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
