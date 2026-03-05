@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
-import { TrustBadges } from "@/components/TrustBadges";
+
 import { HowItWorksSection } from "@/components/HowItWorksSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { StatsSection } from "@/components/StatsSection";
@@ -11,7 +11,7 @@ import { ComparisonBanner } from "@/components/ComparisonBanner";
 import { FAQSection } from "@/components/FAQSection";
 import { DownloadSection } from "@/components/DownloadSection";
 import { Footer } from "@/components/Footer";
-import { WelcomeOnboarding } from "@/components/WelcomeOnboarding";
+
 import { PageTransition } from "@/components/PageTransition";
 
 const MemoizedHeader = memo(Header);
@@ -28,7 +28,7 @@ const Index = () => {
       <div className="min-h-screen pt-safe">
         <MemoizedHeader />
         <HeroSection />
-        <TrustBadges />
+        
         <HowItWorksSection />
         <MemoizedFeaturesSection />
         <StatsSection />
@@ -37,7 +37,7 @@ const Index = () => {
         <FAQSection />
         {!isNativeApp && <MemoizedDownloadSection />}
         <MemoizedFooter />
-        <WelcomeOnboarding />
+        
       </div>
     </PageTransition>
   );
