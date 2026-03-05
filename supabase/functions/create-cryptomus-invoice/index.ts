@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       amount,
       currency: "USD",
       order_id: orderId,
-      url_return: returnUrl || `${SUPABASE_URL.replace('.supabase.co', '')}/dashboard`,
+      url_return: returnUrl || `${SUPABASE_URL.replace('.supabase.co', '')}/payment-success?plan=${planType === "lifetime" ? "lifetime" : "monthly"}`,
       url_callback: `${SUPABASE_URL}/functions/v1/cryptomus-webhook`,
       lifetime: 900,
       is_payment_multiple: false,

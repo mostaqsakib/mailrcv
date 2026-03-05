@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.cryptomus-webhook]
 verify_jwt = false
+
+[functions.expire-plans]
+verify_jwt = false
