@@ -25,3 +25,5 @@ project_id = "euiqflvrdraydkhwksmh"
     verify_jwt = false
   [functions.verify-domain]
     verify_jwt = false
+  [functions.test-email-templates]
+    verify_jwt = false
