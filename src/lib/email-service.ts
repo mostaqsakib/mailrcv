@@ -147,7 +147,15 @@ export async function getOrCreateAlias(username: string, domainId: string, userI
     .maybeSingle();
 
   if (existing) {
-    // If alias exists but has no user_id and we have one, update it
+    // If alias is owned by another user, deny access
+    if (existing.user_id && userId && existing.user_id !== userId) {
+      throw new Error("INBOX_OWNED_BY_OTHER_USER");
+    }
+    if (existing.user_id && !userId) {
+      // Guest trying to access a user-owned inbox
+      throw new Error("INBOX_OWNED_BY_OTHER_USER");
+    }
+    // If alias exists but has no user_id and we have one, claim it
     if (userId && !existing.user_id) {
       await supabase
         .from("email_aliases")
