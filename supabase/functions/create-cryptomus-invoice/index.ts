@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     // Create Cryptomus invoice
     const body = JSON.stringify({
       amount,
-      currency: "USD",
+      currency: "USDT",
       order_id: orderId,
       url_return: returnUrl || `${SUPABASE_URL.replace('.supabase.co', '')}/payment-success?plan=${planType === "lifetime" ? "lifetime" : "monthly"}`,
       url_callback: `${SUPABASE_URL}/functions/v1/cryptomus-webhook`,
