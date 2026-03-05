@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import type { PlanType } from "@/lib/plan-limits";
+import { useGlobalNotifications } from "@/hooks/use-global-notifications";
 
 interface UserProfile {
   id: string;
@@ -110,6 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const plan: PlanType = profile?.plan ?? 'guest';
+
+  // Global notifications for all user inboxes
+  useGlobalNotifications({
+    userId: user?.id ?? null,
+    enabled: !!user,
+  });
 
   return (
     <AuthContext.Provider value={{ user, session, profile, plan, loading, signUp, signIn, signOut, refreshProfile }}>
