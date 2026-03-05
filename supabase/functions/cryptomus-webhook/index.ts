@@ -23,7 +23,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const CRYPTOMUS_API_KEY = Deno.env.get("CRYPTOMUS_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Load Cryptomus API key from payment_gateways table
+    const { data: gateway } = await supabase
+      .from("payment_gateways")
+      .select("config")
+      .eq("gateway_type", "cryptomus")
+      .eq("is_active", true)
+      .single();
+
+    const CRYPTOMUS_API_KEY = gateway?.config?.api_key || Deno.env.get("CRYPTOMUS_API_KEY");
     if (!CRYPTOMUS_API_KEY) {
       throw new Error("Cryptomus API key not configured");
     }
@@ -43,7 +55,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const status = body.status; // paid, paid_over, wrong_amount, etc.
+    const status = body.status;
     const additionalData = body.additional_data ? JSON.parse(body.additional_data) : null;
 
     if (!additionalData?.paymentOrderId || !additionalData?.userId) {
@@ -53,10 +65,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Only process successful payments
     if (status === "paid" || status === "paid_over") {

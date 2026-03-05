@@ -23,13 +23,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const CRYPTOMUS_MERCHANT_ID = Deno.env.get("CRYPTOMUS_MERCHANT_ID");
-    const CRYPTOMUS_API_KEY = Deno.env.get("CRYPTOMUS_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Load Cryptomus credentials from payment_gateways table
+    const { data: gateway } = await supabaseAdmin
+      .from("payment_gateways")
+      .select("config")
+      .eq("gateway_type", "cryptomus")
+      .eq("is_active", true)
+      .single();
+
+    const CRYPTOMUS_MERCHANT_ID = gateway?.config?.merchant_id || Deno.env.get("CRYPTOMUS_MERCHANT_ID");
+    const CRYPTOMUS_API_KEY = gateway?.config?.api_key || Deno.env.get("CRYPTOMUS_API_KEY");
 
     if (!CRYPTOMUS_MERCHANT_ID || !CRYPTOMUS_API_KEY) {
-      throw new Error("Cryptomus credentials not configured");
+      throw new Error("Cryptomus credentials not configured. Please set them in Admin → Gateways.");
     }
 
     // Auth check
@@ -58,8 +68,6 @@ Deno.serve(async (req) => {
     const orderId = `mailrcv_${user.id}_${Date.now()}`;
 
     // Create payment order in DB
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const { data: order, error: orderError } = await supabaseAdmin
       .from("payment_orders")
       .insert({
@@ -82,7 +90,7 @@ Deno.serve(async (req) => {
       order_id: orderId,
       url_return: returnUrl || `${SUPABASE_URL.replace('.supabase.co', '')}/dashboard`,
       url_callback: `${SUPABASE_URL}/functions/v1/cryptomus-webhook`,
-      lifetime: 900, // 15 minutes
+      lifetime: 900,
       is_payment_multiple: false,
       additional_data: JSON.stringify({ paymentOrderId: order.id, userId: user.id }),
     });
