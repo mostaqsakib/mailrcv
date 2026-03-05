@@ -19,7 +19,7 @@ interface Gateway {
 
 // Binance official logo SVG
 const BinanceLogo = () => (
-  <svg viewBox="0 0 126.61 126.61" className="w-6 h-6" fill="none">
+  <svg viewBox="0 0 126.61 126.61" className="w-8 h-8" fill="none">
     <g fill="#F3BA2F">
       <path d="M38.73 53.2 63.3 28.63l24.58 24.58 14.3-14.3L63.3 0 24.42 38.9zM0 63.31l14.3-14.3 14.3 14.3-14.3 14.3zM38.73 73.41 63.3 97.98l24.58-24.58 14.31 14.29L63.3 126.61 24.42 87.72l-.01-.01zM97.99 63.31l14.3-14.3 14.32 14.3-14.31 14.3z"/>
       <path d="M77.83 63.3 63.3 48.78 52.95 59.13l-1.2 1.2-2.78 2.78-.01.01.01.01 14.33 14.33 14.53-14.53.01-.01-.01-.01z"/>
@@ -29,7 +29,9 @@ const BinanceLogo = () => (
 
 // Official Cryptomus logo
 const CryptomusLogo = () => (
-  <img src={cryptomusLogoSvg} alt="Cryptomus" className="w-6 h-6" />
+  <div className="w-8 h-8 rounded-md bg-white/90 flex items-center justify-center p-1">
+    <img src={cryptomusLogoSvg} alt="Cryptomus" className="w-6 h-6" />
+  </div>
 );
 
 const GatewayCard = ({
