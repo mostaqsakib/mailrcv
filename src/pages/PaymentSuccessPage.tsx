@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle, Crown, Sparkles, ArrowRight, Infinity, Calendar } from "lucide-react";
+import { CheckCircle, Crown, Sparkles, ArrowRight, Infinity, Calendar, XCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Confetti = () => {
@@ -62,21 +62,122 @@ const Confetti = () => {
 const PaymentSuccessPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { refreshProfile, profile } = useAuth();
-  const [showConfetti, setShowConfetti] = useState(true);
+  const { refreshProfile, profile, user } = useAuth();
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [verified, setVerified] = useState(false);
 
   const planType = searchParams.get("plan") || "monthly";
   const isLifetime = planType === "lifetime";
 
-  useEffect(() => {
-    refreshProfile();
-    const timer = setTimeout(() => setShowConfetti(false), 5000);
-    return () => clearTimeout(timer);
-  }, [refreshProfile]);
+  const verifyPayment = useCallback(async () => {
+    if (!user) return;
+    setVerifying(true);
 
+    // Check if user's plan was actually updated to 'paid'
+    await refreshProfile();
+
+    // Small delay to allow webhook to process
+    await new Promise(r => setTimeout(r, 2000));
+    await refreshProfile();
+
+    // Re-fetch profile to check plan status
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: latestProfile } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", user.id)
+      .single();
+
+    if (latestProfile?.plan === "paid") {
+      setVerified(true);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000);
+    } else {
+      // Retry once more after another delay
+      await new Promise(r => setTimeout(r, 3000));
+      const { data: retryProfile } = await supabase
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .single();
+
+      if (retryProfile?.plan === "paid") {
+        setVerified(true);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
+      } else {
+        setVerified(false);
+      }
+    }
+    setVerifying(false);
+  }, [user, refreshProfile]);
+
+  useEffect(() => {
+    verifyPayment();
+  }, [verifyPayment]);
+
+  // Verifying state
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
+        <div className="fixed inset-0 grid-dots opacity-20 pointer-events-none" />
+        <div className="relative z-10 px-4 py-8 w-full max-w-lg text-center space-y-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6"
+          >
+            <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Verifying Payment...</h1>
+            <p className="text-muted-foreground">Please wait while we confirm your payment status</p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment not verified
+  if (!verified) {
+    return (
+      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
+        <div className="fixed inset-0 grid-dots opacity-20 pointer-events-none" />
+        <div className="relative z-10 px-4 py-8 w-full max-w-lg text-center space-y-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-6"
+          >
+            <div className="mx-auto w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+              <XCircle className="w-10 h-10 text-destructive" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Payment Not Confirmed</h1>
+            <p className="text-muted-foreground">
+              Your payment hasn't been verified yet. This could mean the payment is still processing or was not completed.
+            </p>
+            <div className="space-y-3 pt-2">
+              <Button onClick={() => verifyPayment()} className="w-full h-11 rounded-xl">
+                Check Again
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/pricing")} className="w-full h-11 rounded-xl">
+                Back to Pricing
+              </Button>
+              <Button variant="ghost" onClick={() => navigate("/dashboard")} className="w-full text-muted-foreground">
+                Go to Dashboard
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment verified successfully
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
-      {/* Background effects */}
       <div className="fixed inset-0 grid-dots opacity-20 pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/8 blur-[200px] pointer-events-none" />
       <div className="fixed bottom-0 right-1/4 w-[400px] h-[300px] bg-emerald-500/8 blur-[150px] pointer-events-none" />
@@ -90,7 +191,6 @@ const PaymentSuccessPage = () => {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="text-center space-y-8"
         >
-          {/* Success icon */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -103,7 +203,6 @@ const PaymentSuccessPage = () => {
             </div>
           </motion.div>
 
-          {/* Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +217,6 @@ const PaymentSuccessPage = () => {
             </p>
           </motion.div>
 
-          {/* Plan card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -166,7 +264,6 @@ const PaymentSuccessPage = () => {
             </div>
           </motion.div>
 
-          {/* CTA buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
