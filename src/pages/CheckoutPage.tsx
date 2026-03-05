@@ -16,6 +16,25 @@ interface Gateway {
   config: Record<string, any>;
 }
 
+// Binance official logo SVG
+const BinanceLogo = () => (
+  <svg viewBox="0 0 126.61 126.61" className="w-6 h-6" fill="none">
+    <g fill="#F3BA2F">
+      <path d="M38.73 53.2 63.3 28.63l24.58 24.58 14.3-14.3L63.3 0 24.42 38.9zM0 63.31l14.3-14.3 14.3 14.3-14.3 14.3zM38.73 73.41 63.3 97.98l24.58-24.58 14.31 14.29L63.3 126.61 24.42 87.72l-.01-.01zM97.99 63.31l14.3-14.3 14.32 14.3-14.31 14.3z"/>
+      <path d="M77.83 63.3 63.3 48.78 52.95 59.13l-1.2 1.2-2.78 2.78-.01.01.01.01 14.33 14.33 14.53-14.53.01-.01-.01-.01z"/>
+    </g>
+  </svg>
+);
+
+// Cryptomus logo SVG
+const CryptomusLogo = () => (
+  <svg viewBox="0 0 32 32" className="w-6 h-6" fill="none">
+    <rect width="32" height="32" rx="8" fill="#0085FF"/>
+    <path d="M16 6C10.48 6 6 10.48 6 16s4.48 10 10 10 10-4.48 10-10S21.52 6 16 6zm0 17.5c-4.14 0-7.5-3.36-7.5-7.5S11.86 8.5 16 8.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z" fill="white"/>
+    <path d="M18.5 13.5h-3v-2h3a3.5 3.5 0 010 7h-1v2h-2v-2h-2v-2h4a1.5 1.5 0 000-3z" fill="white"/>
+  </svg>
+);
+
 const GatewayCard = ({
   icon,
   iconBg,
@@ -25,6 +44,8 @@ const GatewayCard = ({
   disabled,
   loading,
   accentColor = "primary",
+  badge,
+  footer,
 }: {
   icon: React.ReactNode;
   iconBg: string;
@@ -34,6 +55,8 @@ const GatewayCard = ({
   disabled?: boolean;
   loading?: boolean;
   accentColor?: string;
+  badge?: React.ReactNode;
+  footer?: React.ReactNode;
 }) => {
   const cardRef = useRef<HTMLButtonElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -69,15 +92,21 @@ const GatewayCard = ({
         }}
       />
 
-      <div className="relative z-10 flex items-center gap-4 p-5 text-left">
-        <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-lg`}>
-          {icon}
+      <div className="relative z-10 p-5 text-left">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-lg`}>
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-foreground">{title}</p>
+              {badge}
+            </div>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
+          </div>
+          {loading && <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground">{title}</p>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
-        </div>
-        {loading && <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />}
+        {footer && <div className="mt-3 pt-3 border-t border-border/20">{footer}</div>}
       </div>
 
       {/* Bottom shine */}
@@ -280,11 +309,22 @@ const CheckoutPage = () => {
             <div className="space-y-4">
               {binanceGateway && (
                 <GatewayCard
-                  icon={<span className="text-yellow-400 font-bold text-lg">₿</span>}
+                  icon={<BinanceLogo />}
                   iconBg="bg-gradient-to-br from-yellow-500/30 to-amber-600/20"
                   title={binanceGateway.display_name}
                   subtitle="Send USDT via Binance Pay • Manual verification"
                   accentColor="accent"
+                  badge={
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
+                      Preferred
+                    </span>
+                  }
+                  footer={
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-emerald-500 font-semibold">0% Fee — No extra charges</span>
+                      <span className="text-muted-foreground">You pay exactly {amount} {currency}</span>
+                    </div>
+                  }
                   onClick={() => {
                     setSelectedGateway("binance");
                     createBinanceOrder();
@@ -294,12 +334,18 @@ const CheckoutPage = () => {
 
               {cryptomusGateway && (
                 <GatewayCard
-                  icon={<CreditCard className="w-6 h-6 text-primary" />}
-                  iconBg="bg-gradient-to-br from-primary/30 to-primary/10"
+                  icon={<CryptomusLogo />}
+                  iconBg="bg-gradient-to-br from-blue-500/30 to-blue-600/20"
                   title={cryptomusGateway.display_name}
                   subtitle="Pay with any cryptocurrency • Auto verification"
                   loading={cryptomusLoading}
                   disabled={cryptomusLoading}
+                  footer={
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">2% processing fee applies</span>
+                      <span className="text-muted-foreground">~${(parseFloat(amount) * 1.02).toFixed(2)} total</span>
+                    </div>
+                  }
                   onClick={() => {
                     setSelectedGateway("cryptomus");
                     handleCryptomus();
