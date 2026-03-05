@@ -36,7 +36,7 @@ const Index = () => {
         <MemoizedComparisonBanner />
         <FAQSection />
         {!isNativeApp && <MemoizedDownloadSection />}
-        <MemoizedFooter />
+        <MemoizedFooter showTelegram />
         
       </div>
     </PageTransition>
