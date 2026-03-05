@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,35 +31,54 @@ const FloatingParticle = ({ delay, size, x, y, duration }: { delay: number; size
   />
 );
 
-// Animated typing text
-const TypingText = ({ texts }: { texts: string[] }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+// Animated typing text - optimized with refs to avoid re-render lag
+const TypingText = memo(({ texts }: { texts: string[] }) => {
   const [displayText, setDisplayText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  const stateRef = useRef({ currentIndex: 0, isDeleting: false, isPaused: false });
+  const rafRef = useRef<number>(0);
+  const lastTickRef = useRef(0);
 
   useEffect(() => {
-    const currentFullText = texts[currentIndex];
-    const speed = isDeleting ? 40 : 70;
+    const tick = (timestamp: number) => {
+      const state = stateRef.current;
+      const currentFullText = texts[state.currentIndex];
+      const speed = state.isDeleting ? 35 : 65;
 
-    if (!isDeleting && displayText === currentFullText) {
-      const timer = setTimeout(() => setIsDeleting(true), 2000);
-      return () => clearTimeout(timer);
-    }
-    if (isDeleting && displayText === "") {
-      setIsDeleting(false);
-      setCurrentIndex((prev) => (prev + 1) % texts.length);
-      return;
-    }
+      if (timestamp - lastTickRef.current < speed) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      lastTickRef.current = timestamp;
 
-    const timer = setTimeout(() => {
-      setDisplayText(
-        isDeleting
-          ? currentFullText.substring(0, displayText.length - 1)
-          : currentFullText.substring(0, displayText.length + 1)
-      );
-    }, speed);
-    return () => clearTimeout(timer);
-  }, [displayText, isDeleting, currentIndex, texts]);
+      setDisplayText(prev => {
+        if (state.isPaused) return prev;
+
+        if (!state.isDeleting && prev === currentFullText) {
+          state.isPaused = true;
+          setTimeout(() => {
+            state.isPaused = false;
+            state.isDeleting = true;
+          }, 2000);
+          return prev;
+        }
+
+        if (state.isDeleting && prev === "") {
+          state.isDeleting = false;
+          state.currentIndex = (state.currentIndex + 1) % texts.length;
+          return prev;
+        }
+
+        return state.isDeleting
+          ? currentFullText.substring(0, prev.length - 1)
+          : currentFullText.substring(0, prev.length + 1);
+      });
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [texts]);
 
   return (
     <span className="gradient-text">
@@ -67,7 +86,8 @@ const TypingText = ({ texts }: { texts: string[] }) => {
       <span className="animate-pulse text-primary">|</span>
     </span>
   );
-};
+});
+TypingText.displayName = "TypingText";
 
 export const HeroSection = () => {
   const [username, setUsername] = useState("");
