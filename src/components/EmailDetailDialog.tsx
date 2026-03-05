@@ -1,5 +1,5 @@
 import { cleanSenderEmail } from "@/lib/clean-sender";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -275,6 +275,9 @@ const EmailDetailDialog = ({ email, open, onOpenChange, onDelete }: EmailDetailD
               <DialogTitle className="text-lg font-semibold mb-2 leading-tight">
                 {email.subject || "(No subject)"}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Email from {cleanSenderEmail(email.from_email)}
+              </DialogDescription>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-primary/60" />
