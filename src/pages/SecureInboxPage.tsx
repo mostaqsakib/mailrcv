@@ -252,37 +252,36 @@ export default function SecureInboxPage() {
                 <Label htmlFor="password">
                   {mode === 'register' ? 'Create Password' : 'Password'}
                 </Label>
-                <div className="relative">
+                <div className="flex items-center bg-background/60 dark:bg-background/40 rounded-xl px-4 py-3 gap-4 border border-border/50 dark:border-primary/15 focus-within:border-primary/50 transition-all duration-300 focus-within:shadow-[0_0_25px_-5px] focus-within:shadow-primary/20">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400/15 to-teal-500/15 flex items-center justify-center shrink-0">
+                    <Lock className="w-4 h-4 text-emerald-400" />
+                  </div>
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={mode === 'register' ? 'Minimum 6 characters' : 'Enter your password'}
-                    className="pr-20"
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-0 px-1 h-auto py-1 text-foreground placeholder:text-muted-foreground/40"
                     autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <Button
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
                       onClick={() => setShowPassword(!showPassword)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                     {mode === 'register' && (
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
                         onClick={handleGeneratePassword}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                         title="Generate random password"
                       >
-                        <Shuffle className="w-4 h-4" />
-                      </Button>
+                        <Shuffle className="w-5 h-5" />
+                      </button>
                     )}
                   </div>
                 </div>
