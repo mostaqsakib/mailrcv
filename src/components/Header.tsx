@@ -93,7 +93,7 @@ export const Header = () => {
             <div className="w-9 h-9 rounded-full gradient-bg flex items-center justify-center shrink-0">
               <User className="w-4 h-4 text-primary-foreground" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 mr-2">
               <p className="text-sm font-medium truncate">{profile?.display_name || user.email?.split('@')[0]}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
