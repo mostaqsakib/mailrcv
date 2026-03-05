@@ -1,34 +1,27 @@
 project_id = "euiqflvrdraydkhwksmh"
 
-[functions.receive-email]
-verify_jwt = false
-
-[functions.send-push-notification]
-verify_jwt = false
-
-[functions.register-push-token]
-verify_jwt = false
-
-[functions.inbox-auth]
-verify_jwt = false
-
-[functions.verify-domain]
-verify_jwt = false
-
-[functions.download-apk]
-verify_jwt = false
-
-[functions.cleanup-emails]
-verify_jwt = false
-
-[functions.verify-binance-payment]
-verify_jwt = false
-
-[functions.create-cryptomus-invoice]
-verify_jwt = false
-
-[functions.cryptomus-webhook]
-verify_jwt = false
-
-[functions.expire-plans]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.cleanup-emails]
+    verify_jwt = false
+  [functions.create-cryptomus-invoice]
+    verify_jwt = false
+  [functions.cryptomus-webhook]
+    verify_jwt = false
+  [functions.download-apk]
+    verify_jwt = false
+  [functions.expire-plans]
+    verify_jwt = false
+  [functions.inbox-auth]
+    verify_jwt = false
+  [functions.receive-email]
+    verify_jwt = false
+  [functions.register-push-token]
+    verify_jwt = false
+  [functions.send-push-notification]
+    verify_jwt = false
+  [functions.verify-binance-payment]
+    verify_jwt = false
+  [functions.verify-domain]
+    verify_jwt = false
