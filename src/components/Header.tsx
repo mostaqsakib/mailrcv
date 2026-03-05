@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, forwardRef } from "react";
 import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Sparkles, Menu, X, CreditCard, Download, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -22,21 +22,25 @@ import {
   SheetClose,
 } from "./ui/sheet";
 
-const NavItem = ({ to, children, active }: { to: string; children: React.ReactNode; active?: boolean }) => (
-  <Link
-    to={to}
-    className={`relative text-sm font-medium transition-colors duration-300 px-3 py-1.5 rounded-lg ${
-      active
-        ? "text-foreground bg-primary/10"
-        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-    }`}
-  >
-    {children}
-    {active && (
-      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
-    )}
-  </Link>
+const NavItem = forwardRef<HTMLAnchorElement, { to: string; children: React.ReactNode; active?: boolean }>(
+  ({ to, children, active }, ref) => (
+    <Link
+      ref={ref}
+      to={to}
+      className={`relative text-sm font-medium transition-colors duration-300 px-3 py-1.5 rounded-lg ${
+        active
+          ? "text-foreground bg-primary/10"
+          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+      }`}
+    >
+      {children}
+      {active && (
+        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
+      )}
+    </Link>
+  )
 );
+NavItem.displayName = "NavItem";
 
 export const Header = () => {
   const { user, profile, plan, signOut, loading } = useAuth();
