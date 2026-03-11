@@ -53,7 +53,7 @@ export const CreateInboxDialog = ({ open, onOpenChange, onCreated }: CreateInbox
 
   const { domains } = useDomains();
   const navigate = useNavigate();
-  const { plan } = useAuth();
+  const { plan, user } = useAuth();
   const canUsePassword = canUsePasswordProtection(plan);
 
   const resetForm = useCallback(() => {
