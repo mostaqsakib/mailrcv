@@ -25,7 +25,7 @@ export interface EmailAlias {
 export function generateShareToken(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   let token = '';
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 8; i++) {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return token;
