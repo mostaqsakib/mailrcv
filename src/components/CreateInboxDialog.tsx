@@ -145,20 +145,37 @@ export const CreateInboxDialog = ({ open, onOpenChange, onCreated }: CreateInbox
   };
 
   // --- Bulk mode handlers ---
-  const handleBulkGenerate = useCallback(() => {
+  const handleBulkGenerate = useCallback(async () => {
     const count = Math.min(Math.max(parseInt(quantity) || 1, 1), 500);
     const usedNames = new Set<string>();
     const results: GeneratedEmail[] = [];
-    while (results.length < count) {
+    const names: string[] = [];
+    while (names.length < count) {
       const name = generateRandomName();
       if (usedNames.has(name)) continue;
       usedNames.add(name);
-      const param = bulkDomain !== DEFAULT_DOMAINS[0] ? `${name}@${bulkDomain}` : name;
-      results.push({ email: `${name}@${bulkDomain}`, link: `${SITE_URL}/inbox/${param}` });
+      names.push(name);
     }
+
+    // Create aliases in DB with tokens
+    const domain = await getOrCreateDomainByName(bulkDomain);
+    if (!domain) {
+      toast.error("Failed to get domain");
+      return;
+    }
+
+    for (const name of names) {
+      const alias = await getOrCreateAlias(name, domain.id, user?.id);
+      const token = alias?.share_token;
+      const param = bulkDomain !== DEFAULT_DOMAINS[0] ? `${name}@${bulkDomain}` : name;
+      let link = `${SITE_URL}/inbox/${param}`;
+      if (token) link += `?token=${token}`;
+      results.push({ email: `${name}@${bulkDomain}`, link });
+    }
+
     setGenerated(results);
     toast.success(`${count} email addresses generated!`);
-  }, [quantity, bulkDomain]);
+  }, [quantity, bulkDomain, user?.id]);
 
   const handleCopyAll = async () => {
     await navigator.clipboard.writeText(generated.map((e) => `${e.email}\t${e.link}`).join("\n"));
