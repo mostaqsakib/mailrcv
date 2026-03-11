@@ -250,6 +250,11 @@ export const Header = () => {
                           <Settings className="w-4 h-4" /> Profile
                         </Link>
                       </DropdownMenuItem>
+                      {plan === 'paid' && (
+                        <DropdownMenuItem onClick={() => setShowBulkDialog(true)} className="gap-2 cursor-pointer rounded-lg">
+                          <Layers className="w-4 h-4" /> Bulk Generate
+                        </DropdownMenuItem>
+                      )}
                       {plan !== 'paid' && (
                         <DropdownMenuItem asChild className="rounded-lg">
                           <Link to="/pricing" className="gap-2 cursor-pointer">
