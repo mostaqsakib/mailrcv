@@ -375,7 +375,7 @@ const InboxPage = () => {
       setLoading(false);
       setEmailsLoading(false);
     }
-  }, [username, domainName, user, plan]);
+  }, [username, domainName, user, plan, searchParams]);
 
   useEffect(() => {
     const checkAuthAndInit = async () => {
