@@ -572,10 +572,14 @@ const InboxPage = () => {
   }, [username, domainName]);
 
   const copyInboxUrl = useCallback(async () => {
-    const cleanUrl = `https://mailrcv.site/inbox/${urlUsername}`;
+    let cleanUrl = `https://mailrcv.site/inbox/${urlUsername}`;
+    // Include share token if this is a user-owned inbox
+    if (alias?.share_token) {
+      cleanUrl += `?token=${alias.share_token}`;
+    }
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
-  }, [urlUsername]);
+  }, [urlUsername, alias?.share_token]);
 
   const copyPassword = useCallback(async () => {
     if (savedPassword) {

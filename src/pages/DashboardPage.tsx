@@ -48,6 +48,7 @@ interface UserAlias {
   domain_name?: string;
   forward_to_email: string | null;
   last_email_at?: string | null;
+  share_token?: string | null;
 }
 
 // Format relative time
