@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2, Crown, Sparkles } from "lucide-react";
+import { Mail, ArrowRight, Shuffle, Copy, Check, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Wand2, Crown, Sparkles, Layers } from "lucide-react";
+import { CreateInboxDialog } from "@/components/CreateInboxDialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useDomains } from "@/hooks/use-domains";
@@ -102,6 +103,7 @@ export const HeroSection = () => {
   const navigate = useNavigate();
   const { plan, user } = useAuth();
   const canUsePassword = canUsePasswordProtection(plan);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
 
   // Track mouse for spotlight effect
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -423,6 +425,16 @@ export const HeroSection = () => {
 
           {/* Bottom hints */}
           <div className="mt-5 flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: "0.5s" }}>
+            {plan === "paid" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBulkDialog(true)}
+                className="gap-2 mb-1 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300"
+              >
+                <Layers className="w-4 h-4 text-primary" /> Bulk Generate
+              </Button>
+            )}
             <p className="text-xs sm:text-sm text-muted-foreground/50">
               💡 Click the <Shuffle className="inline w-3.5 h-3.5 mx-0.5" /> button for a random name
             </p>
@@ -432,6 +444,13 @@ export const HeroSection = () => {
               </p>
             )}
           </div>
+
+          {/* Bulk Generate Dialog */}
+          <CreateInboxDialog
+            open={showBulkDialog}
+            onOpenChange={setShowBulkDialog}
+            defaultBulkMode
+          />
 
         </div>
       </div>

@@ -31,7 +31,6 @@ import {
   Copy,
   Check,
   Plus,
-  Layers,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -198,7 +197,6 @@ const DashboardPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserAlias | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showBulkDialog, setShowBulkDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -303,11 +301,6 @@ const DashboardPage = () => {
               <Button variant="outline" size="sm" onClick={fetchAliases} className="gap-2">
                 <RefreshCw className="w-4 h-4" /> Refresh
               </Button>
-              {plan === "paid" && (
-                <Button variant="outline" size="sm" onClick={() => setShowBulkDialog(true)} className="gap-2">
-                  <Layers className="w-4 h-4" /> Bulk Generate
-                </Button>
-              )}
               <Button size="sm" onClick={() => setShowCreateDialog(true)} className="relative gap-2 overflow-hidden group/btn">
                   <div className="absolute inset-0 gradient-bg" />
                   <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.15), transparent)", animation: "shimmerSlide 2s infinite" }} />
@@ -436,13 +429,6 @@ const DashboardPage = () => {
         onCreated={fetchAliases}
       />
 
-      {/* Bulk Generate Dialog (reuses CreateInboxDialog in bulk mode) */}
-      <CreateInboxDialog
-        open={showBulkDialog}
-        onOpenChange={setShowBulkDialog}
-        onCreated={fetchAliases}
-        defaultBulkMode
-      />
 
       {/* Premium Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
