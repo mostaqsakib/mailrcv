@@ -169,11 +169,12 @@ export async function getOrCreateAlias(username: string, domainId: string, userI
     }
     // If alias exists but has no user_id and we have one, claim it
     if (userId && !existing.user_id) {
+      const token = generateShareToken();
       await supabase
         .from("email_aliases")
-        .update({ user_id: userId })
+        .update({ user_id: userId, share_token: token })
         .eq("id", existing.id);
-      return { ...existing, user_id: userId } as EmailAlias;
+      return { ...existing, user_id: userId, share_token: token } as EmailAlias;
     }
     return existing as EmailAlias;
   }
