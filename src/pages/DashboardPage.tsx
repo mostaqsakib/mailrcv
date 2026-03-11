@@ -198,7 +198,6 @@ const DashboardPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserAlias | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showBulkDialog, setShowBulkDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
