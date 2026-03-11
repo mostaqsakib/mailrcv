@@ -152,6 +152,7 @@ export type Database = {
           is_active: boolean
           is_password_protected: boolean
           password_hash: string | null
+          share_token: string | null
           updated_at: string
           user_id: string | null
           username: string
@@ -165,6 +166,7 @@ export type Database = {
           is_active?: boolean
           is_password_protected?: boolean
           password_hash?: string | null
+          share_token?: string | null
           updated_at?: string
           user_id?: string | null
           username: string
@@ -178,6 +180,7 @@ export type Database = {
           is_active?: boolean
           is_password_protected?: boolean
           password_hash?: string | null
+          share_token?: string | null
           updated_at?: string
           user_id?: string | null
           username?: string

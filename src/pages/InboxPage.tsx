@@ -280,23 +280,36 @@ const InboxPage = () => {
 
     if (aliasRes.data) {
       const aliasData = aliasRes.data;
-      // Check ownership: if alias belongs to another user, deny access
-      if (aliasData.user_id && user?.id && aliasData.user_id !== user.id) {
-        toast.error("This inbox is private and belongs to another user.");
-        navigate("/");
+      const isOwner = aliasData.user_id && user?.id && aliasData.user_id === user.id;
+      
+      // Token-based access: if alias has share_token and visitor is not owner, check URL token
+      if (aliasData.share_token && !isOwner) {
+        const urlToken = searchParams.get('token');
+        if (!urlToken || urlToken !== aliasData.share_token) {
+          toast.error("Invalid or missing access token for this inbox.");
+          navigate("/");
+          return;
+        }
+      }
+      
+      // Check ownership: if alias belongs to another user and no valid token
+      if (aliasData.user_id && !isOwner && !aliasData.share_token) {
+        if (user?.id) {
+          toast.error("This inbox is private and belongs to another user.");
+          navigate("/");
+        } else {
+          toast.error("This inbox is private. Please sign in to access it.");
+          navigate("/auth");
+        }
         return;
       }
-      if (aliasData.user_id && !user) {
-        toast.error("This inbox is private. Please sign in to access it.");
-        navigate("/auth");
-        return;
-      }
+      
       setAlias(aliasData as EmailAlias);
       setForwardEmail(aliasData.forward_to_email || "");
     }
     setEmails(emailsData);
     setEmailsLoading(false);
-  }, [user, navigate]);
+  }, [user, navigate, searchParams]);
 
   // Fallback: full initialization when alias_id is not available (new inbox)
   const initializeInbox = useCallback(async () => {
@@ -332,7 +345,8 @@ const InboxPage = () => {
         return;
       }
 
-      const aliasData = await getOrCreateAlias(username!, domain.id, user?.id);
+      const urlToken = searchParams.get('token') || undefined;
+      const aliasData = await getOrCreateAlias(username!, domain.id, user?.id, urlToken);
       if (!aliasData) {
         toast.error("Failed to create inbox");
         return;
@@ -361,7 +375,7 @@ const InboxPage = () => {
       setLoading(false);
       setEmailsLoading(false);
     }
-  }, [username, domainName, user, plan]);
+  }, [username, domainName, user, plan, searchParams]);
 
   useEffect(() => {
     const checkAuthAndInit = async () => {
@@ -559,10 +573,14 @@ const InboxPage = () => {
   }, [username, domainName]);
 
   const copyInboxUrl = useCallback(async () => {
-    const cleanUrl = `https://mailrcv.site/inbox/${urlUsername}`;
+    let cleanUrl = `https://mailrcv.site/inbox/${urlUsername}`;
+    // Include share token if this is a user-owned inbox
+    if (alias?.share_token) {
+      cleanUrl += `?token=${alias.share_token}`;
+    }
     await navigator.clipboard.writeText(cleanUrl);
     toast.success("Inbox URL copied!");
-  }, [urlUsername]);
+  }, [urlUsername, alias?.share_token]);
 
   const copyPassword = useCallback(async () => {
     if (savedPassword) {

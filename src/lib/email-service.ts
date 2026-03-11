@@ -17,6 +17,18 @@ export interface EmailAlias {
   is_active: boolean;
   email_count: number;
   created_at: string;
+  share_token?: string | null;
+  user_id?: string | null;
+}
+
+// Generate a random share token
+export function generateShareToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let token = '';
+  for (let i = 0; i < 16; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
 }
 
 export interface ReceivedEmail {
@@ -137,7 +149,7 @@ export async function addDomain(domainName: string): Promise<Domain | null> {
   return data as Domain;
 }
 
-export async function getOrCreateAlias(username: string, domainId: string, userId?: string): Promise<EmailAlias | null> {
+export async function getOrCreateAlias(username: string, domainId: string, userId?: string, shareToken?: string): Promise<EmailAlias | null> {
   // Check if alias exists
   const { data: existing } = await supabase
     .from("email_aliases")
@@ -147,32 +159,41 @@ export async function getOrCreateAlias(username: string, domainId: string, userI
     .maybeSingle();
 
   if (existing) {
-    // If alias is owned by another user, deny access
+    // If alias is owned by another user, check token access
     if (existing.user_id && userId && existing.user_id !== userId) {
+      // Allow if valid share token provided
+      if (existing.share_token && shareToken === existing.share_token) {
+        return existing as EmailAlias;
+      }
       throw new Error("INBOX_OWNED_BY_OTHER_USER");
     }
     if (existing.user_id && !userId) {
-      // Guest trying to access a user-owned inbox
+      // Guest: allow if valid share token provided
+      if (existing.share_token && shareToken === existing.share_token) {
+        return existing as EmailAlias;
+      }
       throw new Error("INBOX_OWNED_BY_OTHER_USER");
     }
     // If alias exists but has no user_id and we have one, claim it
     if (userId && !existing.user_id) {
+      const token = generateShareToken();
       await supabase
         .from("email_aliases")
-        .update({ user_id: userId })
+        .update({ user_id: userId, share_token: token })
         .eq("id", existing.id);
-      return { ...existing, user_id: userId } as EmailAlias;
+      return { ...existing, user_id: userId, share_token: token } as EmailAlias;
     }
     return existing as EmailAlias;
   }
 
-  // Create new alias with optional user_id
-  const insertData: { username: string; domain_id: string; user_id?: string } = { 
+  // Create new alias with optional user_id and share_token
+  const insertData: { username: string; domain_id: string; user_id?: string; share_token?: string } = { 
     username: username.toLowerCase(), 
     domain_id: domainId 
   };
   if (userId) {
     insertData.user_id = userId;
+    insertData.share_token = generateShareToken();
   }
 
   const { data: created, error } = await supabase
