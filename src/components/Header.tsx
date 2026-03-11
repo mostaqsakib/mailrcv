@@ -49,6 +49,7 @@ export const Header = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
 
