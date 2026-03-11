@@ -179,13 +179,14 @@ export async function getOrCreateAlias(username: string, domainId: string, userI
     return existing as EmailAlias;
   }
 
-  // Create new alias with optional user_id
-  const insertData: { username: string; domain_id: string; user_id?: string } = { 
+  // Create new alias with optional user_id and share_token
+  const insertData: { username: string; domain_id: string; user_id?: string; share_token?: string } = { 
     username: username.toLowerCase(), 
     domain_id: domainId 
   };
   if (userId) {
     insertData.user_id = userId;
+    insertData.share_token = generateShareToken();
   }
 
   const { data: created, error } = await supabase
