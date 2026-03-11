@@ -314,5 +314,11 @@ export const Header = () => {
         </nav>
       </div>
     </header>
+    <CreateInboxDialog
+      open={showBulkDialog}
+      onOpenChange={setShowBulkDialog}
+      defaultBulkMode
+    />
+    </>
   );
 };
