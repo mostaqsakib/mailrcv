@@ -64,7 +64,8 @@ export const CreateInboxDialog = ({ open, onOpenChange, onCreated, defaultBulkMo
     setShowPasswordField(false);
     setCopied(false);
     setGenerated([]);
-  }, []);
+    setMode(defaultBulkMode ? "bulk" : "single");
+  }, [defaultBulkMode]);
 
   // --- Single mode handlers ---
   const handleSubmit = async (e: React.FormEvent) => {
