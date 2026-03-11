@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { getOrCreateDomainByName, getOrCreateAlias, generateShareToken } from "@/lib/email-service";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
