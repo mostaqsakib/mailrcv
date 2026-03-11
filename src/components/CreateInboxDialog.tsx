@@ -34,8 +34,8 @@ interface GeneratedEmail {
   link: string;
 }
 
-export const CreateInboxDialog = ({ open, onOpenChange, onCreated }: CreateInboxDialogProps) => {
-  const [mode, setMode] = useState<"single" | "bulk">("single");
+export const CreateInboxDialog = ({ open, onOpenChange, onCreated, defaultBulkMode }: CreateInboxDialogProps) => {
+  const [mode, setMode] = useState<"single" | "bulk">(defaultBulkMode ? "bulk" : "single");
 
   // Single mode state
   const [username, setUsername] = useState("");
