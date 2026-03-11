@@ -170,6 +170,7 @@ export const Header = () => {
   );
 
   return (
+    <>
     <header className="absolute top-0 left-0 right-0 z-50 pt-safe">
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
         <nav
