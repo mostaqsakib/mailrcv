@@ -299,10 +299,15 @@ const DashboardPage = () => {
                 {aliases.length} inbox{aliases.length !== 1 ? "es" : ""} • {limits.label} Plan
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={fetchAliases} className="gap-2">
                 <RefreshCw className="w-4 h-4" /> Refresh
               </Button>
+              {plan === "paid" && (
+                <Button variant="outline" size="sm" onClick={() => setShowBulkDialog(true)} className="gap-2">
+                  <Layers className="w-4 h-4" /> Bulk Generate
+                </Button>
+              )}
               <Button size="sm" onClick={() => setShowCreateDialog(true)} className="relative gap-2 overflow-hidden group/btn">
                   <div className="absolute inset-0 gradient-bg" />
                   <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.15), transparent)", animation: "shimmerSlide 2s infinite" }} />
