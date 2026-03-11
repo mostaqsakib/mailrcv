@@ -345,7 +345,8 @@ const InboxPage = () => {
         return;
       }
 
-      const aliasData = await getOrCreateAlias(username!, domain.id, user?.id);
+      const urlToken = searchParams.get('token') || undefined;
+      const aliasData = await getOrCreateAlias(username!, domain.id, user?.id, urlToken);
       if (!aliasData) {
         toast.error("Failed to create inbox");
         return;
