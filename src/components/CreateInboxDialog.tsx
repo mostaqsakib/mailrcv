@@ -26,6 +26,7 @@ interface CreateInboxDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  defaultBulkMode?: boolean;
 }
 
 interface GeneratedEmail {
