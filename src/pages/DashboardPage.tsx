@@ -266,7 +266,8 @@ const DashboardPage = () => {
   const getInboxUrl = (alias: UserAlias) => {
     const domain = alias.domain_name || "mailrcv.site";
     if (alias.is_password_protected) return `/secure/${alias.username}@${domain}`;
-    return domain === "mailrcv.site" ? `/inbox/${alias.username}` : `/inbox/${alias.username}@${domain}`;
+    const basePath = domain === "mailrcv.site" ? `/inbox/${alias.username}` : `/inbox/${alias.username}@${domain}`;
+    return alias.share_token ? `${basePath}?token=${alias.share_token}` : basePath;
   };
 
   const limits = PLAN_LIMITS[plan];
