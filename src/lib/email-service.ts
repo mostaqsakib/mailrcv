@@ -149,7 +149,7 @@ export async function addDomain(domainName: string): Promise<Domain | null> {
   return data as Domain;
 }
 
-export async function getOrCreateAlias(username: string, domainId: string, userId?: string): Promise<EmailAlias | null> {
+export async function getOrCreateAlias(username: string, domainId: string, userId?: string, shareToken?: string): Promise<EmailAlias | null> {
   // Check if alias exists
   const { data: existing } = await supabase
     .from("email_aliases")
@@ -159,12 +159,19 @@ export async function getOrCreateAlias(username: string, domainId: string, userI
     .maybeSingle();
 
   if (existing) {
-    // If alias is owned by another user, deny access
+    // If alias is owned by another user, check token access
     if (existing.user_id && userId && existing.user_id !== userId) {
+      // Allow if valid share token provided
+      if (existing.share_token && shareToken === existing.share_token) {
+        return existing as EmailAlias;
+      }
       throw new Error("INBOX_OWNED_BY_OTHER_USER");
     }
     if (existing.user_id && !userId) {
-      // Guest trying to access a user-owned inbox
+      // Guest: allow if valid share token provided
+      if (existing.share_token && shareToken === existing.share_token) {
+        return existing as EmailAlias;
+      }
       throw new Error("INBOX_OWNED_BY_OTHER_USER");
     }
     // If alias exists but has no user_id and we have one, claim it
