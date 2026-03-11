@@ -280,23 +280,36 @@ const InboxPage = () => {
 
     if (aliasRes.data) {
       const aliasData = aliasRes.data;
-      // Check ownership: if alias belongs to another user, deny access
-      if (aliasData.user_id && user?.id && aliasData.user_id !== user.id) {
-        toast.error("This inbox is private and belongs to another user.");
-        navigate("/");
+      const isOwner = aliasData.user_id && user?.id && aliasData.user_id === user.id;
+      
+      // Token-based access: if alias has share_token and visitor is not owner, check URL token
+      if (aliasData.share_token && !isOwner) {
+        const urlToken = searchParams.get('token');
+        if (!urlToken || urlToken !== aliasData.share_token) {
+          toast.error("Invalid or missing access token for this inbox.");
+          navigate("/");
+          return;
+        }
+      }
+      
+      // Check ownership: if alias belongs to another user and no valid token
+      if (aliasData.user_id && !isOwner && !aliasData.share_token) {
+        if (user?.id) {
+          toast.error("This inbox is private and belongs to another user.");
+          navigate("/");
+        } else {
+          toast.error("This inbox is private. Please sign in to access it.");
+          navigate("/auth");
+        }
         return;
       }
-      if (aliasData.user_id && !user) {
-        toast.error("This inbox is private. Please sign in to access it.");
-        navigate("/auth");
-        return;
-      }
+      
       setAlias(aliasData as EmailAlias);
       setForwardEmail(aliasData.forward_to_email || "");
     }
     setEmails(emailsData);
     setEmailsLoading(false);
-  }, [user, navigate]);
+  }, [user, navigate, searchParams]);
 
   // Fallback: full initialization when alias_id is not available (new inbox)
   const initializeInbox = useCallback(async () => {
