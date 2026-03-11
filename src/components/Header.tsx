@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, forwardRef } from "react";
-import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Menu, X, CreditCard, Download, Settings } from "lucide-react";
+import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Menu, X, CreditCard, Download, Settings, Layers } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { CreateInboxDialog } from "@/components/CreateInboxDialog";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,6 +49,7 @@ export const Header = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
 
@@ -76,7 +78,14 @@ export const Header = () => {
               Profile
             </Link>
           </SheetClose>
-
+          {plan === 'paid' && (
+            <SheetClose asChild>
+              <button onClick={() => setShowBulkDialog(true)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full text-left">
+                <Layers className="w-4 h-4" />
+                Bulk Generate
+              </button>
+            </SheetClose>
+          )}
 
           <div className="h-px bg-border/40 my-2 mx-4" />
 
@@ -161,6 +170,7 @@ export const Header = () => {
   );
 
   return (
+    <>
     <header className="absolute top-0 left-0 right-0 z-50 pt-safe">
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
         <nav
@@ -248,6 +258,11 @@ export const Header = () => {
                           <Settings className="w-4 h-4" /> Profile
                         </Link>
                       </DropdownMenuItem>
+                      {plan === 'paid' && (
+                        <DropdownMenuItem onClick={() => setShowBulkDialog(true)} className="gap-2 cursor-pointer rounded-lg">
+                          <Layers className="w-4 h-4" /> Bulk Generate
+                        </DropdownMenuItem>
+                      )}
                       {plan !== 'paid' && (
                         <DropdownMenuItem asChild className="rounded-lg">
                           <Link to="/pricing" className="gap-2 cursor-pointer">
@@ -300,5 +315,11 @@ export const Header = () => {
         </nav>
       </div>
     </header>
+    <CreateInboxDialog
+      open={showBulkDialog}
+      onOpenChange={setShowBulkDialog}
+      defaultBulkMode
+    />
+    </>
   );
 };
