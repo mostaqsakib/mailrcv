@@ -78,7 +78,14 @@ export const Header = () => {
               Profile
             </Link>
           </SheetClose>
-
+          {plan === 'paid' && (
+            <SheetClose asChild>
+              <button onClick={() => setShowBulkDialog(true)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full text-left">
+                <Layers className="w-4 h-4" />
+                Bulk Generate
+              </button>
+            </SheetClose>
+          )}
 
           <div className="h-px bg-border/40 my-2 mx-4" />
 
