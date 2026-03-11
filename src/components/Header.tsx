@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, forwardRef } from "react";
-import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Menu, X, CreditCard, Download, Settings } from "lucide-react";
+import { Mail, User, LogOut, Crown, ChevronDown, LayoutDashboard, Menu, X, CreditCard, Download, Settings, Layers } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { CreateInboxDialog } from "@/components/CreateInboxDialog";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
