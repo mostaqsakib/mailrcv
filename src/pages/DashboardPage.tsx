@@ -430,13 +430,6 @@ const DashboardPage = () => {
         onCreated={fetchAliases}
       />
 
-      {/* Bulk Generate Dialog (reuses CreateInboxDialog in bulk mode) */}
-      <CreateInboxDialog
-        open={showBulkDialog}
-        onOpenChange={setShowBulkDialog}
-        onCreated={fetchAliases}
-        defaultBulkMode
-      />
 
       {/* Premium Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
