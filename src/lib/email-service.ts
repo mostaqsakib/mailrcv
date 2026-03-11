@@ -17,6 +17,18 @@ export interface EmailAlias {
   is_active: boolean;
   email_count: number;
   created_at: string;
+  share_token?: string | null;
+  user_id?: string | null;
+}
+
+// Generate a random share token
+export function generateShareToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let token = '';
+  for (let i = 0; i < 16; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
 }
 
 export interface ReceivedEmail {
