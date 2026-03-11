@@ -26,6 +26,7 @@ interface CreateInboxDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  defaultBulkMode?: boolean;
 }
 
 interface GeneratedEmail {
@@ -33,8 +34,8 @@ interface GeneratedEmail {
   link: string;
 }
 
-export const CreateInboxDialog = ({ open, onOpenChange, onCreated }: CreateInboxDialogProps) => {
-  const [mode, setMode] = useState<"single" | "bulk">("single");
+export const CreateInboxDialog = ({ open, onOpenChange, onCreated, defaultBulkMode }: CreateInboxDialogProps) => {
+  const [mode, setMode] = useState<"single" | "bulk">(defaultBulkMode ? "bulk" : "single");
 
   // Single mode state
   const [username, setUsername] = useState("");
@@ -63,7 +64,8 @@ export const CreateInboxDialog = ({ open, onOpenChange, onCreated }: CreateInbox
     setShowPasswordField(false);
     setCopied(false);
     setGenerated([]);
-  }, []);
+    setMode(defaultBulkMode ? "bulk" : "single");
+  }, [defaultBulkMode]);
 
   // --- Single mode handlers ---
   const handleSubmit = async (e: React.FormEvent) => {
