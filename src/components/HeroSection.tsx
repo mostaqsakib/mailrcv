@@ -103,6 +103,7 @@ export const HeroSection = () => {
   const navigate = useNavigate();
   const { plan, user } = useAuth();
   const canUsePassword = canUsePasswordProtection(plan);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
 
   // Track mouse for spotlight effect
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
