@@ -29,24 +29,24 @@ export const SignupEmail = ({
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Verify your email for Mail RCV</Preview>
+    <Preview>Confirm your email for Mail RCV</Preview>
     <Body style={main}>
       <Container style={container}>
         <Text style={brand}>✉️ Mail RCV</Text>
-        <Heading style={h1}>Welcome aboard!</Heading>
+        <Heading style={h1}>Confirm your email</Heading>
         <Text style={text}>
           Thanks for signing up for{' '}
           <Link href={siteUrl} style={link}>
             <strong>Mail RCV</strong>
           </Link>
-          ! Your disposable inbox awaits.
+          !
         </Text>
         <Text style={text}>
-          Please verify your email (
+          Please confirm your email address (
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) to get started:
+          ) by clicking the button below:
         </Text>
         <Button style={button} href={confirmationUrl}>
           Verify Email

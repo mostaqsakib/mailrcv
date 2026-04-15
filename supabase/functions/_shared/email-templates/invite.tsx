@@ -37,13 +37,15 @@ export const InviteEmail = ({
           <Link href={siteUrl} style={link}>
             <strong>Mail RCV</strong>
           </Link>
-          . Click the button below to accept the invitation and create your account.
+          . Click the button below to accept the invitation and create your
+          account.
         </Text>
         <Button style={button} href={confirmationUrl}>
           Accept Invitation
         </Button>
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this email.
+          If you weren't expecting this invitation, you can safely ignore this
+          email.
         </Text>
       </Container>
     </Body>
