@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, forwardRef } from "react";
 import { Smartphone, Download, Bell, Zap, Shield } from "lucide-react";
 
-export const DownloadSection = () => {
+export const DownloadSection = forwardRef<HTMLElement, {}>((_, ref) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
