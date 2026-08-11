@@ -16,7 +16,7 @@ export const Footer = forwardRef<HTMLElement, { showTelegram?: boolean }>(
   }, []);
 
   return (
-    <footer className="py-10 bg-background relative overflow-hidden">
+    <footer ref={ref} className="py-10 bg-background relative overflow-hidden">
       <div className="absolute inset-0 grid-dots opacity-10" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-40 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -89,4 +89,6 @@ export const Footer = forwardRef<HTMLElement, { showTelegram?: boolean }>(
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
