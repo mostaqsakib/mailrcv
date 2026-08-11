@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, forwardRef } from "react";
 import { Smartphone, Download, Bell, Zap, Shield } from "lucide-react";
 
-export const DownloadSection = () => {
+export const DownloadSection = forwardRef<HTMLElement, {}>((_, ref) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -13,7 +13,7 @@ export const DownloadSection = () => {
   }, []);
 
   return (
-    <section className="py-16 sm:py-20 relative overflow-hidden">
+    <section ref={ref} className="py-16 sm:py-20 relative overflow-hidden">
       <div className="absolute inset-0 grid-dots opacity-10" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/8 blur-[180px] rounded-full" />
 
@@ -140,4 +140,6 @@ export const DownloadSection = () => {
       </div>
     </section>
   );
-};
+});
+
+DownloadSection.displayName = "DownloadSection";
