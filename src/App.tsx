@@ -18,6 +18,7 @@ const SecureInboxPage = lazy(() => import("./pages/SecureInboxPage"));
 const DomainsPage = lazy(() => import("./pages/DomainsPage"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage"));
 const BulkGeneratePage = lazy(() => import("./pages/BulkGeneratePage"));
+const ApiDocsPage = lazy(() => import("./pages/ApiDocsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -119,6 +120,7 @@ const App = () => (
                 <Route path="/domain" element={<DomainsPage />} />
                 <Route path="/download" element={<DownloadPage />} />
                 <Route path="/bulk" element={<BulkGeneratePage />} />
+                <Route path="/api" element={<ApiDocsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/demo/neon" element={<DemoNeonPage />} />
